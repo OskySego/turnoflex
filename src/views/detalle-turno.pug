@@ -1,0 +1,51 @@
+extends layout
+
+block content
+  if error
+    .alert.alert-danger.shadow-sm(role="alert")
+      h4.alert-heading ¡Ocurrió un error!
+      p= error
+      hr
+      a.btn.btn-outline-danger.btn-sm(href="/") Volver al inicio
+  else
+    .row.justify-content-center
+      .col-md-8
+        .card.shadow-sm.border-0
+          .card-header.bg-white.d-flex.justify-content-between.align-items-center.py-3
+            h5.m-0.fw-bold Detalle del Turno: #{turno.id}
+            span.badge(class=turno.estado === 'reservado' ? 'bg-warning text-dark' : (turno.estado === 'cancelado' ? 'bg-danger' : 'bg-success'))
+              = turno.estado.toUpperCase()
+
+          .card-body
+            .row.g-3.mb-4
+              .col-md-6
+                .p-3.border.rounded.bg-white
+                  h6.text-uppercase.text-muted.small.fw-bold Paciente / Cliente
+                  p.fs-5.mb-1.fw-bold= turno.usuario ? turno.usuario.nombre : 'No asignado'
+                  p.mb-1.small.text-secondary Email: #{turno.usuario ? turno.usuario.email : 'N/D'}
+                  p.mb-0.small.text-secondary Teléfono: #{turno.usuario ? turno.usuario.telefono : 'N/D'}
+
+              .col-md-6
+                .p-3.border.rounded.bg-white
+                  h6.text-uppercase.text-muted.small.fw-bold Especialista
+                  p.fs-5.mb-1.fw-bold= turno.profesional ? turno.profesional.nombre : 'No asignado'
+                  p.mb-0.badge.bg-info.text-dark= turno.profesional ? turno.profesional.especialidad : 'N/D'
+
+            .p-3.bg-light.rounded.mb-4.d-flex.justify-content-around.text-center
+              div
+                span.d-block.text-muted.small Fecha
+                strong.fs-5= turno.fecha
+              div
+                span.d-block.text-muted.small Hora
+                strong.fs-5= turno.hora
+
+            .d-flex.gap-2.justify-content-end
+              if turno.estado !== 'cancelado'
+                form(action=`/turnos/${turno.id}/estado`, method="POST")
+                  input(type="hidden", name="nuevoEstado", value="cancelado")
+                  button.btn.btn-outline-danger(type="submit") Cancelar Turno
+
+              if turno.estado !== 'atendido'
+                form(action=`/turnos/${turno.id}/estado`, method="POST")
+                  input(type="hidden", name="nuevoEstado", value="atendido")
+                  button.btn.btn-success(type="submit") Marcar como Atendido
