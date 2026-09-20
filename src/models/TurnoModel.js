@@ -67,14 +67,16 @@ export class TurnoModel extends JsonRepository {
   }
 
   /**
-   * Crea y guarda un nuevo turno en la base JSON.
+   * Crea y guarda un nuevo turno en la base JSON con ID secuencial de 3 cifras.
    * @param {Object} newTurnoData
    * @returns {Object}
    */
   create(newTurnoData) {
     const data = this._readData();
+    const turnos = data[this.collectionKey] || [];
 
-    const existeSuperposicion = data.turnos.some(
+    // Validar superposición de horarios
+    const existeSuperposicion = turnos.some(
       (t) =>
         t.profesional_id === newTurnoData.profesional_id &&
         t.fecha === newTurnoData.fecha &&
@@ -88,16 +90,33 @@ export class TurnoModel extends JsonRepository {
       );
     }
 
+    // Generar ID numérico secuencial estricto de 3 cifras (ej: "001", "002", "015")
+    let siguienteNumero = 1;
+    if (turnos.length > 0) {
+      const idsNumericos = turnos
+        .map((t) => parseInt(t.id, 10))
+        .filter((n) => !isNaN(n));
+      
+      if (idsNumericos.length > 0) {
+        siguienteNumero = Math.max(...idsNumericos) + 1;
+      }
+    }
+    const idFormateado = String(siguienteNumero).padStart(3, '0');
+
+    // Mapear el ID del cliente (soporta cliente_id o usuario_id)
+    const clienteId = newTurnoData.cliente_id || newTurnoData.usuario_id;
+
     const newTurno = {
-      id: `trn-${Date.now()}`,
-      cliente_id: newTurnoData.cliente_id,
+      id: idFormateado,
+      cliente_id: clienteId,
       profesional_id: newTurnoData.profesional_id,
       fecha: newTurnoData.fecha,
       hora: newTurnoData.hora,
       estado: newTurnoData.estado || 'reservado'
     };
 
-    data[this.collectionKey].push(newTurno);
+    turnos.push(newTurno);
+    data[this.collectionKey] = turnos;
     this._writeData(data);
 
     return newTurno;
