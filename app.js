@@ -28,7 +28,6 @@ app.use('/', turnoRoutes);
 app.use('/', profesionalRoutes);
 app.use('/', clienteRoutes);
 
-// Manejo genérico de rutas no encontradas (404)
 app.use((req, res) => {
   res.status(404).send('Página o Endpoint no encontrado');
 });
