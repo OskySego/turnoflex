@@ -69,14 +69,14 @@ export class TurnoController {
   static crearTurno(req, res) {
     try {
       const {
-        usuario_id,
+        cliente_id,
         profesional_id,
         fecha,
         hora
       } = req.body;
 
       const nuevoTurno = turnoModel.create({
-        usuario_id,
+        cliente_id,
         profesional_id,
         fecha,
         hora

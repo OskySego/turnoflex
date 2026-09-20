@@ -1,0 +1,36 @@
+extends layout
+
+block content
+  - const iniciales = (nombre) => nombre ? nombre.split(' ').filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join('') : 'NN'
+
+  .row.justify-content-center
+    .col-md-10
+      .d-flex.justify-content-between.align-items-center.mb-4
+        div
+          h2.text-dark.fw-medium.mb-1 Clientes
+          p.text-secondary.mb-0 Clientes registrados en TurnoFlex
+        span.badge.bg-primary.rounded-pill.px-3.py-2.fs-6= `${clientes.length} clientes`
+
+      if clientes && clientes.length > 0
+        .row.g-3
+          each cli in clientes
+            .col-md-6
+              .card.border-0.rounded-4.shadow-sm.h-100
+                .card-body.p-4
+                  .d-flex.align-items-center.gap-3.mb-3
+                    .rounded-circle.d-flex.align-items-center.justify-content-center.fw-medium.fs-5.flex-shrink-0(
+                      style="width:52px; height:52px; background:#DBEAFE; color:#1E40AF;"
+                    )= iniciales(cli.nombre)
+                    div
+                      p.mb-1.fw-medium(style="color:#0D1B3E;")= cli.nombre
+                      p.small.text-secondary.mb-0= cli.email
+
+                  .mb-3
+                    p.text-uppercase.mb-1.fw-medium(style="font-size:11px; color:#94A3B8; letter-spacing:.06em;") Teléfono
+                    p.small.text-secondary.mb-0= cli.telefono || 'N/D'
+
+                  a.btn.btn-outline-primary.rounded-3.w-100(
+                    href=`/clientes/${cli.id}`
+                  ) Ver detalle
+      else
+        .alert.alert-info.rounded-4 No hay clientes registrados.
