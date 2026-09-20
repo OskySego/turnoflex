@@ -35,10 +35,11 @@ export const validarExistenciaTurno = (req, res, next) => {
  * Middleware que valida la presencia de los campos obligatorios antes de intentar crear un turno.
  */
 export const validarCamposCreacionTurno = (req, res, next) => {
-  const { usuario_id, profesional_id, fecha, hora } = req.body;
+  // CORRECCIÓN: Ahora busca "cliente_id" para coincidir con la vista y el modelo
+  const { cliente_id, profesional_id, fecha, hora } = req.body;
   const camposFaltantes = [];
 
-  if (!usuario_id) camposFaltantes.push('usuario_id');
+  if (!cliente_id) camposFaltantes.push('cliente_id');
   if (!profesional_id) camposFaltantes.push('profesional_id');
   if (!fecha) camposFaltantes.push('fecha');
   if (!hora) camposFaltantes.push('hora');

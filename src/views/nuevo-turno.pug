@@ -17,7 +17,8 @@ block content
             // Selector de Paciente / Cliente dinámico
             .mb-3
               label.form-label.fw-medium Paciente / Cliente
-              select.form-select(name="usuario_id" required)
+              // CORRECCIÓN APLICADA AQUÍ: name="cliente_id"
+              select.form-select(name="cliente_id" required)
                 option(value="" disabled selected) Seleccioná un cliente...
                 if clientes && clientes.length > 0
                   each cli in clientes
