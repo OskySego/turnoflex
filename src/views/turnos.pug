@@ -6,15 +6,18 @@ block content
       h2.mb-1 Turnos
       p.text-muted.mb-0 Turnos registrados en TurnoFlex
 
-    span.badge.bg-primary.fs-6
-      | #{turnos.length} turnos
+    .d-flex.align-items-center.gap-3
+      if turnos
+        span.badge.bg-primary.fs-6
+          | #{turnos.length} turnos
+      
+      // Botón para volver al inicio
+      a.btn.btn-outline-secondary(href="/")
+        | Volver al inicio
 
-  if turnos.length === 0
-    .alert.alert-info
-      | No hay turnos registrados.
-    if turnos
-      span.badge.bg-primary.fs-6
-        | #{turnos.length} turnos
+      // Botón para solicitar nuevo turno
+      a.btn.btn-primary(href="/turnos/nuevo")
+        | + Solicitar nuevo turno
 
   if !turnos || turnos.length === 0
     .alert.alert-info.shadow-sm

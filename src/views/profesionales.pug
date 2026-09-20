@@ -9,6 +9,9 @@ block content
     span.badge.bg-primary.fs-6
       | #{profesionales.length} profesionales
 
+    a.btn.btn-outline-secondary(href="/")
+        | Volver al inicio  
+
   if profesionales.length === 0
     .alert.alert-info
       | No hay profesionales registrados.
