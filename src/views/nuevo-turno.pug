@@ -1,0 +1,53 @@
+extends layout
+
+block content
+  .row.justify-content-center
+    .col-md-7
+      .card.border-0.rounded-4.shadow-sm
+        .card-body.p-4
+          // Cabecera con título y botón de volver
+          .d-flex.justify-content-between.align-items-center.mb-3
+            h2.h4.fw-bold.mb-0 Solicitar Nuevo Turno
+            a.btn.btn-outline-secondary.btn-sm.rounded-3(href="/turnos") 
+              | Volver al listado
+
+          p.text-muted.mb-4 Completá los datos para registrar un turno en TurnoFlex.
+
+          form(action="/turnos" method="POST")
+            // Selector de Paciente / Cliente dinámico
+            .mb-3
+              label.form-label.fw-medium Paciente / Cliente
+              select.form-select(name="usuario_id" required)
+                option(value="" disabled selected) Seleccioná un cliente...
+                if clientes && clientes.length > 0
+                  each cli in clientes
+                    option(value=cli.id)= `${cli.nombre} — (${cli.email || 'Sin email'})`
+                else
+                  option(value="" disabled) No hay clientes registrados
+
+            // Selector de Profesional y sus disponibilidades
+            .mb-3
+              label.form-label.fw-medium Profesional y Disponibilidad
+              select.form-select(name="profesional_id" required)
+                option(value="" disabled selected) Seleccioná un profesional...
+                if profesionales && profesionales.length > 0
+                  each prof in profesionales
+                    // Muestra nombre, especialidad y horarios si la BD los trae
+                    - const infoHorarios = prof.horarios ? ` [Horarios: ${prof.horarios}]` : ''
+                    option(value=prof.id)= `${prof.nombre} (${prof.especialidad || 'General'})${infoHorarios}`
+                else
+                  option(value="" disabled) No hay profesionales registrados
+
+            // Campos de Fecha y Hora
+            .row.mb-4
+              .col-md-6
+                label.form-label.fw-medium Fecha
+                input.form-control(type="date" name="fecha" required)
+              .col-md-6
+                label.form-label.fw-medium Hora
+                input.form-control(type="time" name="hora" required)
+
+            // Botones de acción finales
+            .d-flex.justify-content-end.gap-2
+              a.btn.btn-outline-secondary.rounded-3(href="/turnos") Cancelar
+              button.btn.btn-primary.rounded-3(type="submit") Guardar Turno

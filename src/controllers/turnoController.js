@@ -1,6 +1,10 @@
 import { TurnoModel } from '../models/TurnoModel.js';
-
+import { ClienteModel } from '../models/ClienteModel.js'; // importar el modelo de Cliente
+import { ProfesionalModel } from '../models/ProfesionalModel.js'; // importar el modelo de Profesional
 const turnoModel = new TurnoModel();
+// Instanciamos los repositorios / modelos
+const clienteModel = new ClienteModel();
+const profesionalModel = new ProfesionalModel();
 
 export class TurnoController {
 
@@ -167,6 +171,22 @@ export class TurnoController {
         });
       }
       res.status(500).json({ status: 'error', message: error.message });
+    }
+  }
+  // GET /turnos/nuevo - Mostrar formulario con clientes y profesionales cargados
+  static async getFormNuevoTurno(req, res) {
+    try {
+      // Usamos findAll() en lugar de obtenerTodos()
+      const clientes = clienteModel.findAll();
+      const profesionales = profesionalModel.findAll(); // (Asegurate que ProfesionalModel tenga un método similar)
+
+      res.render('nuevo-turno', {
+        tituloPage: 'Solicitar Nuevo Turno',
+        clientes: clientes || [],
+        profesionales: profesionales || []
+      });
+    } catch (error) {
+      res.status(500).send(`Error al cargar el formulario: ${error.message}`);
     }
   }
 
