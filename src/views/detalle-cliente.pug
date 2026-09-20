@@ -1,0 +1,45 @@
+extends layout
+
+block content
+  - const iniciales = (nombre) => nombre ? nombre.split(' ').filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join('') : 'NN'
+
+  if error
+    .alert.alert-danger.shadow-sm(role="alert")
+      h4.alert-heading ¡Ocurrió un error!
+      p= error
+      hr
+      a.btn.btn-outline-danger.btn-sm(href="/clientes") Volver al listado
+  else
+    .row.justify-content-center
+      .col-md-8
+        .card.border-0.rounded-5.overflow-hidden.shadow-sm
+
+          //- Detelle del cliente
+          .p-4.text-white(style="background-color: #0D1B3E;")
+            p.text-uppercase.mb-1.fw-semibold(style="font-size:11px; opacity:.45; letter-spacing:.08em;") Detalle del cliente
+            .d-flex.align-items-center.gap-3.mb-4
+              span.fs-4.fw-medium= cliente.id
+            .row.g-2
+              .col
+                .p-3.rounded-4(style="background:rgba(255,255,255,.07); border:0.5px solid rgba(255,255,255,.12);")
+                  p.text-uppercase.mb-1(style="font-size:11px; opacity:.45; letter-spacing:.06em;") Nombre
+                  p.mb-0.fw-medium= cliente.nombre
+
+          //- Datos
+          .card-body.bg-white.p-4
+
+            .d-flex.align-items-center.gap-3.pb-3.border-bottom.mb-3
+              .rounded-circle.d-flex.align-items-center.justify-content-center.fw-medium.fs-6.flex-shrink-0(
+                style="width:44px; height:44px; background:#DBEAFE; color:#1E40AF;"
+              )= iniciales(cliente.nombre)
+              div
+                p.text-uppercase.mb-1.fw-medium(style="font-size:11px; color:#94A3B8; letter-spacing:.06em;") Cliente
+                p.mb-1.fw-medium(style="color:#0D1B3E;")= cliente.nombre
+                p.small.text-secondary.mb-0= cliente.email
+
+            .mb-3
+              p.text-uppercase.mb-1.fw-medium(style="font-size:11px; color:#94A3B8; letter-spacing:.06em;") Teléfono
+              p.text-secondary.mb-0= cliente.telefono || 'N/D'
+
+            .d-flex.gap-2.justify-content-end
+              a.btn.btn-outline-secondary.rounded-3(href="/clientes") Volver

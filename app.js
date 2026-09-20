@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import turnoRoutes from './src/routes/turnoRoutes.js';
+import clienteRoutes from './src/routes/clienteRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,12 +16,13 @@ app.set('views', path.join(process.cwd(), 'src/views'));
 
 // Rutas de la aplicación
 app.use('/', turnoRoutes);
+app.use('/', clienteRoutes);
 
 // Manejo genérico de rutas no encontradas (404)
 app.set('view engine', 'pug');
 app.set('views', path.join(process.cwd(), 'src/views'));
 
-app.use('/', turnoRoutes);
+
 
 app.use((req, res) => {
   res.status(404).send('Página o Endpoint no encontrado');
