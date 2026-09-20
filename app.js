@@ -3,6 +3,7 @@ import path from 'path';
 
 import turnoRoutes from './src/routes/turnoRoutes.js';
 import profesionalRoutes from './src/routes/profesionalRoutes.js';
+import clienteRoutes from './src/routes/clienteRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +26,7 @@ app.get('/', (req, res) => {
 // Rutas de la aplicación
 app.use('/', turnoRoutes);
 app.use('/', profesionalRoutes);
+app.use('/', clienteRoutes);
 
 // Manejo genérico de rutas no encontradas (404)
 app.use((req, res) => {
