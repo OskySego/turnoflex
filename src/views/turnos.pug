@@ -12,6 +12,13 @@ block content
   if turnos.length === 0
     .alert.alert-info
       | No hay turnos registrados.
+    if turnos
+      span.badge.bg-primary.fs-6
+        | #{turnos.length} turnos
+
+  if !turnos || turnos.length === 0
+    .alert.alert-info.shadow-sm
+      | No hay turnos registrados actualmente.
 
   else
     .row.g-4
@@ -43,6 +50,7 @@ block content
 
               p.mb-1
                 strong Paciente:
+                strong Paciente / Cliente:
                 |  #{turno.usuario ? turno.usuario.nombre : turno.usuario_id}
 
               p.mb-0
@@ -51,5 +59,6 @@ block content
 
             .card-footer.bg-white.border-0.pb-3
               a.btn.btn-primary(
+              a.btn.btn-outline-primary.w-100(
                 href=`/turnos/${turno.id}`
               ) Ver detalle
