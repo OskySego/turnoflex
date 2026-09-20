@@ -1,7 +1,8 @@
 import express from 'express';
 import path from 'path';
+
 import turnoRoutes from './src/routes/turnoRoutes.js';
-import clienteRoutes from './src/routes/clienteRoutes.js';
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,15 +15,15 @@ app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'pug');
 app.set('views', path.join(process.cwd(), 'src/views'));
 
+// Página principal
+app.get('/', (req, res) => {
+  res.render('inicio', {
+    tituloPage: 'Inicio - TurnoFlex'
+  });
+});
+
 // Rutas de la aplicación
 app.use('/', turnoRoutes);
-app.use('/', clienteRoutes);
-
-// Manejo genérico de rutas no encontradas (404)
-app.set('view engine', 'pug');
-app.set('views', path.join(process.cwd(), 'src/views'));
-
-
 
 app.use((req, res) => {
   res.status(404).send('Página o Endpoint no encontrado');
@@ -31,6 +32,6 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log('=================================');
   console.log(' Servidor TurnoFlex iniciado');
-  console.log(` Accedé en: http://localhost:${PORT}/turnos/trn-301`);
+  console.log(` Inicio: http://localhost:${PORT}`);
   console.log('=================================');
 });

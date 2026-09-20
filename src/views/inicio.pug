@@ -1,0 +1,28 @@
+extends layout
+
+block content
+  .text-center.mb-5
+    h2.display-6.fw-bold Bienvenido a TurnoFlex
+    p.lead.text-muted
+      | Sistema de gestión de turnos y profesionales
+
+  .row.g-4.justify-content-center
+    .col-md-5
+      .card.h-100.shadow-sm
+        .card-body.text-center.p-4
+          h3.h4 Turnos
+          p.text-muted
+            | Consultá y gestioná los turnos registrados en el sistema.
+
+          a.btn.btn-primary(href="/turnos")
+            | Ver turnos
+
+    .col-md-5
+      .card.h-100.shadow-sm
+        .card-body.text-center.p-4
+          h3.h4 Profesionales
+          p.text-muted
+            | Consultá profesionales, especialidades, días y horarios disponibles.
+
+          a.btn.btn-primary(href="/profesionales")
+            | Ver profesionales
