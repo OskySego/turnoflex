@@ -74,30 +74,45 @@ export class TurnoController {
   }
 
   // 4. Método para cambiar el estado (atendido/cancelado/reservado)
+  // 4. Método para cambiar el estado (atendido/cancelado/reservado)
   static cambiarEstadoTurno(req, res) {
     try {
       const { id } = req.params;
       const { nuevoEstado } = req.body;
+      
+      // Asumimos que el middleware validarExistenciaTurno te deja el turno actual acá
+      const turnoActual = req.turnoEncontrado || turnoModel.findById(id); 
 
       const estadosValidos = ['reservado', 'cancelado', 'atendido'];
       if (!nuevoEstado || !estadosValidos.includes(nuevoEstado)) {
-        
-        // Si es navegador web
         if (req.accepts('html') && !req.accepts('json')) {
           return res.status(400).render('detalle-turno', {
             tituloPage: 'Error al cambiar estado',
-            turno: turnoModel.findById(id),
+            turno: turnoActual,
             error: `Estado no permitido. Debe ser: ${estadosValidos.join(', ')}`
           });
         }
-        
-        // Si es API
-        return res.status(400).json({
-          status: 'error',
-          message: `Estado no permitido. Debe ser: ${estadosValidos.join(', ')}`
-        });
+        return res.status(400).json({ status: 'error', message: `Estado no permitido.` });
       }
 
+      // NUEVA REGLA: Bloquear si se intenta pasar de Atendido a Cancelado o viceversa
+      if (
+        (turnoActual.estado === 'atendido' && nuevoEstado === 'cancelado') ||
+        (turnoActual.estado === 'cancelado' && nuevoEstado === 'atendido')
+      ) {
+        const mensajeError = `Transición no permitida. Un turno ${turnoActual.estado} solo puede volver al estado reservado.`;
+        
+        if (req.accepts('html') && !req.accepts('json')) {
+          return res.status(400).render('detalle-turno', {
+            tituloPage: 'Error de transición',
+            turno: turnoActual,
+            error: mensajeError
+          });
+        }
+        return res.status(400).json({ status: 'error', message: mensajeError });
+      }
+
+      // Si pasa las validaciones, actualizamos
       const turnoActualizado = turnoModel.updateEstado(id, nuevoEstado);
 
       // Redirección directa para formularios HTML desde el navegador
@@ -121,4 +136,5 @@ export class TurnoController {
       res.status(500).json({ status: 'error', message: error.message });
     }
   }
+
 }

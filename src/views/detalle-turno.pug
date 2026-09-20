@@ -63,22 +63,21 @@ block content
 
             h5.h6.text-muted.text-uppercase.mb-3 Acciones Disponibles
             .d-flex.gap-2.flex-wrap
-              if turno.estado !== 'atendido'
+              if turno.estado === 'reservado'
                 form(action=`/turnos/${turno.id}/estado` method="POST")
                   input(type="hidden" name="nuevoEstado" value="atendido")
                   button.btn.btn-success(type="submit") Marcar como Atendido
 
-              if turno.estado !== 'cancelado'
                 form(action=`/turnos/${turno.id}/estado` method="POST")
                   input(type="hidden" name="nuevoEstado" value="cancelado")
                   button.btn.btn-danger(type="submit") Cancelar Turno
 
-              if turno.estado !== 'reservado'
+              if turno.estado === 'atendido' || turno.estado === 'cancelado'
                 form(action=`/turnos/${turno.id}/estado` method="POST")
                   input(type="hidden" name="nuevoEstado" value="reservado")
                   button.btn.btn-secondary(type="submit") Reabrir Reserva
 
               a.btn.btn-outline-dark.ms-auto(href="/turnos") Volver al listado general
-
+              
       else
         .alert.alert-warning.shadow-sm No se encontró la información del turno consultado.
