@@ -1,0 +1,46 @@
+extends layout
+
+block content
+  .d-flex.justify-content-between.align-items-center.mb-4
+    div
+      h2.mb-1 Profesionales
+      p.text-muted.mb-0 Profesionales disponibles en TurnoFlex
+
+    span.badge.bg-primary.fs-6
+      | #{profesionales.length} profesionales
+
+  if profesionales.length === 0
+    .alert.alert-info
+      | No hay profesionales registrados.
+
+  else
+    .row.g-4
+      each profesional in profesionales
+        .col-md-6
+          .card.h-100.shadow-sm
+            .card-body
+              h3.h5.card-title.mb-2= profesional.nombre
+
+              p.mb-3
+                span.badge.bg-info.text-dark= profesional.especialidad
+
+              h4.h6 Días disponibles
+
+              if profesional.dias_disponibles && profesional.dias_disponibles.length
+                p.text-muted
+                  = profesional.dias_disponibles.join(' · ')
+              else
+                p.text-muted Sin días disponibles
+
+              h4.h6 Horarios
+
+              if profesional.horarios && profesional.horarios.length
+                p.text-muted
+                  = profesional.horarios.join(' · ')
+              else
+                p.text-muted Sin horarios disponibles
+
+            .card-footer.bg-white.border-0.pb-3
+              a.btn.btn-primary(
+                href=`/profesionales/${profesional.id}`
+              ) Ver profesional

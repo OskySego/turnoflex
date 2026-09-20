@@ -5,27 +5,24 @@ const profesionalModel = new ProfesionalModel();
 export class ProfesionalController {
   /**
    * GET /profesionales
-   * Retorna el listado de profesionales.
+   * Renderiza el listado de profesionales.
    */
   static getProfesionales(req, res) {
     try {
       const profesionales = profesionalModel.findAll();
 
-      res.status(200).json({
-        status: 'success',
-        data: profesionales
+      res.render('profesionales', {
+        tituloPage: 'Profesionales - TurnoFlex',
+        profesionales
       });
     } catch (error) {
-      res.status(500).json({
-        status: 'error',
-        message: error.message
-      });
+      res.status(500).send(`Error de servidor: ${error.message}`);
     }
   }
 
   /**
    * GET /profesionales/:id
-   * Obtiene un profesional por su ID.
+   * Renderiza el detalle de un profesional.
    */
   static getDetalleProfesional(req, res) {
     try {
@@ -34,15 +31,12 @@ export class ProfesionalController {
       const profesional =
         req.profesionalEncontrado || profesionalModel.findById(id);
 
-      res.status(200).json({
-        status: 'success',
-        data: profesional
+      res.render('detalle-profesional', {
+        tituloPage: `${profesional.nombre} - TurnoFlex`,
+        profesional
       });
     } catch (error) {
-      res.status(500).json({
-        status: 'error',
-        message: error.message
-      });
+      res.status(500).send(`Error de servidor: ${error.message}`);
     }
   }
 
