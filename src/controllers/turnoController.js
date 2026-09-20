@@ -3,32 +3,7 @@ import { TurnoModel } from '../models/TurnoModel.js';
 const turnoModel = new TurnoModel();
 
 export class TurnoController {
-  /**
-   * GET /turnos
-   * Renderiza el listado de todos los turnos.
-   */
-  static getTurnos(req, res) {
-    try {
-      const turnos = turnoModel.findAll();
 
-      res.render('turnos', {
-        tituloPage: 'Turnos - TurnoFlex',
-        turnos
-      });
-    } catch (error) {
-      res.status(500).send(`Error de servidor: ${error.message}`);
-    }
-  }
-
-  /**
-   * GET /turnos/:id
-   * Renderiza la vista Pug con los detalles completos del turno.
-   */
-  static getDetalleTurno(req, res) {
-    try {
-      const { id } = req.params;
-
-      const turno = req.turnoEncontrado || turnoModel.findById(id);
   // 1. Método para obtener la lista general o filtrada de turnos
   static getTurnos(req, res) {
     try {
@@ -56,6 +31,9 @@ export class TurnoController {
         turnos
       });
     } catch (error) {
+      if (req.accepts('html') && !req.accepts('json')) {
+        return res.status(500).render('error', { error: error.message });
+      }
       res.status(500).json({ status: 'error', message: error.message });
     }
   }
@@ -77,10 +55,13 @@ export class TurnoController {
         mensajeExito: req.query.exito || null
       });
     } catch (error) {
-      res.status(500).render('detalle-turno', {
-        tituloPage: 'Error de servidor',
-        error: error.message
-      });
+      if (req.accepts('html') && !req.accepts('json')) {
+        return res.status(500).render('detalle-turno', {
+          tituloPage: 'Error de servidor',
+          error: error.message
+        });
+      }
+      res.status(500).json({ status: 'error', message: error.message });
     }
   }
 
@@ -101,17 +82,19 @@ export class TurnoController {
         hora
       });
 
-      if (req.accepts('json')) {
+      if (req.accepts('json') && !req.accepts('html')) {
         return res.status(201).json({
           status: 'success',
           data: nuevoTurno
         });
-      if (req.accepts('json') && !req.accepts('html')) {
-        return res.status(201).json({ status: 'success', data: nuevoTurno });
       }
 
       res.redirect(`/turnos/${nuevoTurno.id}`);
     } catch (error) {
+      if (req.accepts('html') && !req.accepts('json')) {
+        // En una app real acá se redirigiría con el error en la URL o renderizando un form
+        return res.status(400).send(`Error: ${error.message}`); 
+      }
       res.status(400).json({
         status: 'error',
         message: error.message
@@ -119,11 +102,6 @@ export class TurnoController {
     }
   }
 
-  /**
-   * PATCH o POST /turnos/:id/estado
-   * Modifica el estado del turno.
-   */
-  // 4. Método para cambiar el estado (atendido/cancelado/reservado)
   // 4. Método para cambiar el estado (atendido/cancelado/reservado)
   static cambiarEstadoTurno(req, res) {
     try {
@@ -150,7 +128,6 @@ export class TurnoController {
         return res.status(400).json({ status: 'error', message: `Estado no permitido.` });
       }
 
-<<<<<<< HEAD
       // NUEVA REGLA: Bloquear si se intenta pasar de Atendido a Cancelado o viceversa
       if (
         (turnoActual.estado === 'atendido' && nuevoEstado === 'cancelado') ||
@@ -170,12 +147,6 @@ export class TurnoController {
 
       // Si pasa las validaciones, actualizamos
       const turnoActualizado = turnoModel.updateEstado(id, nuevoEstado);
-=======
-      const turnoActualizado = turnoModel.updateEstado(
-        id,
-        nuevoEstado
-      );
->>>>>>> d65078034f4d50cc3e217eb2dd6d635a16b65f75
 
       // Redirección directa para formularios HTML desde el navegador
       if (req.headers['content-type']?.includes('application/x-www-form-urlencoded') || req.accepts('html')) {
@@ -188,10 +159,6 @@ export class TurnoController {
         data: turnoActualizado
       });
     } catch (error) {
-      res.status(500).json({
-        status: 'error',
-        message: error.message
-      });
       if (req.accepts('html') && !req.accepts('json')) {
         return res.status(500).render('detalle-turno', {
           tituloPage: 'Error de servidor',

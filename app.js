@@ -35,7 +35,5 @@ app.listen(PORT, () => {
   console.log('=================================');
   console.log(' Servidor TurnoFlex iniciado');
   console.log(` Inicio: http://localhost:${PORT}`);
-  console.log(` Turno de prueba: http://localhost:${PORT}/turnos/trn-301`);
-  console.log(` Profesionales: http://localhost:${PORT}/profesionales`);
   console.log('=================================');
 });
