@@ -1,51 +1,84 @@
 extends layout
 
 block content
-  if error
-    .alert.alert-danger.shadow-sm(role="alert")
-      h4.alert-heading ¡Ocurrió un error!
-      p= error
-      hr
-      a.btn.btn-outline-danger.btn-sm(href="/") Volver al inicio
-  else
-    .row.justify-content-center
-      .col-md-8
-        .card.shadow-sm.border-0
-          .card-header.bg-white.d-flex.justify-content-between.align-items-center.py-3
-            h5.m-0.fw-bold Detalle del Turno: #{turno.id}
-            span.badge(class=turno.estado === 'reservado' ? 'bg-warning text-dark' : (turno.estado === 'cancelado' ? 'bg-danger' : 'bg-success'))
-              = turno.estado.toUpperCase()
+  .row.justify-content-center
+    .col-md-8
+      if mensajeExito
+        .alert.alert-success.alert-dismissible.fade.show.shadow-sm(role="alert")
+          strong ¡Éxito! 
+          span= mensajeExito
+
+      if error
+        .alert.alert-danger.alert-dismissible.fade.show.shadow-sm(role="alert")
+          strong Error: 
+          span= error
+
+      if turno
+        .card.shadow-sm
+          .card-header.bg-white.py-3.d-flex.justify-content-between.align-items-center
+            h2.h4.mb-0 Detalle del Turno ##{turno.id}
+            
+            if turno.estado === 'cancelado'
+              span.badge.bg-danger.fs-6 CANCELADO
+            else if turno.estado === 'atendido'
+              span.badge.bg-success.fs-6 ATENDIDO
+            else
+              span.badge.bg-warning.text-dark.fs-6 RESERVADO
 
           .card-body
-            .row.g-3.mb-4
+            .row.mb-3
               .col-md-6
-                .p-3.border.rounded.bg-white
-                  h6.text-uppercase.text-muted.small.fw-bold Paciente / Cliente
-                  p.fs-5.mb-1.fw-bold= turno.usuario ? turno.usuario.nombre : 'No asignado'
-                  p.mb-1.small.text-secondary Email: #{turno.usuario ? turno.usuario.email : 'N/D'}
-                  p.mb-0.small.text-secondary Teléfono: #{turno.usuario ? turno.usuario.telefono : 'N/D'}
+                h5.h6.text-muted.text-uppercase Datos del Turno
+                p.mb-1
+                  strong Fecha: 
+                  span= turno.fecha
+                p.mb-1
+                  strong Hora: 
+                  span= `${turno.hora} hs`
 
               .col-md-6
-                .p-3.border.rounded.bg-white
-                  h6.text-uppercase.text-muted.small.fw-bold Especialista
-                  p.fs-5.mb-1.fw-bold= turno.profesional ? turno.profesional.nombre : 'No asignado'
-                  p.mb-0.badge.bg-info.text-dark= turno.profesional ? turno.profesional.especialidad : 'N/D'
+                if turno.usuario
+                  h5.h6.text-muted.text-uppercase Paciente / Cliente
+                  p.mb-1
+                    strong Nombre: 
+                    span= turno.usuario.nombre
+                  p.mb-1
+                    strong Email: 
+                    span= turno.usuario.email
 
-            .p-3.bg-light.rounded.mb-4.d-flex.justify-content-around.text-center
-              div
-                span.d-block.text-muted.small Fecha
-                strong.fs-5= turno.fecha
-              div
-                span.d-block.text-muted.small Hora
-                strong.fs-5= turno.hora
+            hr
 
-            .d-flex.gap-2.justify-content-end
-              if turno.estado !== 'cancelado'
-                form(action=`/turnos/${turno.id}/estado`, method="POST")
-                  input(type="hidden", name="nuevoEstado", value="cancelado")
-                  button.btn.btn-outline-danger(type="submit") Cancelar Turno
+            if turno.profesional
+              .row.mb-3
+                .col-12
+                  h5.h6.text-muted.text-uppercase Profesional
+                  p.mb-1
+                    strong Nombre: 
+                    span= turno.profesional.nombre
+                  p.mb-0
+                    strong Especialidad: 
+                    span= turno.profesional.especialidad
 
+            hr
+
+            h5.h6.text-muted.text-uppercase.mb-3 Acciones Disponibles
+            .d-flex.gap-2.flex-wrap
               if turno.estado !== 'atendido'
-                form(action=`/turnos/${turno.id}/estado`, method="POST")
-                  input(type="hidden", name="nuevoEstado", value="atendido")
+                form(action=`/turnos/${turno.id}/estado` method="POST")
+                  input(type="hidden" name="nuevoEstado" value="atendido")
                   button.btn.btn-success(type="submit") Marcar como Atendido
+
+              if turno.estado !== 'cancelado'
+                form(action=`/turnos/${turno.id}/estado` method="POST")
+                  input(type="hidden" name="nuevoEstado" value="cancelado")
+                  button.btn.btn-danger(type="submit") Cancelar Turno
+
+              if turno.estado !== 'reservado'
+                form(action=`/turnos/${turno.id}/estado` method="POST")
+                  input(type="hidden" name="nuevoEstado" value="reservado")
+                  button.btn.btn-secondary(type="submit") Reabrir Reserva
+
+              a.btn.btn-outline-dark.ms-auto(href="/turnos") Volver al listado general
+
+      else
+        .alert.alert-warning.shadow-sm No se encontró la información del turno consultado.

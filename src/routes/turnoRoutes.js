@@ -9,6 +9,7 @@ const router = Router();
 
 // Ruta dinámica GET para obtener/renderizar el detalle de un turno
 router.get('/turnos/:id', validarExistenciaTurno, TurnoController.getDetalleTurno);
+router.get('/turnos', TurnoController.getTurnos);
 
 // Ruta POST para crear un turno con validación previa de body
 router.post('/turnos', validarCamposCreacionTurno, TurnoController.crearTurno);

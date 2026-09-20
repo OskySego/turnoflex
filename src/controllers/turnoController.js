@@ -3,19 +3,52 @@ import { TurnoModel } from '../models/TurnoModel.js';
 const turnoModel = new TurnoModel();
 
 export class TurnoController {
-  /**
-   * GET /turnos/:id
-   * Renderiza la vista Pug con los detalles completos del turno.
-   */
+  // 1. Método para obtener la lista general o filtrada de turnos
+  static getTurnos(req, res) {
+    try {
+      const { estado, fecha, profesional_id } = req.query;
+      let turnos = turnoModel.findAll();
+
+      if (estado) {
+        turnos = turnos.filter((t) => t.estado === estado);
+      }
+      if (fecha) {
+        turnos = turnos.filter((t) => t.fecha === fecha);
+      }
+      if (profesional_id) {
+        turnos = turnos.filter((t) => t.profesional_id === profesional_id);
+      }
+
+      // Si la petición pide JSON (Postman / Thunder Client)
+      if (req.accepts('json') && !req.accepts('html')) {
+        return res.status(200).json({ status: 'success', data: turnos });
+      }
+
+      // Renderiza la vista del listado general (turnos.pug)
+      res.render('turnos', {
+        tituloPage: 'Listado de Turnos',
+        turnos
+      });
+    } catch (error) {
+      res.status(500).json({ status: 'error', message: error.message });
+    }
+  }
+
+  // 2. Método para ver el detalle de un turno específico
   static getDetalleTurno(req, res) {
     try {
-      const { id } = req.params;
-      // El middleware previno que llegara acá si no existía, pero se puede re-verificar
-      const turno = req.turnoEncontrado || turnoModel.findById(id);
+      const turno = req.turnoEncontrado;
 
+      // Si pide JSON (API REST)
+      if (req.accepts('json') && !req.accepts('html')) {
+        return res.status(200).json({ status: 'success', data: turno });
+      }
+
+      // Renderiza la vista individual (detalle-turno.pug)
       res.render('detalle-turno', {
         tituloPage: `Detalle del Turno #${turno.id}`,
-        turno
+        turno,
+        mensajeExito: req.query.exito || null
       });
     } catch (error) {
       res.status(500).render('detalle-turno', {
@@ -25,17 +58,13 @@ export class TurnoController {
     }
   }
 
-  /**
-   * POST /turnos
-   * Crea un nuevo turno enviado por Body JSON o Formulario.
-   */
+  // 3. Método para crear un nuevo turno
   static crearTurno(req, res) {
     try {
       const { usuario_id, profesional_id, fecha, hora } = req.body;
       const nuevoTurno = turnoModel.create({ usuario_id, profesional_id, fecha, hora });
 
-      // Responder API JSON o Redireccionar según el Request Header
-      if (req.accepts('json')) {
+      if (req.accepts('json') && !req.accepts('html')) {
         return res.status(201).json({ status: 'success', data: nuevoTurno });
       }
       res.redirect(`/turnos/${nuevoTurno.id}`);
@@ -44,10 +73,7 @@ export class TurnoController {
     }
   }
 
-  /**
-   * PATCH o POST /turnos/:id/estado
-   * Modifica el estado del turno (cancelar o confirmar/atender).
-   */
+  // 4. Método para cambiar el estado (atendido/cancelado/reservado)
   static cambiarEstadoTurno(req, res) {
     try {
       const { id } = req.params;
@@ -55,24 +81,43 @@ export class TurnoController {
 
       const estadosValidos = ['reservado', 'cancelado', 'atendido'];
       if (!nuevoEstado || !estadosValidos.includes(nuevoEstado)) {
+        
+        // Si es navegador web
+        if (req.accepts('html') && !req.accepts('json')) {
+          return res.status(400).render('detalle-turno', {
+            tituloPage: 'Error al cambiar estado',
+            turno: turnoModel.findById(id),
+            error: `Estado no permitido. Debe ser: ${estadosValidos.join(', ')}`
+          });
+        }
+        
+        // Si es API
         return res.status(400).json({
-          status: 'fail',
-          message: `Estado inválido. Los valores permitidos son: ${estadosValidos.join(', ')}`
+          status: 'error',
+          message: `Estado no permitido. Debe ser: ${estadosValidos.join(', ')}`
         });
       }
 
       const turnoActualizado = turnoModel.updateEstado(id, nuevoEstado);
 
-      if (req.accepts('json')) {
-        return res.status(200).json({
-          status: 'success',
-          message: `Estado del turno actualizado a ${nuevoEstado}`,
-          data: turnoActualizado
-        });
+      // Redirección directa para formularios HTML desde el navegador
+      if (req.headers['content-type']?.includes('application/x-www-form-urlencoded') || req.accepts('html')) {
+        return res.redirect(`/turnos/${id}?exito=El+estado+del+turno+se+actualizó+a+${nuevoEstado}`);
       }
 
-      res.redirect(`/turnos/${id}`);
+      // Respuesta JSON para cliente API (Thunder Client / Postman)
+      return res.status(200).json({
+        status: 'success',
+        data: turnoActualizado
+      });
     } catch (error) {
+      if (req.accepts('html') && !req.accepts('json')) {
+        return res.status(500).render('detalle-turno', {
+          tituloPage: 'Error de servidor',
+          turno: turnoModel.findById(req.params.id),
+          error: error.message
+        });
+      }
       res.status(500).json({ status: 'error', message: error.message });
     }
   }

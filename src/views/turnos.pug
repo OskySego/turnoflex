@@ -1,0 +1,56 @@
+extends layout
+
+block content
+  .d-flex.justify-content-between.align-items-center.mb-4
+    div
+      h2.mb-1 Turnos
+      p.text-muted.mb-0 Turnos registrados en TurnoFlex
+
+    if turnos
+      span.badge.bg-primary.fs-6
+        | #{turnos.length} turnos
+
+  if !turnos || turnos.length === 0
+    .alert.alert-info.shadow-sm
+      | No hay turnos registrados actualmente.
+
+  else
+    .row.g-4
+      each turno in turnos
+        .col-md-6
+          .card.h-100.shadow-sm
+            .card-header.bg-white.py-3
+              .d-flex.justify-content-between.align-items-center
+                h3.h5.mb-0= turno.id
+
+                if turno.estado === 'cancelado'
+                  span.badge.bg-danger CANCELADO
+                else if turno.estado === 'atendido'
+                  span.badge.bg-success ATENDIDO
+                else
+                  span.badge.bg-primary RESERVADO
+
+            .card-body
+              .row
+                .col-6
+                  p.text-muted.mb-1 Fecha
+                  p.fw-bold= turno.fecha
+
+                .col-6
+                  p.text-muted.mb-1 Hora
+                  p.fw-bold= turno.hora
+
+              hr
+
+              p.mb-1
+                strong Paciente / Cliente:
+                |  #{turno.usuario ? turno.usuario.nombre : turno.usuario_id}
+
+              p.mb-0
+                strong Profesional:
+                |  #{turno.profesional ? turno.profesional.nombre : turno.profesional_id}
+
+            .card-footer.bg-white.border-0.pb-3
+              a.btn.btn-outline-primary.w-100(
+                href=`/turnos/${turno.id}`
+              ) Ver detalle
