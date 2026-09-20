@@ -9,7 +9,11 @@ block content
         div
           h2.text-dark.fw-medium.mb-1 Clientes
           p.text-secondary.mb-0 Clientes registrados en TurnoFlex
-        span.badge.bg-primary.rounded-pill.px-3.py-2.fs-6= `${clientes.length} clientes`
+        
+        .d-flex.align-items-center.gap-3
+          span.badge.bg-primary.rounded-pill.px-3.py-2.fs-6= `${clientes.length} clientes`
+          a.btn.btn-outline-secondary.btn-sm.rounded-3(href="/")
+            | Volver al inicio
 
       if clientes && clientes.length > 0
         .row.g-3
@@ -30,7 +34,7 @@ block content
                     p.small.text-secondary.mb-0= cli.telefono || 'N/D'
 
                   a.btn.btn-outline-primary.rounded-3.w-100(
-                    href=`/clientes/${cli.id}`
+                    href=`/vista/clientes/${cli.id}`
                   ) Ver detalle
       else
         .alert.alert-info.rounded-4 No hay clientes registrados.
