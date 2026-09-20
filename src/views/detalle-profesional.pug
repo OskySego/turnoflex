@@ -1,0 +1,41 @@
+extends layout
+
+block content
+  .mb-4
+    a.btn.btn-outline-secondary(href="/profesionales")
+      | ← Volver a profesionales
+
+  .card.shadow-sm
+    .card-header.bg-white.py-3
+      .d-flex.justify-content-between.align-items-center
+        h2.h4.mb-0= profesional.nombre
+        span.badge.bg-info.text-dark= profesional.especialidad
+
+    .card-body
+      .row.g-4
+        .col-md-6
+          .border.rounded.p-3.h-100
+            h3.h6.text-uppercase.text-muted Días disponibles
+
+            if profesional.dias_disponibles && profesional.dias_disponibles.length
+              ul.list-group.list-group-flush
+                each dia in profesional.dias_disponibles
+                  li.list-group-item.px-0= dia
+            else
+              p.text-muted.mb-0 Sin días disponibles
+
+        .col-md-6
+          .border.rounded.p-3.h-100
+            h3.h6.text-uppercase.text-muted Horarios disponibles
+
+            if profesional.horarios && profesional.horarios.length
+              .d-flex.flex-wrap.gap-2
+                each horario in profesional.horarios
+                  span.badge.bg-primary.fs-6= horario
+            else
+              p.text-muted.mb-0 Sin horarios disponibles
+
+      .mt-4
+        p.text-muted.mb-0
+          strong ID del profesional:
+          |  #{profesional.id}

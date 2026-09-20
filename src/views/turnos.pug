@@ -6,6 +6,12 @@ block content
       h2.mb-1 Turnos
       p.text-muted.mb-0 Turnos registrados en TurnoFlex
 
+    span.badge.bg-primary.fs-6
+      | #{turnos.length} turnos
+
+  if turnos.length === 0
+    .alert.alert-info
+      | No hay turnos registrados.
     if turnos
       span.badge.bg-primary.fs-6
         | #{turnos.length} turnos
@@ -43,6 +49,7 @@ block content
               hr
 
               p.mb-1
+                strong Paciente:
                 strong Paciente / Cliente:
                 |  #{turno.usuario ? turno.usuario.nombre : turno.usuario_id}
 
@@ -51,6 +58,7 @@ block content
                 |  #{turno.profesional ? turno.profesional.nombre : turno.profesional_id}
 
             .card-footer.bg-white.border-0.pb-3
+              a.btn.btn-primary(
               a.btn.btn-outline-primary.w-100(
                 href=`/turnos/${turno.id}`
               ) Ver detalle
