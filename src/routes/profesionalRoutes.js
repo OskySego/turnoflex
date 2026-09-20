@@ -9,24 +9,42 @@ import {
 
 const router = Router();
 
-// Ruta GET para obtener todos los profesionales
+// RUTAS API (JSON)
+
+// Obtener todos los profesionales
 router.get(
   '/profesionales',
   ProfesionalController.getProfesionales
 );
 
-// Ruta dinámica GET para obtener un profesional por su ID
+// Obtener un profesional por ID
 router.get(
   '/profesionales/:id',
   validarExistenciaProfesional,
   ProfesionalController.getDetalleProfesional
 );
 
-// Ruta POST para crear un profesional con validación previa del body
+// Crear un profesional
 router.post(
   '/profesionales',
   validarCamposCreacionProfesional,
   ProfesionalController.crearProfesional
+);
+
+
+// RUTAS VISTAS (HTML)
+
+// Listado de profesionales
+router.get(
+  '/vista/profesionales',
+  ProfesionalController.getProfesionalesVista
+);
+
+// Detalle de un profesional
+router.get(
+  '/vista/profesionales/:id',
+  validarExistenciaProfesional,
+  ProfesionalController.getDetalleProfesionalVista
 );
 
 export default router;
