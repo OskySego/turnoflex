@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'path';
 
 import turnoRoutes from './src/routes/turnoRoutes.js';
-import profesionalRoutes from './src/routes/profesionalRoutes.js';
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,9 +24,7 @@ app.get('/', (req, res) => {
 
 // Rutas de la aplicación
 app.use('/', turnoRoutes);
-app.use('/', profesionalRoutes);
 
-// Manejo genérico de rutas no encontradas (404)
 app.use((req, res) => {
   res.status(404).send('Página o Endpoint no encontrado');
 });
