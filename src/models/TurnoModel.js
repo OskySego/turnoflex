@@ -7,28 +7,57 @@ export class TurnoModel extends JsonRepository {
   }
 
   /**
-   * Retorna todos los turnos almacenados.
+   * Retorna todos los turnos almacenados
+   * incluyendo los datos del usuario y profesional relacionados.
    * @returns {Array}
    */
   findAll() {
     const data = this._readData();
-    return data[this.collectionKey] || [];
+    const turnos = data[this.collectionKey] || [];
+
+    return turnos.map((turno) => {
+      const usuario =
+        (data.usuarios || []).find(
+          (u) => u.id === turno.usuario_id
+        ) || null;
+
+      const profesional =
+        (data.profesionales || []).find(
+          (p) => p.id === turno.profesional_id
+        ) || null;
+
+      return {
+        ...turno,
+        usuario,
+        profesional
+      };
+    });
   }
 
   /**
-   * Busca un turno por su ID único y opcionalmente pobla los objetos de usuario y profesional.
+   * Busca un turno por su ID único y opcionalmente
+   * pobla los objetos de usuario y profesional.
    * @param {string} id - ID del turno.
    * @returns {Object|null}
    */
   findById(id) {
     const data = this._readData();
-    const turno = (data[this.collectionKey] || []).find((t) => t.id === id);
+
+    const turno = (data[this.collectionKey] || []).find(
+      (t) => t.id === id
+    );
 
     if (!turno) return null;
 
-    // Resolver relaciones de clave foránea
-    const usuario = (data.usuarios || []).find((u) => u.id === turno.usuario_id) || null;
-    const profesional = (data.profesionales || []).find((p) => p.id === turno.profesional_id) || null;
+    const usuario =
+      (data.usuarios || []).find(
+        (u) => u.id === turno.usuario_id
+      ) || null;
+
+    const profesional =
+      (data.profesionales || []).find(
+        (p) => p.id === turno.profesional_id
+      ) || null;
 
     return {
       ...turno,
@@ -39,13 +68,12 @@ export class TurnoModel extends JsonRepository {
 
   /**
    * Crea y guarda un nuevo turno en la base JSON.
-   * @param {Object} newTurnoData - Objeto con usuario_id, profesional_id, fecha, hora.
-   * @returns {Object} El turno recién creado.
+   * @param {Object} newTurnoData
+   * @returns {Object}
    */
   create(newTurnoData) {
     const data = this._readData();
-    
-    // Regla de negocio: Verificar no superposición de turnos para el profesional
+
     const existeSuperposicion = data.turnos.some(
       (t) =>
         t.profesional_id === newTurnoData.profesional_id &&
@@ -55,7 +83,9 @@ export class TurnoModel extends JsonRepository {
     );
 
     if (existeSuperposicion) {
-      throw new Error('El profesional ya posee un turno reservado en la fecha y hora seleccionadas.');
+      throw new Error(
+        'El profesional ya posee un turno reservado en la fecha y hora seleccionadas.'
+      );
     }
 
     const newTurno = {
@@ -74,18 +104,22 @@ export class TurnoModel extends JsonRepository {
   }
 
   /**
-   * Actualiza el estado de un turno (ej. reservado, atendido, cancelado).
-   * @param {string} id 
-   * @param {string} nuevoEstado 
+   * Actualiza el estado de un turno.
+   * @param {string} id
+   * @param {string} nuevoEstado
    * @returns {Object|null}
    */
   updateEstado(id, nuevoEstado) {
     const data = this._readData();
-    const index = data[this.collectionKey].findIndex((t) => t.id === id);
+
+    const index = data[this.collectionKey].findIndex(
+      (t) => t.id === id
+    );
 
     if (index === -1) return null;
 
     data[this.collectionKey][index].estado = nuevoEstado;
+
     this._writeData(data);
 
     return data[this.collectionKey][index];
