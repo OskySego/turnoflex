@@ -16,9 +16,9 @@ export class TurnoModel extends JsonRepository {
     const turnos = data[this.collectionKey] || [];
 
     return turnos.map((turno) => {
-      const usuario =
-        (data.usuarios || []).find(
-          (u) => u.id === turno.usuario_id
+      const cliente =
+        (data.clientes || []).find(
+          (c) => c.id === turno.cliente_id
         ) || null;
 
       const profesional =
@@ -28,7 +28,7 @@ export class TurnoModel extends JsonRepository {
 
       return {
         ...turno,
-        usuario,
+        cliente,
         profesional
       };
     });
@@ -49,9 +49,9 @@ export class TurnoModel extends JsonRepository {
 
     if (!turno) return null;
 
-    const usuario =
-      (data.usuarios || []).find(
-        (u) => u.id === turno.usuario_id
+    const cliente =
+      (data.clientes || []).find(
+        (c) => c.id === turno.cliente_id
       ) || null;
 
     const profesional =
@@ -61,7 +61,7 @@ export class TurnoModel extends JsonRepository {
 
     return {
       ...turno,
-      usuario,
+      cliente,
       profesional
     };
   }
@@ -90,7 +90,7 @@ export class TurnoModel extends JsonRepository {
 
     const newTurno = {
       id: `trn-${Date.now()}`,
-      usuario_id: newTurnoData.usuario_id,
+      cliente_id: newTurnoData.cliente_id,
       profesional_id: newTurnoData.profesional_id,
       fecha: newTurnoData.fecha,
       hora: newTurnoData.hora,
