@@ -15,6 +15,13 @@ app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'pug');
 app.set('views', path.join(process.cwd(), 'src/views'));
 
+// Página principal
+app.get('/', (req, res) => {
+  res.render('inicio', {
+    tituloPage: 'Inicio - TurnoFlex'
+  });
+});
+
 // Rutas de la aplicación
 app.use('/', turnoRoutes);
 app.use('/', profesionalRoutes);
