@@ -9,7 +9,12 @@ const profesionalSchema = new mongoose.Schema({
     matricula: { type: String, required: true, unique: true },
     especialidad: { type: String, required: true },
     subespecialidad: { type: String, required: true },
-    tipoCobertura: { type: String, enum: ['particular', 'obra social', 'ambas'], default: 'presencial' },
+    tipoCobertura: { 
+        type: String, 
+        enum: ['particular', 'obra_social', 'ambas'], 
+        default: 'ambas', 
+        required: true 
+    },
 
     // Agenda General
     sede: { type: String},
