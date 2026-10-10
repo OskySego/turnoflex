@@ -8,15 +8,15 @@ const clienteSchema = new mongoose.Schema({
     telefono: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     direccion: {
-        calle: string,
-        numero: string,
-        localidad: string,
-        provincia: string,
+        calle: String,
+        numero: String,
+        localidad: String,
+        provincia: String,
     },
     obraSocial: { 
-        empresa:string,
-        numeroAfiliado: string,
-        plan: string,
+        empresa:String,
+        numeroAfiliado: String,
+        plan: String,
     }
  }, { timestamps: true });
 
