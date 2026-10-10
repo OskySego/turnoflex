@@ -103,7 +103,7 @@ export class TurnoController {
     }
   }
 
-  // 5. Cambiar el estado del turno
+  // 5. Cambiar el estado del turno (Función base)
   static async cambiarEstadoTurno(req, res) {
     try {
       const { id } = req.params;
@@ -140,6 +140,19 @@ export class TurnoController {
       res.status(500).json({ status: 'error', message: error.message });
     }
   }
+
+  // 6. Marcar turno como atendido (Método independiente fuera de cambiarEstadoTurno)
+  static async marcarAtendido(req, res) {
+    req.body.nuevoEstado = 'atendido';
+    return TurnoController.cambiarEstadoTurno(req, res);
+  }
+  
+  // 7. Cancelar turno (Método independiente fuera de cambiarEstadoTurno)
+  static async cancelarTurno(req, res) {
+    req.body.nuevoEstado = 'cancelado';
+    return TurnoController.cambiarEstadoTurno(req, res);
+  }
+
 }
 
 export default TurnoController;

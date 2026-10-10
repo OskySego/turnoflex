@@ -7,44 +7,43 @@ import {
 
 const router = Router();
 
-// 1. RUTA ESTÁTICA PARA NUEVO (DEBE IR PRIMERO ANTES DE CUALQUIER :id)
+// 1. RUTA PARA NUEVO (Debe ir antes de /:id)
 router.get(
-  '/turnos/nuevo',
+  '/nuevo',
   TurnoController.getFormNuevoTurno
 );
 
 // Ruta GET para obtener/renderizar el listado de turnos
 router.get(
-  '/turnos',
+  '/',
   TurnoController.getTurnos
 );
 
 // Ruta POST para crear un turno con validación previa de body
 router.post(
-  '/turnos',
+  '/',
   validarCamposCreacionTurno,
   TurnoController.crearTurno
 );
 
-// 2. RUTAS DINÁMICAS (Van después para que no intercepten la palabra 'nuevo')
+// 2. RUTA DINÁMICA DE DETALLE
 router.get(
-  '/turnos/:id',
+  '/:id',
   validarExistenciaTurno,
   TurnoController.getDetalleTurno
 );
 
-// Ruta dinámica POST para cambiar el estado de un turno
+// 3. RUTAS PARA LOS BOTONES DE LA VISTA (Atendido y Cancelar)
 router.post(
-  '/turnos/:id/estado',
+  '/:id/atendido',
   validarExistenciaTurno,
-  TurnoController.cambiarEstadoTurno
+  TurnoController.marcarAtendido
 );
 
-// Ruta dinámica PATCH para cambiar el estado de un turno
-router.patch(
-  '/turnos/:id/estado',
+router.post(
+  '/:id/cancelar',
   validarExistenciaTurno,
-  TurnoController.cambiarEstadoTurno
+  TurnoController.cancelarTurno
 );
 
 export default router;
