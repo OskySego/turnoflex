@@ -17,7 +17,7 @@ const clienteSchema = new mongoose.Schema({
         empresa:string,
         numeroAfiliado: string,
         plan: string,
-    }, { timestamps: true }
-});
+    }
+ }, { timestamps: true });
 
 export const Cliente = mongoose.model('Cliente', clienteSchema);
