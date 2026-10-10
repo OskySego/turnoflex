@@ -1,9 +1,13 @@
 import express from 'express';
 import path from 'path';
+import 'dotenv/config'; // importado para que lea process.env correctamente
 
+import { connectDB } from './src/config/db.js';
 import turnoRoutes from './src/routes/turnoRoutes.js';
 import profesionalRoutes from './src/routes/profesionalRoutes.js';
 import clienteRoutes from './src/routes/clienteRoutes.js';
+
+await connectDB(); // Conectar a la base de datos
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,11 +28,13 @@ app.get('/', (req, res) => {
 });
 
 // Rutas de la aplicación
-app.use('/', turnoRoutes);
-app.use('/', profesionalRoutes);
-app.use('/', clienteRoutes);
+app.use('/turnos', turnoRoutes);
+app.use('/profesionales', profesionalRoutes);
+app.use('/clientes', clienteRoutes);
 
+//manejo de errores 404
 app.use((req, res) => {
+  console.log(`❌ 404 - Ruta solicitada: ${req.originalUrl}`);
   res.status(404).send('Página o Endpoint no encontrado');
 });
 
