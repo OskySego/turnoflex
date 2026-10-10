@@ -1,36 +1,44 @@
 extends layout
 
 block content
-  .d-flex.justify-content-between.align-items-center.mb-4
+  .d-flex.justify-content-between.align-items-center.mb-4.flex-wrap.gap-3
     div
       h2.mb-1 Turnos
       p.text-muted.mb-0 Turnos registrados en TurnoFlex
 
-    .d-flex.align-items-center.gap-3
-      if turnos
-        span.badge.bg-primary.fs-6
-          | #{turnos.length} turnos
+    .d-flex.align-items-center.gap-2
+      span.badge.bg-primary.fs-6
+        | #{turnos.length} turnos
       
       // Botón para volver al inicio
-      a.btn.btn-outline-secondary(href="/")
+      a.btn.btn-outline-secondary.rounded-3(href="/")
         | Volver al inicio
 
       // Botón para solicitar nuevo turno
-      a.btn.btn-primary(href="/turnos/nuevo")
+      a.btn.btn-primary.rounded-3(href="/turnos/nuevo")
         | + Solicitar nuevo turno
 
   if !turnos || turnos.length === 0
-    .alert.alert-info.shadow-sm
+    .alert.alert-info.shadow-sm.rounded-3
       | No hay turnos registrados actualmente.
 
-  else
+   else
     .row.g-4
       each turno in turnos
+        - const turnoId = turno._id || turno.id
         .col-md-6
-          .card.h-100.shadow-sm
-            .card-header.bg-white.py-3
+          .card.border-0.rounded-4.shadow-sm.h-100.overflow-hidden
+            .card-header.bg-white.py-3.border-bottom
               .d-flex.justify-content-between.align-items-center
-                h3.h5.mb-0= turno.id
+                - 
+                  let prefijo = 'TRN';
+                  if (turno.profesional_id && turno.profesional_id.especialidad) {
+                    prefijo = turno.profesional_id.especialidad.substring(0, 3).toUpperCase();
+                  }
+                  const idCorto = turnoId ? turnoId.toString().slice(-4).toUpperCase() : '0000';
+                  const codigoReserva = `${prefijo}-${idCorto}`;
+
+                h3.h5.mb-0.fw-bold= codigoReserva
 
                 if turno.estado === 'cancelado'
                   span.badge.bg-danger CANCELADO
@@ -39,25 +47,26 @@ block content
                 else
                   span.badge.bg-primary RESERVADO
 
-            .card-body
-              .row
-                .col-6
-                  p.text-muted.mb-1 Fecha
-                  p.fw-bold= turno.fecha
+            .card-body.p-4.d-flex.flex-column.justify-content-between
+              div
+                .row.g-2.mb-3
+                  .col-6
+                    .p-2.rounded-3.bg-light
+                      small.text-muted.d-block.fw-bold Fecha
+                      span.fw-bold.small= turno.fecha || 'N/D'
 
-                .col-6
-                  p.text-muted.mb-1 Hora
-                  p.fw-bold= turno.hora
+                  .col-6
+                    .p-2.rounded-3.bg-light
+                      small.text-muted.d-block.fw-bold Hora
+                      span.fw-bold.small= turno.hora ? `${turno.hora} hs` : 'N/D'
 
-              hr
+                p.mb-1.small
+                  strong.text-muted Paciente: 
+                  span.fw-medium #{turno.cliente_id && turno.cliente_id.nombre ? turno.cliente_id.nombre : (turno.cliente ? turno.cliente.nombre : 'Sin asignar')}
 
-              p.mb-1
-                strong Paciente / Cliente:
-                |  #{turno.cliente ? turno.cliente.nombre : turno.cliente_id}
+                p.mb-0.small
+                  strong.text-muted Profesional: 
+                  span.fw-medium #{turno.profesional_id && turno.profesional_id.nombre ? turno.profesional_id.nombre : (turno.profesional ? turno.profesional.nombre : 'Sin asignar')}
 
-              p.mb-0
-                strong Profesional:
-                |  #{turno.profesional ? turno.profesional.nombre : turno.profesional_id}
-
-            .card-footer.bg-white.border-0.pb-3
-              a.btn.btn-outline-primary.w-100(href=`/turnos/${turno.id}`) Ver detalle
+              div.pt-3
+                a.btn.btn-outline-primary.w-100.rounded-3(href=`/turnos/${turnoId}`) Ver detalle
