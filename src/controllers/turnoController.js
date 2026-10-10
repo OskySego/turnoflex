@@ -103,7 +103,7 @@ export class TurnoController {
     }
   }
 
-  // 5. Cambiar el estado del turno (Función base)
+  // 5. Cambiar el estado del turno (Función base corregida con manejo robusto de errores)
   static async cambiarEstadoTurno(req, res) {
     try {
       const { id } = req.params;
@@ -111,12 +111,18 @@ export class TurnoController {
 
       const turnoActual = await Turno.findById(id);
       if (!turnoActual) {
-        return res.status(404).send('Turno no encontrado');
+        if (req.accepts('html')) {
+          return res.status(404).render('detalle-turno', { tituloPage: 'No encontrado', error: 'El turno no existe' });
+        }
+        return res.status(404).json({ status: 'error', message: 'Turno no encontrado' });
       }
 
       const estadosValidos = ['reservado', 'cancelado', 'atendido'];
       if (!nuevoEstado || !estadosValidos.includes(nuevoEstado)) {
-        return res.status(400).send('Estado no válido');
+        if (req.accepts('html')) {
+          return res.status(400).render('detalle-turno', { tituloPage: 'Error', error: 'Estado no válido' });
+        }
+        return res.status(400).json({ status: 'error', message: 'Estado no válido' });
       }
 
       // Regla de Negocio: Transiciones bloqueadas entre Atendido y Cancelado
@@ -125,7 +131,10 @@ export class TurnoController {
         (turnoActual.estado === 'cancelado' && nuevoEstado === 'atendido')
       ) {
         const mensajeError = `Transición no permitida. Un turno ${turnoActual.estado} solo puede volver a reservado.`;
-        return res.status(400).send(mensajeError);
+        if (req.accepts('html')) {
+          return res.status(400).render('detalle-turno', { tituloPage: 'Error', error: mensajeError, turno: turnoActual });
+        }
+        return res.status(400).json({ status: 'error', message: mensajeError });
       }
 
       turnoActual.estado = nuevoEstado;
@@ -137,17 +146,20 @@ export class TurnoController {
 
       return res.status(200).json({ status: 'success', data: turnoActual });
     } catch (error) {
+      if (req.accepts('html')) {
+        return res.status(500).render('detalle-turno', { tituloPage: 'Error', error: error.message });
+      }
       res.status(500).json({ status: 'error', message: error.message });
     }
   }
 
-  // 6. Marcar turno como atendido (Método independiente fuera de cambiarEstadoTurno)
+  // 6. Marcar turno como atendido
   static async marcarAtendido(req, res) {
     req.body.nuevoEstado = 'atendido';
     return TurnoController.cambiarEstadoTurno(req, res);
   }
   
-  // 7. Cancelar turno (Método independiente fuera de cambiarEstadoTurno)
+  // 7. Cancelar turno
   static async cancelarTurno(req, res) {
     req.body.nuevoEstado = 'cancelado';
     return TurnoController.cambiarEstadoTurno(req, res);
