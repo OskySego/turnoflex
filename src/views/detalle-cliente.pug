@@ -4,42 +4,74 @@ block content
   - const iniciales = (nombre) => nombre ? nombre.split(' ').filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join('') : 'NN'
 
   if error
-    .alert.alert-danger.shadow-sm(role="alert")
-      h4.alert-heading ¡Ocurrió un error!
-      p= error
+    .alert.alert-danger.shadow-sm.rounded-3(role="alert")
+      h4.alert-heading.fw-bold ¡Ocurrió un error!
+      p.mb-2= error
       hr
       a.btn.btn-outline-danger.btn-sm(href="/clientes") Volver al listado
+  else if !cliente
+    .alert.alert-warning.shadow-sm.rounded-3(role="alert")
+      h4.alert-heading.fw-bold Cliente no encontrado
+      p.mb-2 No se pudo obtener la información del cliente solicitado.
+      hr
+      a.btn.btn-outline-warning.btn-sm(href="/clientes") Volver al listado
   else
     .row.justify-content-center
-      .col-md-8
-        .card.border-0.rounded-5.overflow-hidden.shadow-sm
+      .col-lg-9
+        .card.border-0.rounded-4.shadow-sm.overflow-hidden
 
-          //- Detelle del cliente
+          //- Cabecera Principal
           .p-4.text-white(style="background-color: #0D1B3E;")
-            p.text-uppercase.mb-1.fw-semibold(style="font-size:11px; opacity:.45; letter-spacing:.08em;") Detalle del cliente
-            .d-flex.align-items-center.gap-3.mb-4
-              span.fs-4.fw-medium= cliente.id
-            .row.g-2
-              .col
-                .p-3.rounded-4(style="background:rgba(255,255,255,.07); border:0.5px solid rgba(255,255,255,.12);")
-                  p.text-uppercase.mb-1(style="font-size:11px; opacity:.45; letter-spacing:.06em;") Nombre
-                  p.mb-0.fw-medium= cliente.nombre
-
-          //- Datos
-          .card-body.bg-white.p-4
-
-            .d-flex.align-items-center.gap-3.pb-3.border-bottom.mb-3
-              .rounded-circle.d-flex.align-items-center.justify-content-center.fw-medium.fs-6.flex-shrink-0(
-                style="width:44px; height:44px; background:#DBEAFE; color:#1E40AF;"
+            .d-flex.align-items-center.gap-3
+              .rounded-circle.d-flex.align-items-center.justify-content-center.fw-bold.fs-4(
+                style="width:60px; height:60px; background:#3B82F6; color:white;"
               )= iniciales(cliente.nombre)
               div
-                p.text-uppercase.mb-1.fw-medium(style="font-size:11px; color:#94A3B8; letter-spacing:.06em;") Cliente
-                p.mb-1.fw-medium(style="color:#0D1B3E;")= cliente.nombre
-                p.small.text-secondary.mb-0= cliente.email
+                h3.mb-1.fw-bold= cliente.nombre
+                p.mb-0.text-white-50 DNI: #{cliente.dni || 'No especificado'}
 
-            .mb-3
-              p.text-uppercase.mb-1.fw-medium(style="font-size:11px; color:#94A3B8; letter-spacing:.06em;") Teléfono
-              p.text-secondary.mb-0= cliente.telefono || 'N/D'
+          //- Cuerpo con secciones
+          .card-body.p-4.bg-white
+            
+            //- Datos Personales
+            h6.text-uppercase.text-muted.small.fw-bold.mb-3 Datos Personales
+            .row.g-3.mb-4.bg-light.p-3.rounded-3
+              .col-md-6
+                strong.d-block.small.text-muted Fecha de Nacimiento:
+                span= cliente.fechaNacimiento ? new Date(cliente.fechaNacimiento).toLocaleDateString() : 'N/D'
+              .col-md-6
+                strong.d-block.small.text-muted Género:
+                span= cliente.genero || 'N/D'
 
-            .d-flex.gap-2.justify-content-end
-              a.btn.btn-outline-secondary.rounded-3(href="/vista/clientes") Volver
+            //- Contacto y Domicilio
+            h6.text-uppercase.text-muted.small.fw-bold.mb-3 Contacto y Domicilio
+            .row.g-3.mb-4.bg-light.p-3.rounded-3
+              .col-md-6
+                strong.d-block.small.text-muted Teléfono / WhatsApp:
+                span= cliente.telefono || 'N/D'
+              .col-md-6
+                strong.d-block.small.text-muted Correo Electrónico:
+                span= cliente.email || 'N/D'
+              .col-md-12
+                strong.d-block.small.text-muted Domicilio:
+                if cliente.domicilio
+                  span= `${cliente.domicilio.calle || ''} ${cliente.domicilio.numero || ''}, ${cliente.domicilio.localidad || ''} (${cliente.domicilio.provincia || ''})`
+                else
+                  span N/D
+
+            //- Cobertura Médica
+            h6.text-uppercase.text-muted.small.fw-bold.mb-3 Cobertura Médica
+            .row.g-3.mb-4.bg-light.p-3.rounded-3
+              .col-md-4
+                strong.d-block.small.text-muted Obra Social / Prepaga:
+                span= (cliente.obraSocial && cliente.obraSocial.empresa) ? cliente.obraSocial.empresa : 'Particular / Sin cobertura'
+              .col-md-4
+                strong.d-block.small.text-muted Nro de Afiliado:
+                span= (cliente.obraSocial && cliente.obraSocial.numeroAfiliado) ? cliente.obraSocial.numeroAfiliado : 'N/D'
+              .col-md-4
+                strong.d-block.small.text-muted Plan:
+                span= (cliente.obraSocial && cliente.obraSocial.plan) ? cliente.obraSocial.plan : 'N/D'
+
+            //- Botón volver
+            .d-flex.justify-content-end
+              a.btn.btn-outline-secondary.px-4.rounded-3(href="/clientes") Volver al listado
