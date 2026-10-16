@@ -1,91 +1,80 @@
-import { ClienteModel } from '../models/ClienteModel.js';
-
-const clienteModel = new ClienteModel();
+import { Cliente } from '../models/Cliente.js';
 
 export class ClienteController {
-  // GET /clientes - Listar todos (JSON)
-  static getAll(req, res) {
+  
+  // 1. Obtener y listar clientes
+  static async getClientes(req, res) {
     try {
-      const clientes = clienteModel.findAll();
-      res.status(200).json({ status: 'success', data: clientes });
-    } catch (error) {
-      res.status(500).json({ status: 'error', message: error.message });
-    }
-  }
+      const clientes = await Cliente.find().lean({ virtuals: true });
 
-  // GET /clientes/:id - Obtener uno (JSON)
-  static getById(req, res) {
-    try {
-      // El middleware ya verificó que existe y lo adjuntó a req
-      res.status(200).json({ status: 'success', data: req.clienteEncontrado });
-    } catch (error) {
-      res.status(500).json({ status: 'error', message: error.message });
-    }
-  }
+      if (req.accepts('json') && !req.accepts('html')) {
+        return res.status(200).json({ status: 'success', data: clientes });
+      }
 
-  // POST /clientes - Crear (JSON)
-  static create(req, res) {
-    try {
-      // El middleware ya validó los campos
-      const nuevo = clienteModel.create(req.body);
-      res.status(201).json({ status: 'success', data: nuevo });
-    } catch (error) {
-      res.status(400).json({ status: 'error', message: error.message });
-    }
-  }
-
-  // PUT /clientes/:id - Actualizar (JSON)
-  static update(req, res) {
-    try {
-      // El middleware ya verificó que existe
-      const actualizado = clienteModel.update(req.params.id, req.body);
-      res.status(200).json({ status: 'success', data: actualizado });
-    } catch (error) {
-      res.status(500).json({ status: 'error', message: error.message });
-    }
-  }
-
-  // DELETE /clientes/:id - Eliminar (JSON)
-  static delete(req, res) {
-    try {
-      // El middleware ya verificó que existe
-      clienteModel.delete(req.params.id);
-      res.status(200).json({ status: 'success', message: 'Cliente eliminado correctamente.' });
-    } catch (error) {
-      res.status(500).json({ status: 'error', message: error.message });
-    }
-  }
-
-  // Vista HTML
-
-  // GET /vista/clientes - Listar (HTML)
-  static getAllVista(req, res) {
-    try {
-      const clientes = clienteModel.findAll();
       res.render('lista-cliente', {
-        tituloPage: 'Clientes',
-        clientes
+        tituloPage: 'Listado de Clientes',
+        clientes: clientes || []
       });
     } catch (error) {
-      res.status(500).render('lista-cliente', {
-        tituloPage: 'Error',
-        error: error.message
-      });
+      res.status(500).send('Error al obtener clientes: ' + error.message);
     }
   }
 
-  // GET /vista/clientes/:id - Detalle (HTML)
-  static getByIdVista(req, res) {
+  // 2. Detalle de un cliente por ID
+  static async getDetalleCliente(req, res) {
     try {
+      const { id } = req.params;
+      const cliente = await Cliente.findById(id).lean({ virtuals: true });
+
+      if (!cliente) {
+        return res.status(404).render('detalle-cliente', {
+          tituloPage: 'No Encontrado',
+          error: 'Cliente no encontrado'
+        });
+      }
+
+      if (req.accepts('json') && !req.accepts('html')) {
+        return res.status(200).json({ status: 'success', data: cliente });
+      }
+
       res.render('detalle-cliente', {
-        tituloPage: `Detalle del Cliente #${req.clienteEncontrado.id}`,
-        cliente: req.clienteEncontrado
+        tituloPage: `Detalle de ${cliente.nombre}`,
+        cliente
       });
     } catch (error) {
-      res.status(500).render('detalle-cliente', {
-        tituloPage: 'Error',
-        error: error.message
+      res.status(500).send('Error al obtener el detalle: ' + error.message);
+    }
+  }
+
+  // 3. Crear un nuevo cliente
+  static async crearCliente(req, res) {
+    try {
+      const { 
+        nombre, dni, fechaNacimiento, genero, 
+        telefono, email, calle, numero, localidad, provincia, 
+        empresa, numeroAfiliado, plan 
+      } = req.body;
+
+      const nuevoCliente = await Cliente.create({
+        nombre,
+        dni,
+        fechaNacimiento,
+        genero,
+        telefono,
+        email,
+        domicilio: { calle, numero, localidad, provincia },
+        obraSocial: { empresa, numeroAfiliado, plan }
       });
+
+      if (req.accepts('json') && !req.accepts('html')) {
+        return res.status(201).json({ status: 'success', data: nuevoCliente });
+      }
+
+      res.redirect('/clientes');
+    } catch (error) {
+      res.status(400).send('Error al crear cliente: ' + error.message);
     }
   }
 }
+
+export default ClienteController;

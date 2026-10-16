@@ -1,96 +1,75 @@
 extends layout
 
 block content
-  .row.justify-content-center
-    .col-md-8
-      if mensajeExito
-        .alert.alert-success.alert-dismissible.fade.show.shadow-sm(role="alert")
-          strong ¡Éxito! 
-          span= mensajeExito
+  if error
+    .alert.alert-danger.shadow-sm.rounded-3(role="alert")
+      h4.alert-heading.fw-bold ¡Ocurrió un error!
+      p.mb-2= error
+      hr
+      a.btn.btn-outline-danger.btn-sm(href="/turnos") Volver al listado
+  else
+    - const turnoId = turno ? (turno._id || turno.id) : null
+    - const clienteObj = (turno && turno.cliente_id && typeof turno.cliente_id === 'object') ? turno.cliente_id : (turno ? turno.cliente : null)
+    - const profesionalObj = (turno && turno.profesional_id && typeof turno.profesional_id === 'object') ? turno.profesional_id : (turno ? turno.profesional : null)
+    - const esFinalizado = turno && (turno.estado === 'atendido' || turno.estado === 'cancelado')
 
-      if error
-        .alert.alert-danger.alert-dismissible.fade.show.shadow-sm(role="alert")
-          strong Error: 
-          span= error
-
-      if turno
-        .card.shadow-sm.border-0.rounded-4
-          .card-header.bg-white.py-3.d-flex.justify-content-between.align-items-center.border-bottom-0
-            h2.h4.mb-0.fw-bold Detalle del Turno ##{turno.id}
-            
-            if turno.estado === 'cancelado'
-              span.badge.bg-danger.fs-6.px-3.py-2 CANCELADO
-            else if turno.estado === 'atendido'
-              span.badge.bg-success.fs-6.px-3.py-2 ATENDIDO
-            else
-              span.badge.bg-warning.text-dark.fs-6.px-3.py-2 RESERVADO
-
-          .card-body.p-4
-            .row.mb-4
-              // Datos del Turno
-              .col-md-6
-                h5.h6.text-muted.text-uppercase.fw-bold.mb-3 Información del Turno
-                p.mb-2
-                  strong ID del Turno: 
-                  span.text-secondary= turno.id
-                p.mb-2
-                  strong Fecha: 
-                  span.text-secondary= turno.fecha
-                p.mb-2
-                  strong Hora: 
-                  span.text-secondary= `${turno.hora} hs`
-
-
-              // Datos del Paciente / Cliente (soporta tanto cliente como usuario)
-              .col-md-6
-                - const clienteData = turno.cliente || turno.usuario
-                if clienteData
-                  h5.h6.text-muted.text-uppercase.fw-bold.mb-3 Paciente / Cliente
-                  p.mb-2
-                    strong Nombre: 
-                    span.text-secondary= clienteData.nombre || 'N/D'
-                  p.mb-2
-                    strong Email: 
-                    span.text-secondary= clienteData.email || 'N/D'
-                  p.mb-0
-                    strong Teléfono: 
-                    span.text-secondary= clienteData.telefono || 'N/D'
+    .row.justify-content-center
+      .col-lg-9
+        .card.border-0.rounded-4.shadow-sm.overflow-hidden
+          
+          //- Cabecera Principal
+          .p-4.text-white(style="background-color: #0D1B3E;")
+            .d-flex.justify-content-between.align-items-center.flex-wrap.gap-3
+              div
+                span.badge.bg-primary.mb-2.fs-6 Turno N° #{turnoId ? turnoId.toString().slice(-6).toUpperCase() : 'N/A'}
+                h3.mb-0.fw-bold Gestión del Turno Médico
+              div
+                if turno && turno.estado === 'atendido'
+                  span.badge.bg-success.fs-6.px-3.py-2 ATENDIDO
+                else if turno && turno.estado === 'cancelado'
+                  span.badge.bg-danger.fs-6.px-3.py-2 CANCELADO
                 else
-                  h5.h6.text-muted.text-uppercase.fw-bold.mb-3 Paciente / Cliente
-                  p.text-muted.small No hay información del cliente asociada.
+                  span.badge.bg-warning.text-dark.fs-6.px-3.py-2 PENDIENTE DE ATENCIÓN
 
-            hr.my-4
+          //- Cuerpo
+          .card-body.p-4.bg-white
 
-            // Datos del Profesional
-            if turno.profesional
-              .row.mb-4
-                .col-12
-                  h5.h6.text-muted.text-uppercase.fw-bold.mb-3 Profesional Asignado
-                  p.mb-2
-                    strong Nombre: 
-                    span.text-secondary= turno.profesional.nombre
-                  p.mb-0
-                    strong Especialidad: 
-                    span.text-secondary= turno.profesional.especialidad
+            //- Datos del Paciente y Cita
+            h6.text-uppercase.text-muted.small.fw-bold.mb-3 Datos de la Cita y Paciente
+            .row.g-3.mb-4
+              .col-md-6
+                .p-3.rounded-3.bg-light.h-100
+                  strong.d-block.small.text-muted.text-uppercase.mb-2 Paciente / Cliente
+                  h5.fw-bold.mb-1= clienteObj ? clienteObj.nombre : 'Sin asignar'
+                  p.text-muted.small.mb-1 DNI: #{clienteObj && clienteObj.dni ? clienteObj.dni : 'N/D'}
+                  p.text-muted.small.mb-0 Cobertura: #{clienteObj && clienteObj.obraSocial && clienteObj.obraSocial.empresa ? clienteObj.obraSocial.empresa : 'Particular'}
 
-              hr.my-4
+              .col-md-6
+                .p-3.rounded-3.bg-light.h-100
+                  strong.d-block.small.text-muted.text-uppercase.mb-2 Horario y Modalidad
+                  h5.fw-bold.mb-1= turno && turno.fecha ? turno.fecha : 'Fecha no definida'
+                  p.text-muted.small.mb-1 Horario: #{turno && turno.hora ? turno.hora + ' hs' : 'N/D'}
+                  p.text-muted.small.mb-0 Modalidad: #{turno && turno.modalidad ? turno.modalidad : 'Presencial'}
 
-            // Acciones Disponibles y Navegación
-            h5.h6.text-muted.text-uppercase.fw-bold.mb-3 Acciones Disponibles
-            .d-flex.flex-column.gap-3
-              if turno.estado === 'reservado'
-                .d-flex.gap-2.flex-wrap
-                  form(action=`/turnos/${turno.id}/estado` method="POST")
-                    input(type="hidden" name="nuevoEstado" value="atendido")
-                    button.btn.btn-success(type="submit") Marcar como Atendido
+            //- Profesional Asignado
+            h6.text-uppercase.text-muted.small.fw-bold.mb-3 Profesional Asignado
+            .row.g-3.mb-4.bg-light.p-3.rounded-3.mx-0
+              .col-md-12
+                h5.fw-bold.mb-1= profesionalObj ? profesionalObj.nombre : 'Sin asignar'
+                p.text-muted.small.mb-0 Especialidad: #{profesionalObj ? profesionalObj.especialidad : 'General'}
 
-                  form(action=`/turnos/${turno.id}/estado` method="POST")
-                    input(type="hidden" name="nuevoEstado" value="cancelado")
-                    button.btn.btn-danger(type="submit") Cancelar Turno
+            //- Botones de acción
+            if turnoId
+              .d-flex.flex-wrap.align-items-center.gap-3.pt-2(class=esFinalizado ? 'justify-content-end' : 'justify-content-between')
+                if !esFinalizado
+                  .d-flex.flex-wrap.gap-2
+                    form(action=`/turnos/${turnoId}/atendido` method="POST" style="display:inline;")
+                      button.btn.btn-success.px-3.py-2.rounded-3(type="submit") Marcar como Atendido
+                    
+                    form(action=`/turnos/${turnoId}/cancelar` method="POST" style="display:inline;")
+                      button.btn.btn-danger.px-3.py-2.rounded-3(type="submit") Cancelar Turno
 
-              .d-flex.justify-content-end.mt-2
-                a.btn.btn-outline-dark.btn-sm(href="/turnos") 
-                  | Volver al listado general
-                  
-      else
-        .alert.alert-warning.shadow-sm No se encontró la información del turno consultado.
+                a.btn.btn-outline-secondary.px-4.py-2.rounded-3(href="/turnos") Volver al listado
+            else
+              .d-flex.justify-content-end
+                a.btn.btn-outline-secondary.px-4.py-2.rounded-3(href="/turnos") Volver al listado

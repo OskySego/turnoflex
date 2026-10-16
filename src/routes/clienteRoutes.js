@@ -2,21 +2,23 @@ import { Router } from 'express';
 import { ClienteController } from '../controllers/clienteController.js';
 import {
   validarExistenciaCliente,
-  validarCamposCreacionCliente,
-  validarCamposActualizacionCliente
+  validarCamposCreacionCliente
 } from '../middlewares/clienteMiddleware.js';
 
 const router = Router();
 
-//  RUTAS API (JSON) 
-router.get('/clientes', ClienteController.getAll);
-router.get('/clientes/:id', validarExistenciaCliente, ClienteController.getById);
-router.post('/clientes', validarCamposCreacionCliente, ClienteController.create);
-router.put('/clientes/:id', validarExistenciaCliente, validarCamposActualizacionCliente, ClienteController.update);
-router.delete('/clientes/:id', validarExistenciaCliente, ClienteController.delete);
+// 1. GET /clientes -> Lista de clientes
+router.get('/', ClienteController.getClientes);
 
-//  RUTAS VISTAS (HTML) 
-router.get('/vista/clientes', ClienteController.getAllVista);
-router.get('/vista/clientes/:id', validarExistenciaCliente, ClienteController.getByIdVista);
+// 2. GET /clientes/nuevo -> Muestra el formulario (¡OBLIGATORIO antes de /:id!)
+router.get('/nuevo', (req, res) => {
+  res.render('nuevo-cliente', { tituloPage: 'Nuevo Cliente' });
+});
+
+// 3. POST /clientes -> Crea el cliente procesando el formulario
+router.post('/', validarCamposCreacionCliente, ClienteController.crearCliente);
+
+// 4. GET /clientes/:id -> Detalle del cliente (Siempre debe ir al final)
+router.get('/:id', validarExistenciaCliente, ClienteController.getDetalleCliente);
 
 export default router;

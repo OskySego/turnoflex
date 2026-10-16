@@ -1,0 +1,104 @@
+extends layout
+
+block content
+  .row.justify-content-center
+    .col-lg-10
+      .card.border-0.rounded-4.shadow-sm.overflow-hidden
+        .p-4.text-white(style="background-color: #0D1B3E;")
+          h2.h4.mb-0.fw-bold Registrar Nuevo Cliente
+        
+        .card-body.p-4.p-md-5.bg-white
+          form(action="/clientes" method="POST")
+            
+            //- Sección 1: Datos Personales
+            h5.text-primary.fw-bold.mb-3 1. Datos Personales e Identificatorios
+            .row.g-3.mb-4
+              .col-md-6
+                label.form-label.fw-bold(for="nombre") Nombre y apellido completo *
+                input.form-control.rounded-3(type="text" id="nombre" name="nombre" required placeholder="Tal como figura en el DNI")
+              .col-md-6
+                label.form-label.fw-bold(for="dni") DNI / Cédula / Pasaporte *
+                input.form-control.rounded-3(type="text" id="dni" name="dni" required placeholder="Número único")
+              .col-md-6
+                label.form-label.fw-bold(for="fechaNacimiento") Fecha de nacimiento
+                input.form-control.rounded-3(type="date" id="fechaNacimiento" name="fechaNacimiento")
+              .col-md-6
+                label.form-label.fw-bold(for="genero") Género o sexo
+                select.form-select.rounded-3(id="genero" name="genero")
+                  option(value="") Seleccionar...
+                  option(value="Masculino") Masculino
+                  option(value="Femenino") Femenino
+                  option(value="Otro") Otro
+
+            hr.my-4
+
+            //- Sección 2: Datos de Contacto
+            h5.text-primary.fw-bold.mb-3 2. Datos de Contacto y Domicilio
+            .row.g-3.mb-4
+              .col-md-6
+                label.form-label.fw-bold(for="telefono") Teléfono celular / WhatsApp *
+                input.form-control.rounded-3(type="text" id="telefono" name="telefono" required placeholder="Ej: 1155443322")
+              .col-md-6
+                label.form-label.fw-bold(for="email") Correo electrónico *
+                input.form-control.rounded-3(type="email" id="email" name="email" required placeholder="correo@ejemplo.com")
+              
+              .col-md-6
+                label.form-label.fw-bold(for="calle") Calle
+                input.form-control.rounded-3(type="text" id="calle" name="calle" placeholder="Ej: Av. Rivadavia")
+              .col-md-6
+                label.form-label.fw-bold(for="numero") Número
+                input.form-control.rounded-3(type="text" id="numero" name="numero" placeholder="Ej: 1234")
+              .col-md-6
+                label.form-label.fw-bold(for="localidad") Localidad
+                input.form-control.rounded-3(type="text" id="localidad" name="localidad" placeholder="Ej: Morón")
+              .col-md-6
+                label.form-label.fw-bold(for="provincia") Provincia
+                input.form-control.rounded-3(type="text" id="provincia" name="provincia" placeholder="Ej: Buenos Aires")
+
+            hr.my-4
+
+            //- Sección 3: Tipo de Atención
+            h5.text-primary.fw-bold.mb-3 3. Tipo de Atención
+            .row.g-3.mb-4
+              .col-md-12
+                label.form-label.fw-bold Seleccione el tipo de atención *
+                select.form-select.rounded-3#tipoAtencion(name="tipoAtencion" required)
+                  option(value="particular") Particular
+                  option(value="obra_social") Obra Social / Prepaga
+
+            //- Contenedor dinámico de obra social
+            #seccionObraSocial.row.g-3.mb-4(style="display: none;")
+              .col-md-4
+                label.form-label.fw-bold(for="empresa") Empresa o Prepaga
+                input.form-control.rounded-3(type="text" id="empresa" name="empresa" placeholder="Ej: OSDE, Swiss Medical")
+              .col-md-4
+                label.form-label.fw-bold(for="numeroAfiliado") Número de afiliado
+                input.form-control.rounded-3(type="text" id="numeroAfiliado" name="numeroAfiliado" placeholder="Nro de credencial")
+              .col-md-4
+                label.form-label.fw-bold(for="plan") Plan médico
+                input.form-control.rounded-3(type="text" id="plan" name="plan" placeholder="Ej: 310, PMO, etc.")
+
+            //- Botones
+            .d-flex.justify-content-end.gap-2.pt-3
+              a.btn.btn-outline-secondary.px-4.rounded-3(href="/clientes") Cancelar
+              button.btn.btn-primary.px-4.rounded-3(type="submit") Guardar Cliente
+
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      const selectAtencion = document.getElementById('tipoAtencion');
+      const seccionObraSocial = document.getElementById('seccionObraSocial');
+
+      function actualizarVisibilidad() {
+        if (selectAtencion.value === 'obra_social') {
+          seccionObraSocial.style.display = 'flex';
+        } else {
+          seccionObraSocial.style.display = 'none';
+          document.getElementById('empresa').value = '';
+          document.getElementById('numeroAfiliado').value = '';
+          document.getElementById('plan').value = '';
+        }
+      }
+
+      selectAtencion.addEventListener('change', actualizarVisibilidad);
+      actualizarVisibilidad();
+    });
