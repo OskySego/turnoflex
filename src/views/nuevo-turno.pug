@@ -2,53 +2,259 @@ extends layout
 
 block content
   .row.justify-content-center
-    .col-md-7
-      .card.border-0.rounded-4.shadow-sm
-        .card-body.p-4
-          // Cabecera con título y botón de volver
-          .d-flex.justify-content-between.align-items-center.mb-3
-            h2.h4.fw-bold.mb-0 Solicitar Nuevo Turno
-            a.btn.btn-outline-secondary.btn-sm.rounded-3(href="/turnos") 
-              | Volver al listado
-
-          p.text-muted.mb-4 Completá los datos para registrar un turno en TurnoFlex.
-
-          form(action="/turnos" method="POST")
-            // Selector de Paciente / Cliente dinámico
-            .mb-3
-              label.form-label.fw-medium Paciente / Cliente
-              // CORRECCIÓN APLICADA AQUÍ: name="cliente_id"
-              select.form-select(name="cliente_id" required)
+    .col-lg-10
+      .card.border-0.rounded-4.shadow-sm.overflow-hidden
+        .p-4.text-white(style="background-color: #0D1B3E;")
+          h2.h4.mb-0.fw-bold Solicitar Nuevo Turno
+        
+        .card-body.p-4.p-md-5.bg-white
+          form(action="/turnos" method="POST" id="formTurno")
+            //- Selector de Cliente
+            .mb-4
+              label.form-label.fw-bold Paciente / Cliente *
+              select.form-select.rounded-3.py-2(name="cliente_id" id="selectCliente" required)
                 option(value="" disabled selected) Seleccioná un cliente...
                 if clientes && clientes.length > 0
                   each cli in clientes
-                    option(value=cli.id)= `${cli.nombre} — (${cli.email || 'Sin email'})`
-                else
-                  option(value="" disabled) No hay clientes registrados
+                    - var cliId = cli._id || cli.id
+                    - var tieneObraSocial = cli.obraSocial && cli.obraSocial.empresa
+                    - var tipoCli = tieneObraSocial ? 'obra_social' : 'particular'
+                    option(value=cliId, data-tipocobertura=tipoCli)= `${cli.nombre} — (${cli.email || 'Sin email'})`
 
-            // Selector de Profesional y sus disponibilidades
-            .mb-3
-              label.form-label.fw-medium Profesional y Disponibilidad
-              select.form-select(name="profesional_id" required)
-                option(value="" disabled selected) Seleccioná un profesional...
+            //- Selector de Profesional
+            .mb-4
+              label.form-label.fw-bold Profesional y Disponibilidad *
+              select.form-select.rounded-3.py-2(name="profesional_id" id="selectProfesional" required disabled)
+                option(value="" disabled selected) Primero seleccioná un cliente...
                 if profesionales && profesionales.length > 0
                   each prof in profesionales
-                    // Muestra nombre, especialidad y horarios si la BD los trae
-                    - const infoHorarios = prof.horarios ? ` [Horarios: ${prof.horarios}]` : ''
-                    option(value=prof.id)= `${prof.nombre} (${prof.especialidad || 'General'})${infoHorarios}`
-                else
-                  option(value="" disabled) No hay profesionales registrados
+                    - var profId = prof._id || prof.id
+                    - var rawDias = prof.diasDisponibles || []
+                    - var cob = prof.tipoCobertura || 'ambas'
+                    - var sobDias = prof.diasSobreturnos || []
+                    - var telDias = prof.diasTelemedicina || []
+                    option(
+                      value=profId, 
+                      data-dias=rawDias.join(','), 
+                      data-inicio=prof.horaInicio || '08:00', 
+                      data-fin=prof.horaFin || '18:00',
+                      data-duracion=prof.duracionTurnoMinutos || 30,
+                      data-cobertura=cob,
+                      data-sob-activo=prof.permiteSobreturnos ? 'true' : 'false',
+                      data-sob-dias=sobDias.join(','),
+                      data-sob-inicio=prof.horaInicioSobreturnos || '',
+                      data-sob-fin=prof.horaFinSobreturnos || '',
+                      data-tel-activo=prof.ofreceTelemedicina ? 'true' : 'false',
+                      data-tel-dias=telDias.join(','),
+                      data-tel-inicio=prof.horaInicioTelemedicina || '',
+                      data-tel-fin=prof.horaFinTelemedicina || ''
+                    )= `${prof.nombre} (${prof.especialidad || 'General'}) [Atiende: ${cob}]`
 
-            // Campos de Fecha y Hora
+              #infoAgenda.p-3.rounded-3.bg-light.border-start.border-4.border-primary.mt-3.small(style="display: none;")
+
+            //- Selector de Modalidad
+            .mb-4
+              label.form-label.fw-bold Tipo de Atención / Modalidad *
+              select.form-select.rounded-3.py-2(name="modalidadTurno" id="selectModalidad" required disabled)
+                option(value="" disabled selected) Primero seleccioná un profesional...
+                option(value="regular") Presencial
+                option(value="sobreturno") Sobreturno
+                option(value="telemedicina") Telemedicina
+
+            //- Fecha y Hora
             .row.mb-4
+              .col-md-6.mb-3.mb-md-0
+                label.form-label.fw-bold Fecha del Turno *
+                input.form-control.rounded-3.py-2(type="date" name="fecha" id="inputFecha" required disabled)
+              
               .col-md-6
-                label.form-label.fw-medium Fecha
-                input.form-control(type="date" name="fecha" required)
-              .col-md-6
-                label.form-label.fw-medium Hora
-                input.form-control(type="time" name="hora" required)
+                label.form-label.fw-bold Horario Disponible *
+                select.form-select.rounded-3.py-2(name="hora" id="inputHora" required disabled)
+                  option(value="" disabled selected) Primero elegí fecha...
 
-            // Botones de acción finales
-            .d-flex.justify-content-end.gap-2
-              a.btn.btn-outline-secondary.rounded-3(href="/turnos") Cancelar
-              button.btn.btn-primary.rounded-3(type="submit") Guardar Turno
+            //- Botones
+            .d-flex.justify-content-end.gap-2.pt-3
+              a.btn.btn-outline-secondary.px-4.rounded-3(href="/turnos") Cancelar
+              button.btn.btn-primary.px-4.rounded-3(type="submit" id="btnSubmit" disabled) Guardar Turno
+
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      const selectCliente = document.getElementById('selectCliente');
+      const selectProf = document.getElementById('selectProfesional');
+      const selectModalidad = document.getElementById('selectModalidad');
+      const inputFecha = document.getElementById('inputFecha');
+      const inputHora = document.getElementById('inputHora');
+      const infoAgenda = document.getElementById('infoAgenda');
+      const btnSubmit = document.getElementById('btnSubmit');
+
+      const opcionesProfesionalesOriginales = Array.from(selectProf.querySelectorAll('option:not([disabled])'));
+      const nombresDias = ['Domingos', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábados'];
+
+      function formatearDias(arrStr) {
+        if (!arrStr || arrStr.trim() === '') return 'Ninguno';
+        const nums = arrStr.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+        if (nums.length === 0) return 'Ninguno';
+        return nums.map(d => nombresDias[d]).join(', ');
+      }
+
+      let configActual = {};
+
+      selectCliente.addEventListener('change', function() {
+        const tipoCliente = this.options[this.selectedIndex].getAttribute('data-tipocobertura');
+        selectProf.innerHTML = '<option value="" disabled selected>Seleccioná un profesional...</option>';
+        selectProf.disabled = false;
+        
+        inputFecha.disabled = true;
+        selectModalidad.disabled = true;
+        selectModalidad.innerHTML = '<option value="" disabled selected>Primero seleccioná un profesional...</option>';
+        inputHora.disabled = true;
+        infoAgenda.style.display = 'none';
+
+        opcionesProfesionalesOriginales.forEach(opt => {
+          const cob = opt.getAttribute('data-cobertura');
+          if ((tipoCliente === 'particular' && (cob === 'particular' || cob === 'ambas')) ||
+              (tipoCliente === 'obra_social' && (cob === 'obra_social' || cob === 'ambas'))) {
+            selectProf.appendChild(opt.cloneNode(true));
+          }
+        });
+      });
+
+      selectProf.addEventListener('change', function() {
+        const opt = selectProf.options[selectProf.selectedIndex];
+        
+        configActual = {
+          diasRegulares: (opt.getAttribute('data-dias') || '').split(',').map(Number).filter(n => !isNaN(n)),
+          inicioReg: opt.getAttribute('data-inicio') || '08:00',
+          finReg: opt.getAttribute('data-fin') || '18:00',
+          duracionReg: parseInt(opt.getAttribute('data-duracion')) || 30,
+          
+          sobActivo: opt.getAttribute('data-sob-activo') === 'true',
+          diasSob: (opt.getAttribute('data-sob-dias') || '').split(',').map(Number).filter(n => !isNaN(n)),
+          inicioSob: opt.getAttribute('data-sob-inicio'),
+          finSob: opt.getAttribute('data-sob-fin'),
+
+          telActivo: opt.getAttribute('data-tel-activo') === 'true',
+          diasTel: (opt.getAttribute('data-tel-dias') || '').split(',').map(Number).filter(n => !isNaN(n)),
+          inicioTel: opt.getAttribute('data-tel-inicio'),
+          finTel: opt.getAttribute('data-tel-fin')
+        };
+
+        const diasPresencialStr = formatearDias(opt.getAttribute('data-dias'));
+        const diasSobStr = formatearDias(opt.getAttribute('data-sob-dias'));
+        const diasTelStr = formatearDias(opt.getAttribute('data-tel-dias'));
+
+        let textoInfo = `🏥 <strong>Presencial:</strong> ${diasPresencialStr} (${configActual.inicioReg} - ${configActual.finReg})<br>`;
+        textoInfo += `⚡ <strong>Sobreturnos:</strong> ${configActual.sobActivo ? diasSobStr : 'No habilitados'}<br>`;
+        textoInfo += `💻 <strong>Telemedicina:</strong> ${configActual.telActivo ? diasTelStr : 'No habilitada'}`;
+
+        infoAgenda.innerHTML = textoInfo;
+        infoAgenda.style.display = 'block';
+
+        selectModalidad.innerHTML = '<option value="" disabled selected>Seleccioná una modalidad...</option>';
+        
+        const optPres = document.createElement('option');
+        optPres.value = 'regular';
+        optPres.textContent = `Presencial (Días: ${diasPresencialStr})`;
+        if (configActual.diasRegulares.length === 0) optPres.disabled = true;
+        selectModalidad.appendChild(optPres);
+
+        const optSob = document.createElement('option');
+        optSob.value = 'sobreturno';
+        if (configActual.sobActivo && configActual.diasSob.length > 0) {
+          optSob.textContent = `Sobreturno (Días: ${diasSobStr})`;
+        } else {
+          optSob.textContent = `Sobreturno (No disponible)`;
+          optSob.disabled = true;
+        }
+        selectModalidad.appendChild(optSob);
+
+        const optTel = document.createElement('option');
+        optTel.value = 'telemedicina';
+        if (configActual.telActivo && configActual.diasTel.length > 0) {
+          optTel.textContent = `Telemedicina (Días: ${diasTelStr})`;
+        } else {
+          optTel.textContent = `Telemedicina (No disponible)`;
+          optTel.disabled = true;
+        }
+        selectModalidad.appendChild(optTel);
+
+        selectModalidad.disabled = false;
+        inputFecha.disabled = true;
+        inputFecha.value = '';
+        inputHora.disabled = true;
+        btnSubmit.disabled = true;
+      });
+
+      selectModalidad.addEventListener('change', function() {
+        inputFecha.disabled = false;
+        inputFecha.value = '';
+        inputHora.disabled = true;
+        inputHora.innerHTML = '<option value="" disabled selected>Primero elegí fecha...</option>';
+        btnSubmit.disabled = true;
+      });
+
+      function actualizarHorarios() {
+        inputHora.innerHTML = '<option value="" disabled selected>Elegí un horario...</option>';
+        const modalidad = selectModalidad.value;
+
+        let inicio = configActual.inicioReg;
+        let fin = configActual.finReg;
+        let duracion = configActual.duracionReg;
+
+        if (modalidad === 'sobreturno') {
+          inicio = configActual.inicioSob || configActual.inicioReg;
+          fin = configActual.finSob || configActual.finReg;
+          duracion = 20; 
+        } else if (modalidad === 'telemedicina') {
+          inicio = configActual.inicioTel || configActual.inicioReg;
+          fin = configActual.finTel || configActual.finReg;
+          duracion = 20; 
+        }
+
+        try {
+          let [h, m] = inicio.split(':').map(Number);
+          let [fh, fm] = fin.split(':').map(Number);
+
+          while (h < fh || (h === fh && m <= fm)) {
+            const hStr = String(h).padStart(2, '0');
+            const mStr = String(m).padStart(2, '0');
+            const val = `${hStr}:${mStr}`;
+
+            const optEl = document.createElement('option');
+            optEl.value = val;
+            optEl.textContent = `${val} hs (${modalidad === 'regular' ? duracion + 'm' : '20m'})`;
+            inputHora.appendChild(optEl);
+
+            m += duracion;
+            if (m >= 60) {
+              m -= 60;
+              h++;
+            }
+          }
+          inputHora.disabled = false;
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      inputFecha.addEventListener('change', function() {
+        if (!inputFecha.value) return;
+        const partes = inputFecha.value.split('-');
+        const diaSemana = new Date(partes[0], partes[1] - 1, partes[2]).getDay();
+        const modalidad = selectModalidad.value;
+
+        let diasPermitidos = configActual.diasRegulares;
+        if (modalidad === 'sobreturno') diasPermitidos = configActual.diasSob;
+        if (modalidad === 'telemedicina') diasPermitidos = configActual.diasTel;
+
+        if (diasPermitidos.length > 0 && !diasPermitidos.includes(diaSemana)) {
+          alert(`❌ La modalidad "${modalidad}" no está disponible para este día de la semana.`);
+          inputFecha.value = '';
+          inputHora.disabled = true;
+          btnSubmit.disabled = true;
+        } else {
+          actualizarHorarios();
+          btnSubmit.disabled = false;
+        }
+      });
+    });
