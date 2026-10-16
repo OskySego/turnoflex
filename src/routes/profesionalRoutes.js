@@ -9,42 +9,27 @@ import {
 
 const router = Router();
 
-// RUTAS API (JSON)
-
-// Obtener todos los profesionales
+// 1. Ruta GET para obtener todos los profesionales
 router.get(
-  '/profesionales',
+  '/',
   ProfesionalController.getProfesionales
 );
 
-// Obtener un profesional por ID
-router.get(
-  '/profesionales/:id',
-  validarExistenciaProfesional,
-  ProfesionalController.getDetalleProfesional
-);
+// 2. Ruta para mostrar el formulario de creación (¡Ojo al orden: req, res y antes de /:id!)
+router.get('/nuevo', (req, res) => {
+  res.render('nuevo-profesional', { tituloPage: 'Nuevo Profesional' });
+});
 
-// Crear un profesional
+// 3. Ruta POST para crear un profesional con validación previa del body
 router.post(
-  '/profesionales',
+  '/',
   validarCamposCreacionProfesional,
   ProfesionalController.crearProfesional
 );
 
-
-// RUTAS VISTAS (HTML)
-
-// Listado de profesionales
-router.get(
-  '/vista/profesionales',
-  ProfesionalController.getProfesionalesVista
-);
-
-// Detalle de un profesional
-router.get(
-  '/vista/profesionales/:id',
-  validarExistenciaProfesional,
-  ProfesionalController.getDetalleProfesionalVista
+// 4. Ruta dinámica GET para obtener un profesional por su ID (Debe ir siempre AL FINAL de las rutas fijas)
+router.get('/:id', 
+  ProfesionalController.getDetalleProfesional
 );
 
 export default router;

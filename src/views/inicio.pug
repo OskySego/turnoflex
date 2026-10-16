@@ -2,37 +2,43 @@ extends layout
 
 block content
   .text-center.mb-5
-    h2.display-6.fw-bold Bienvenido a TurnoFlex
+    h2.display-6.fw-bold.text-dark Bienvenido a TurnoFlex
     p.lead.text-muted
-      | Sistema de gestión de turnos y profesionales
+      | Sistema integral para la gestión de turnos, profesionales y clientes
 
   .row.g-4.justify-content-center
     .col-md-4
-      .card.h-100.shadow-sm
-        .card-body.text-center.p-4
-          h3.h4 Turnos
-          p.text-muted
-            | Consultá y gestioná los turnos registrados en el sistema.
-
-          a.btn.btn-primary(href="/turnos")
-            | Ver turnos
-
-    .col-md-4
-      .card.h-100.shadow-sm
-        .card-body.text-center.p-4
-          h3.h4 Profesionales
-          p.text-muted
-            | Consultá profesionales, especialidades, días y horarios disponibles.
-
-          a.btn.btn-primary(href="/profesionales")
-            | Ver profesionales
+      .card.border-0.rounded-4.shadow-sm.h-100
+        .card-body.text-center.p-4.d-flex.flex-column.justify-content-between
+          div
+            .bg-primary.bg-opacity-10.text-primary.rounded-circle.d-inline-flex.align-items-center.justify-content-center.mb-3(style="width: 60px; height: 60px;")
+              span.fs-3 📅
+            h3.h4.fw-bold.mb-2 Turnos
+            p.text-muted.small
+              | Consultá, programá y gestioná las citas médicas registradas en el sistema.
+          div.mt-3
+            a.btn.btn-primary.w-100.rounded-3(href="/turnos") Ver turnos
 
     .col-md-4
-      .card.h-100.shadow-sm
-        .card-body.text-center.p-4
-          h3.h4 Clientes
-          p.text-muted
-            | Consultá y administrá el listado de clientes registrados.
+      .card.border-0.rounded-4.shadow-sm.h-100
+        .card-body.text-center.p-4.d-flex.flex-column.justify-content-between
+          div
+            .bg-success.bg-opacity-10.text-success.rounded-circle.d-inline-flex.align-items-center.justify-content-center.mb-3(style="width: 60px; height: 60px;")
+              span.fs-3 👨‍⚕️
+            h3.h4.fw-bold.mb-2 Profesionales
+            p.text-muted.small
+              | Consultá médicos, especialidades, sedes, días y horarios de atención disponible.
+          div.mt-3
+            a.btn.btn-primary.w-100.rounded-3(href="/profesionales") Ver profesionales
 
-          a.btn.btn-primary(href="/vista/clientes")
-            | Ver clientes
+    .col-md-4
+      .card.border-0.rounded-4.shadow-sm.h-100
+        .card-body.text-center.p-4.d-flex.flex-column.justify-content-between
+          div
+            .bg-info.bg-opacity-10.text-info.rounded-circle.d-inline-flex.align-items-center.justify-content-center.mb-3(style="width: 60px; height: 60px;")
+              span.fs-3 👥
+            h3.h4.fw-bold.mb-2 Clientes
+            p.text-muted.small
+              | Consultá y administrá la nómina de pacientes registrados y sus coberturas.
+          div.mt-3
+            a.btn.btn-primary.w-100.rounded-3(href="/clientes") Ver clientes

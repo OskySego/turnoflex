@@ -1,41 +1,83 @@
 extends layout
 
 block content
-  .mb-4
-    a.btn.btn-outline-secondary(href="/profesionales")
-      | ← Volver a profesionales
+  - const iniciales = (nombre) => nombre ? nombre.split(' ').filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join('') : 'DR'
 
-  .card.shadow-sm
-    .card-header.bg-white.py-3
-      .d-flex.justify-content-between.align-items-center
-        h2.h4.mb-0= profesional.nombre
-        span.badge.bg-info.text-dark= profesional.especialidad
+  if error
+    .alert.alert-danger.shadow-sm.rounded-3(role="alert")
+      h4.alert-heading.fw-bold ¡Ocurrió un error!
+      p.mb-2= error
+      hr
+      a.btn.btn-outline-danger.btn-sm(href="/profesionales") Volver al listado
+  else if !profesional
+    .alert.alert-warning.shadow-sm.rounded-3(role="alert")
+      h4.alert-heading.fw-bold Profesional no encontrado
+      p.mb-2 No se pudo obtener la información del profesional solicitado.
+      hr
+      a.btn.btn-outline-warning.btn-sm(href="/profesionales") Volver al listado
+  else
+    .row.justify-content-center
+      .col-lg-9
+        .card.border-0.rounded-4.shadow-sm.overflow-hidden
+          
+          //- Cabecera Principal
+          .p-4.text-white(style="background-color: #0D1B3E;")
+            .d-flex.justify-content-between.align-items-center.flex-wrap.gap-3
+              .d-flex.align-items-center.gap-3
+                .rounded-circle.d-flex.align-items-center.justify-content-center.fw-bold.fs-4(
+                  style="width:60px; height:60px; background:#10B981; color:white;"
+                )= iniciales(profesional.nombre)
+                div
+                  h3.mb-1.fw-bold= profesional.nombre
+                  p.mb-1.text-white-50= profesional.especialidad || 'Especialidad N/D'
+                  if profesional.subespecialidades
+                    span.badge.bg-info.text-dark Sub: #{profesional.subespecialidades}
+              
+              div.text-end
+                span.badge.bg-success.fs-6.px-3.py-2
+                  if profesional.tipoCobertura === 'particular'
+                    | Solo Particular
+                  else if profesional.tipoCobertura === 'obra_social'
+                    | Solo Obra Social
+                  else
+                    | Particular & Obra Social
 
-    .card-body
-      .row.g-4
-        .col-md-6
-          .border.rounded.p-3.h-100
-            h3.h6.text-uppercase.text-muted Días disponibles
+          //- Cuerpo
+          .card-body.p-4.bg-white
+            
+            //- Contacto y Sede
+            h6.text-uppercase.text-muted.small.fw-bold.mb-3 Contacto y Sede
+            .row.g-3.mb-4.bg-light.p-3.rounded-3
+              .col-md-4
+                strong.d-block.small.text-muted Teléfono:
+                span= profesional.telefono || 'N/D'
+              .col-md-4
+                strong.d-block.small.text-muted Correo Electrónico:
+                span= profesional.email || 'N/D'
+              .col-md-4
+                strong.d-block.small.text-muted Consultorio / Sede:
+                span= profesional.sede || 'Sede Central'
 
-            if profesional.dias_disponibles && profesional.dias_disponibles.length
-              ul.list-group.list-group-flush
-                each dia in profesional.dias_disponibles
-                  li.list-group-item.px-0= dia
-            else
-              p.text-muted.mb-0 Sin días disponibles
+            //- Información Regulatoria y Agenda
+            h6.text-uppercase.text-muted.small.fw-bold.mb-3 Información Regulatoria y Agenda
+            .row.g-3.mb-4.bg-light.p-3.rounded-3
+              .col-md-4
+                strong.d-block.small.text-muted Matrícula:
+                span.fw-bold= profesional.matricula || 'N/D'
+              .col-md-4
+                strong.d-block.small.text-muted Modalidad:
+                span.text-capitalize= profesional.modalidad || 'Presencial'
+              .col-md-4
+                strong.d-block.small.text-muted Duración de Consulta:
+                span= `${profesional.duracionTurnoMinutos || 30} minutos`
+              
+              .col-md-6.mt-3
+                strong.d-block.small.text-muted Horario de Atención:
+                span= `De ${profesional.horaInicio || '08:00'} a ${profesional.horaFin || '17:00'} hs`
+              .col-md-6.mt-3
+                strong.d-block.small.text-muted Sobreturnos:
+                span= profesional.permiteSobreturnos ? 'Habilitados' : 'No habilitados'
 
-        .col-md-6
-          .border.rounded.p-3.h-100
-            h3.h6.text-uppercase.text-muted Horarios disponibles
-
-            if profesional.horarios && profesional.horarios.length
-              .d-flex.flex-wrap.gap-2
-                each horario in profesional.horarios
-                  span.badge.bg-primary.fs-6= horario
-            else
-              p.text-muted.mb-0 Sin horarios disponibles
-
-      .mt-4
-        p.text-muted.mb-0
-          strong ID del profesional:
-          |  #{profesional.id}
+            //- Botón de retorno
+            .d-flex.justify-content-end
+              a.btn.btn-outline-secondary.px-4.rounded-3(href="/profesionales") Volver al listado
