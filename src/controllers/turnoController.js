@@ -1,6 +1,6 @@
 import { Turno } from '../models/Turno.js';
 import { Cliente } from '../models/Cliente.js';
-import { Profesional } from '../models/Profesional.js';
+import  { Profesional }  from '../models/Profesional.js';
 
 export class TurnoController {
 

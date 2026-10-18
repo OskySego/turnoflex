@@ -38,4 +38,4 @@ const profesionalSchema = new mongoose.Schema({
     horaFinTelemedicina: { type: String },
 }, {timestamps: true});
 
-const Profesional = mongoose.model("Profesional", profesionalSchema);
+export const Profesional = mongoose.model('Profesional', profesionalSchema);

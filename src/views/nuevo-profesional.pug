@@ -1,0 +1,117 @@
+extends layout
+
+block content
+  .row.justify-content-center
+    .col-lg-10
+      .card.border-0.rounded-4.shadow-sm.overflow-hidden
+        .p-4.text-white(style="background-color: #0D1B3E;")
+          h2.h4.mb-0.fw-bold Registrar Nuevo Profesional
+        
+        .card-body.p-4.p-md-5.bg-white
+          form(action="/profesionales" method="POST")
+            
+            //- 1. Identificación y Contacto
+            h5.text-primary.fw-bold.mb-3 1. Identificación y Contacto
+            .row.g-3.mb-4
+              .col-md-6
+                label.form-label.fw-bold(for="nombre") Nombre completo *
+                input.form-control.rounded-3(type="text" id="nombre" name="nombre" required placeholder="Ej: Dr. Juan Pérez")
+              .col-md-6
+                label.form-label.fw-bold(for="dni") DNI / Pasaporte *
+                input.form-control.rounded-3(type="text" id="dni" name="dni" required placeholder="Número de documento")
+              .col-md-4
+                label.form-label.fw-bold(for="genero") Género
+                select.form-select.rounded-3(id="genero" name="genero")
+                  option(value="") Seleccionar...
+                  option(value="Masculino") Masculino
+                  option(value="Femenino") Femenino
+                  option(value="Otro") Otro
+              .col-md-4
+                label.form-label.fw-bold(for="email") Correo electrónico *
+                input.form-control.rounded-3(type="email" id="email" name="email" required placeholder="correo@ejemplo.com")
+              .col-md-4
+                label.form-label.fw-bold(for="telefono") Teléfono celular *
+                input.form-control.rounded-3(type="text" id="telefono" name="telefono" required placeholder="1155443322")
+
+            hr.my-4
+
+            //- 2. Información Profesional y Regulatoria
+            h5.text-primary.fw-bold.mb-3 2. Información Profesional y Cobertura
+            .row.g-3.mb-4
+              .col-md-4
+                label.form-label.fw-bold(for="matricula") Matrícula Nacional/Provincial *
+                input.form-control.rounded-3(type="text" id="matricula" name="matricula" required placeholder="Ej: MN 123456")
+              .col-md-4
+                label.form-label.fw-bold(for="especialidad") Especialidad principal *
+                input.form-control.rounded-3(type="text" id="especialidad" name="especialidad" required placeholder="Ej: Clínica Médica")
+              .col-md-4
+                label.form-label.fw-bold(for="tipoCobertura") Tipo de atención aceptada *
+                select.form-select.rounded-3(id="tipoCobertura" name="tipoCobertura" required)
+                  option(value="ambas") Ambas (Particular y Obra Social)
+                  option(value="particular") Solo Particular
+                  option(value="obra_social") Solo Obra Social / Prepaga
+
+            hr.my-4
+
+            //- 3. Configuración de Agenda Regular
+            h5.text-primary.fw-bold.mb-3 3. Configuración de Agenda Regular
+            .row.g-3.mb-4
+              .col-md-6
+                label.form-label.fw-bold(for="sede") Sede / Consultorio
+                input.form-control.rounded-3(type="text" id="sede" name="sede" placeholder="Ej: Sede Central - Consultorio 3")
+              .col-md-6
+                label.form-label.fw-bold(for="modalidad") Modalidad Principal
+                select.form-select.rounded-3(id="modalidad" name="modalidad")
+                  option(value="presencial") Presencial
+                  option(value="telemedicina") Telemedicina
+                  option(value="ambas") Ambas
+
+              .col-md-4
+                label.form-label.fw-bold(for="horaInicio") Hora inicio regular
+                input.form-control.rounded-3(type="time" id="horaInicio" name="horaInicio" value="08:00")
+              .col-md-4
+                label.form-label.fw-bold(for="horaFin") Hora fin regular
+                input.form-control.rounded-3(type="time" id="horaFin" name="horaFin" value="16:00")
+              .col-md-4
+                label.form-label.fw-bold(for="duracionTurnoMinutos") Duración turno (min)
+                input.form-control.rounded-3(type="number" id="duracionTurnoMinutos" name="duracionTurnoMinutos" value="30" step="5")
+
+            hr.my-4
+
+            //- 4. Configuración de Sobreturnos
+            h5.text-primary.fw-bold.mb-3 4. Configuración de Sobreturnos (20 min c/u)
+            .row.g-3.mb-4
+              .col-md-12
+                .form-check
+                  input.form-check-input(type="checkbox" id="permiteSobreturnos" name="permiteSobreturnos")
+                  label.form-check-label.fw-bold(for="permiteSobreturnos") Habilitar Sobreturnos
+              .col-md-4
+                label.form-label.fw-bold(for="horaInicioSobreturnos") Hora inicio sobreturnos
+                input.form-control.rounded-3(type="time" id="horaInicioSobreturnos" name="horaInicioSobreturnos" value="12:00")
+              .col-md-4
+                label.form-label.fw-bold(for="horaFinSobreturnos") Hora fin sobreturnos
+                input.form-control.rounded-3(type="time" id="horaFinSobreturnos" name="horaFinSobreturnos" value="13:00")
+              .col-md-4
+                label.form-label.fw-bold(for="cantidadMaximaSobreturnos") Cantidad máxima (Máx. 8)
+                input.form-control.rounded-3(type="number" id="cantidadMaximaSobreturnos" name="cantidadMaximaSobreturnos" min="1" max="8" value="4")
+
+            hr.my-4
+
+            //- 5. Configuración de Telemedicina
+            h5.text-primary.fw-bold.mb-3 5. Configuración de Telemedicina (20 min c/u)
+            .row.g-3.mb-4
+              .col-md-12
+                .form-check
+                  input.form-check-input(type="checkbox" id="ofreceTelemedicina" name="ofreceTelemedicina")
+                  label.form-check-label.fw-bold(for="ofreceTelemedicina") Ofrece Videoconsultas / Telemedicina
+              .col-md-6
+                label.form-label.fw-bold(for="horaInicioTelemedicina") Hora inicio telemedicina
+                input.form-control.rounded-3(type="time" id="horaInicioTelemedicina" name="horaInicioTelemedicina" value="16:00")
+              .col-md-6
+                label.form-label.fw-bold(for="horaFinTelemedicina") Hora fin telemedicina
+                input.form-control.rounded-3(type="time" id="horaFinTelemedicina" name="horaFinTelemedicina" value="18:00")
+
+            //- Botones
+            .d-flex.justify-content-end.gap-2.pt-3
+              a.btn.btn-outline-secondary.px-4.rounded-3(href="/profesionales") Cancelar
+              button.btn.btn-primary.px-4.rounded-3(type="submit") Guardar Profesional

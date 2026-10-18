@@ -1,49 +1,49 @@
 extends layout
 
 block content
-  .d-flex.justify-content-between.align-items-center.mb-4
+  .d-flex.justify-content-between.align-items-center.mb-4.flex-wrap.gap-3
     div
-      h2.mb-1 Profesionales
+      h2.mb-1.fw-bold Profesionales
       p.text-muted.mb-0 Profesionales disponibles en TurnoFlex
 
-    span.badge.bg-primary.fs-6
-      | #{profesionales.length} profesionales
+    .d-flex.align-items-center.gap-2
+      span.badge.bg-primary.fs-6.px-3.py-2
+        | #{profesionales ? profesionales.length : 0} profesionales
+      
+      a.btn.btn-outline-secondary.rounded-3(href="/")
+        | Volver al inicio
 
-    a.btn.btn-outline-secondary(href="/")
-        | Volver al inicio  
+      a.btn.btn-primary.rounded-3(href="/profesionales/nuevo")
+        | + Nuevo profesional
 
-  if profesionales.length === 0
-    .alert.alert-info
-      | No hay profesionales registrados.
-
+  if !profesionales || profesionales.length === 0
+    .alert.alert-info.shadow-sm.rounded-3
+      | No hay profesionales registrados actualmente.
   else
     .row.g-4
-      each profesional in profesionales
+      - const diasSemana = { 0: 'Domingo', 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado' }
+      
+      each prof in profesionales
+        - const profId = prof._id || prof.id
         .col-md-6
-          .card.h-100.shadow-sm
-            .card-body
-              h3.h5.card-title.mb-2= profesional.nombre
+          .card.border-0.rounded-4.shadow-sm.h-100
+            .card-body.p-4.d-flex.flex-column.justify-content-between
+              div
+                .d-flex.align-items-center.justify-content-between.mb-3
+                  h3.h5.card-title.fw-bold.mb-0= prof.nombre
+                  span.badge.bg-info.text-dark= prof.especialidad || 'General'
 
-              p.mb-3
-                span.badge.bg-info.text-dark= profesional.especialidad
+                .bg-light.p-3.rounded-3.mb-3
+                  h6.text-muted.text-uppercase.small.fw-bold.mb-2 Días disponibles
+                  if prof.diasDisponibles && prof.diasDisponibles.length
+                    p.mb-2.small.text-dark.fw-medium
+                      | #{prof.diasDisponibles.map(d => diasSemana[d] || d).join(' · ')}
+                  else
+                    p.text-muted.small.mb-2 Sin días asignados
 
-              h4.h6 Días disponibles
+                  h6.text-muted.text-uppercase.small.fw-bold.mb-1 Horarios
+                  p.small.text-dark.fw-medium.mb-0
+                    | De #{prof.horaInicio || '08:00'} a #{prof.horaFin || '18:00'} hs
 
-              if profesional.dias_disponibles && profesional.dias_disponibles.length
-                p.text-muted
-                  = profesional.dias_disponibles.join(' · ')
-              else
-                p.text-muted Sin días disponibles
-
-              h4.h6 Horarios
-
-              if profesional.horarios && profesional.horarios.length
-                p.text-muted
-                  = profesional.horarios.join(' · ')
-              else
-                p.text-muted Sin horarios disponibles
-
-            .card-footer.bg-white.border-0.pb-3
-              a.btn.btn-primary(
-                href=`/profesionales/${profesional.id}`
-              ) Ver profesional
+              div.pt-2
+                a.btn.btn-outline-primary.w-100.rounded-3(href=`/profesionales/${profId}`) Ver profesional

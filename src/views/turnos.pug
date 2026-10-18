@@ -21,8 +21,7 @@ block content
   if !turnos || turnos.length === 0
     .alert.alert-info.shadow-sm.rounded-3
       | No hay turnos registrados actualmente.
-
-   else
+  else
     .row.g-4
       each turno in turnos
         - const turnoId = turno._id || turno.id
