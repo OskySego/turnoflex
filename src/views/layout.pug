@@ -1,21 +1,136 @@
 doctype html
-html(lang="es")
+html(lang="es" data-bs-theme="light")
   head
     meta(charset="UTF-8")
-    meta(name="viewport", content="width=device-width, initial-scale=1.0")
-    title #{tituloPage || 'TurnoFlex - Gestión de Turnos'}
-    link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title TurnoFlex — Gestión de Turnos Médicos
+    
+    //- Bootstrap 5.3 CSS
+    link(
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    )
+    
+    //- Script anti-parpadeo (FOUC)
+    script.
+      (function() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+          document.documentElement.setAttribute('data-bs-theme', savedTheme);
+        } else {
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.setAttribute('data-bs-theme', prefersDark ? 'dark' : 'light');
+        }
+      })();
 
-  body.bg-light
-    header.bg-primary.text-white.py-3.mb-4.shadow-sm
-      .container.d-flex.justify-content-between.align-items-center
-        a.text-white.text-decoration-none(href="/")
-          h1.h3.m-0 TurnoFlex
+    style.
+      body {
+        transition: background-color 0.3s ease, color 0.3s ease;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      main {
+        flex: 1;
+      }
 
-        span.badge.bg-light.text-primary Sistema de Gestión
+      /* Estilo garantizado para el botón de tema sobre la barra azul marino */
+      .btn-theme-toggle {
+        background-color: rgba(255, 255, 255, 0.15);
+        color: #ffffff !important;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.2s ease-in-out;
+      }
+      .btn-theme-toggle:hover {
+        background-color: rgba(255, 255, 255, 0.3);
+        color: #ffffff !important;
+      }
 
-    main.container
+      /* Adaptabilidad para el modo oscuro */
+      [data-bs-theme="dark"] .bg-white {
+        background-color: var(--bs-body-bg) !important;
+      }
+      [data-bs-theme="dark"] .bg-light {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+      }
+      [data-bs-theme="dark"] .text-dark {
+        color: var(--bs-body-color) !important;
+      }
+
+  body.bg-body-tertiary
+    //- Navegación Principal
+    nav.navbar.navbar-expand-lg.navbar-dark.shadow-sm(style="background-color: #0D1B3E;")
+      .container
+        a.navbar-brand.fw-bold.d-flex.align-items-center.gap-2(href="/")
+          span.fs-4 🏥
+          span TurnoFlex
+
+        button.navbar-toggler(
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Navegación principal"
+        )
+          span.navbar-toggler-icon
+
+        .collapse.navbar-collapse#navbarNav
+          //- Enlaces del menú principal
+          ul.navbar-nav.me-auto.mb-2.mb-lg-0
+            li.nav-item
+              a.nav-link(href="/turnos") Turnos
+            li.nav-item
+              a.nav-link(href="/profesionales") Profesionales
+            li.nav-item
+              a.nav-link(href="/clientes") Clientes
+
+          //- Interruptor de Tema (Legibilidad asegurada)
+          .d-flex.align-items-center
+            button.btn.btn-sm.rounded-pill.px-3.d-flex.align-items-center.gap-2.btn-theme-toggle#btnThemeToggle(type="button")
+              span#themeIcon ☀️
+              span#themeText Modo Claro
+
+    //- Contenido Principal
+    main.container.my-4.my-md-5
       block content
 
+    //- Pie de página
     footer.container.text-center.mt-5.py-3.border-top.text-muted
-      p.small &copy; 2026 TurnoFlex - Los Claudestinos
+      p.small &copy; 2026 TurnoFlex - Módulo de Gestión Médica
+      p.small Diseñado y desarrollado por 
+        a(href="https://www.losclaudestinos.com", target="_blank", style="color: var(--accent-teal); text-decoration: none;") Los Claudestinos
+
+    //- Bootstrap 5.3 JS
+    script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js")
+
+    //- Lógica de cambio de tema
+    script.
+      document.addEventListener('DOMContentLoaded', function() {
+        const btnToggle = document.getElementById('btnThemeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const themeText = document.getElementById('themeText');
+        const htmlEl = document.documentElement;
+
+        function actualizarBoton(theme) {
+          if (theme === 'dark') {
+            themeIcon.textContent = '🌙';
+            themeText.textContent = 'Modo Oscuro';
+          } else {
+            themeIcon.textContent = '☀️';
+            themeText.textContent = 'Modo Claro';
+          }
+        }
+
+        const currentTheme = htmlEl.getAttribute('data-bs-theme') || 'light';
+        actualizarBoton(currentTheme);
+
+        btnToggle.addEventListener('click', function() {
+          const activeTheme = htmlEl.getAttribute('data-bs-theme');
+          const newTheme = activeTheme === 'dark' ? 'light' : 'dark';
+
+          htmlEl.setAttribute('data-bs-theme', newTheme);
+          localStorage.setItem('theme', newTheme);
+          actualizarBoton(newTheme);
+        });
+      });
