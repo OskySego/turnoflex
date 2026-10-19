@@ -1,7 +1,18 @@
 extends layout
 
 block content
+  //- Funciones de ayuda y Traductor de Días a prueba de fallos
   - const iniciales = (nombre) => nombre ? nombre.split(' ').filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join('') : 'DR'
+  - const mapaDias = { '0': 'Domingo', '1': 'Lunes', '2': 'Martes', '3': 'Miércoles', '4': 'Jueves', '5': 'Viernes', '6': 'Sábado' }
+  - 
+    const formatDias = (dias) => {
+      if (!dias || dias.length === 0) return 'No especificado';
+      const arr = Array.isArray(dias) ? dias : dias.toString().split(',');
+      return arr.map(d => {
+        const val = String(d).trim();
+        return mapaDias[val] || val;
+      }).join(', ');
+    }
 
   if error
     .alert.alert-danger.shadow-sm.rounded-3(role="alert")
@@ -58,9 +69,9 @@ block content
                 strong.d-block.small.text-muted Consultorio / Sede:
                 span= profesional.sede || 'Sede Central'
 
-            //- Información Regulatoria y Agenda
-            h6.text-uppercase.text-muted.small.fw-bold.mb-3 Información Regulatoria y Agenda
-            .row.g-3.mb-4.bg-light.p-3.rounded-3
+            //- 1. Información Regulatoria y Agenda Regular
+            h6.text-uppercase.text-muted.small.fw-bold.mb-3 Información Regulatoria y Agenda Regular
+            .row.g-3.mb-4.bg-light.p-3.rounded-3.border-start.border-primary.border-4
               .col-md-4
                 strong.d-block.small.text-muted Matrícula:
                 span.fw-bold= profesional.matricula || 'N/D'
@@ -71,13 +82,34 @@ block content
                 strong.d-block.small.text-muted Duración de Consulta:
                 span= `${profesional.duracionTurnoMinutos || 30} minutos`
               
-              .col-md-6.mt-3
-                strong.d-block.small.text-muted Horario de Atención:
-                span= `De ${profesional.horaInicio || '08:00'} a ${profesional.horaFin || '17:00'} hs`
-              .col-md-6.mt-3
-                strong.d-block.small.text-muted Sobreturnos:
-                span= profesional.permiteSobreturnos ? 'Habilitados' : 'No habilitados'
+              .col-md-12.mt-3
+                strong.d-block.small.text-muted Días y Horarios de Atención Regular:
+                span.text-primary.fw-bold= formatDias(profesional.diasAtencion)
+                span.ms-2= `(De ${profesional.horaInicio || '08:00'} a ${profesional.horaFin || '16:00'} hs)`
+
+            //- 2. Agenda de Sobreturnos (Solo se muestra si están habilitados)
+            if profesional.permiteSobreturnos
+              h6.text-uppercase.text-muted.small.fw-bold.mb-3 Agenda de Sobreturnos
+              .row.g-3.mb-4.bg-light.p-3.rounded-3.border-start.border-warning.border-4
+                .col-md-6
+                  strong.d-block.small.text-muted Días habilitados para Sobreturnos:
+                  span.text-warning.fw-bold= formatDias(profesional.diasSobreturnos)
+                .col-md-6
+                  strong.d-block.small.text-muted Horario de Sobreturnos:
+                  span= `De ${profesional.horaInicioSobreturnos || '12:00'} a ${profesional.horaFinSobreturnos || '13:00'} hs `
+                  span.badge.bg-secondary.ms-2 Máx: #{profesional.cantidadMaximaSobreturnos || 4}
+
+            //- 3. Agenda de Telemedicina (Solo se muestra si está habilitada)
+            if profesional.ofreceTelemedicina
+              h6.text-uppercase.text-muted.small.fw-bold.mb-3 Agenda de Telemedicina
+              .row.g-3.mb-4.bg-light.p-3.rounded-3.border-start.border-info.border-4
+                .col-md-6
+                  strong.d-block.small.text-muted Días habilitados para Telemedicina:
+                  span.text-info.fw-bold= formatDias(profesional.diasTelemedicina)
+                .col-md-6
+                  strong.d-block.small.text-muted Horario de Videoconsulta:
+                  span= `De ${profesional.horaInicioTelemedicina || '16:00'} a ${profesional.horaFinTelemedicina || '18:00'} hs`
 
             //- Botón de retorno
-            .d-flex.justify-content-end
+            .d-flex.justify-content-end.mt-4
               a.btn.btn-outline-secondary.px-4.rounded-3(href="/profesionales") Volver al listado

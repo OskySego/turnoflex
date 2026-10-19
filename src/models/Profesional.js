@@ -15,10 +15,14 @@ const profesionalSchema = new mongoose.Schema({
         default: 'ambas', 
         required: true 
     },
+    // Agrega esto dentro de tu esquema de Mongoose
+    diasAtencion: { type: [String], default: [] },
+    diasSobreturnos: { type: [String], default: [] },
+    diasTelemedicina: { type: [String], default: [] },
 
     // Agenda General
     sede: { type: String},
-    diasDisponibles: [{ type: String, enum: ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'] }],
+    diasDisponibles: [{ type: Number, enum: [ 0, 1, 2, 3, 4, 5, 6] }],
     horaInicio: { type: String, required: true },
     horaFin: { type: String, required: true },
     duracionTurnoMinutos: { type: Number, default: 30 },
@@ -26,14 +30,14 @@ const profesionalSchema = new mongoose.Schema({
 
     // Nueva Configuración de Agenda Sobreturnos (maximos 8, duración 20 minutos)
     permiteSobreturnos: { type: Boolean, default: false },
-    diasSobreturnos: [{ type: String, enum: ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'] }],
+    diasSobreturnos: [{ type: Number, enum: [ 0, 1, 2, 3, 4, 5, 6] }],
     horaInicioSobreturnos: { type: String },
     horaFinSobreturnos: { type: String },
     cantidadMaximaSobreturnos: { type: Number, max: 8, default: 4 },
 
     // Configuración de Turnos de telemedicina (duracion fija de 20 min y dias/horarios especificos)
     ofreceTelemedicina: { type: Boolean, default: false },
-    diasTelemedicina: [{ type: String, enum: ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'] }],
+    diasTelemedicina: [{ type: Number, enum: [ 0, 1, 2, 3, 4, 5, 6] }],
     horaInicioTelemedicina: { type: String },
     horaFinTelemedicina: { type: String },
 }, {timestamps: true});

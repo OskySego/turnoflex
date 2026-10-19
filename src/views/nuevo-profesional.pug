@@ -56,6 +56,15 @@ block content
             //- 3. Configuración de Agenda Regular
             h5.text-primary.fw-bold.mb-3 3. Configuración de Agenda Regular
             .row.g-3.mb-4
+              .col-md-12
+                label.form-label.fw-bold Días de atención regular *
+                .d-flex.flex-wrap.gap-3.p-3.border.rounded-3.bg-light
+                  each dia in ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+                    .form-check
+                      //- Eliminado el atributo checked
+                      input.form-check-input(type="checkbox" id=`diaReg${dia}` name="diasAtencion" value=dia)
+                      label.form-check-label(for=`diaReg${dia}`)= dia
+                      
               .col-md-6
                 label.form-label.fw-bold(for="sede") Sede / Consultorio
                 input.form-control.rounded-3(type="text" id="sede" name="sede" placeholder="Ej: Sede Central - Consultorio 3")
@@ -85,6 +94,17 @@ block content
                 .form-check
                   input.form-check-input(type="checkbox" id="permiteSobreturnos" name="permiteSobreturnos")
                   label.form-check-label.fw-bold(for="permiteSobreturnos") Habilitar Sobreturnos
+              
+              //- Días específicos para sobreturnos
+              .col-md-12
+                label.form-label.fw-bold Días habilitados para Sobreturnos
+                .d-flex.flex-wrap.gap-3.p-3.border.rounded-3.bg-light
+                  each dia in ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+                    .form-check
+                      //- Eliminado el atributo checked
+                      input.form-check-input(type="checkbox" id=`diaSob${dia}` name="diasSobreturnos" value=dia)
+                      label.form-check-label(for=`diaSob${dia}`)= dia
+
               .col-md-4
                 label.form-label.fw-bold(for="horaInicioSobreturnos") Hora inicio sobreturnos
                 input.form-control.rounded-3(type="time" id="horaInicioSobreturnos" name="horaInicioSobreturnos" value="12:00")
@@ -104,6 +124,17 @@ block content
                 .form-check
                   input.form-check-input(type="checkbox" id="ofreceTelemedicina" name="ofreceTelemedicina")
                   label.form-check-label.fw-bold(for="ofreceTelemedicina") Ofrece Videoconsultas / Telemedicina
+              
+              //- Días específicos para telemedicina
+              .col-md-12
+                label.form-label.fw-bold Días habilitados para Telemedicina
+                .d-flex.flex-wrap.gap-3.p-3.border.rounded-3.bg-light
+                  each dia in ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+                    .form-check
+                      //- Eliminado el atributo checked
+                      input.form-check-input(type="checkbox" id=`diaTel${dia}` name="diasTelemedicina" value=dia)
+                      label.form-check-label(for=`diaTel${dia}`)= dia
+
               .col-md-6
                 label.form-label.fw-bold(for="horaInicioTelemedicina") Hora inicio telemedicina
                 input.form-control.rounded-3(type="time" id="horaInicioTelemedicina" name="horaInicioTelemedicina" value="16:00")
