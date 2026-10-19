@@ -1,6 +1,11 @@
 extends layout
 
 block content
+  //- Dependencias de Flatpickr (CDN Estable)
+  link(rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css")
+  script(src="https://cdn.jsdelivr.net/npm/flatpickr")
+  script(src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js")
+
   .row.justify-content-center
     .col-lg-10
       .card.border-0.rounded-4.shadow-sm.overflow-hidden
@@ -29,7 +34,8 @@ block content
                 if profesionales && profesionales.length > 0
                   each prof in profesionales
                     - var profId = prof._id || prof.id
-                    - var rawDias = prof.diasDisponibles || []
+                    //- Leemos los dias de la BD (puede llamarse diasAtencion o diasDisponibles según el modelo)
+                    - var rawDias = prof.diasAtencion || prof.diasDisponibles || []
                     - var cob = prof.tipoCobertura || 'ambas'
                     - var sobDias = prof.diasSobreturnos || []
                     - var telDias = prof.diasTelemedicina || []
@@ -65,7 +71,8 @@ block content
             .row.mb-4
               .col-md-6.mb-3.mb-md-0
                 label.form-label.fw-bold Fecha del Turno *
-                input.form-control.rounded-3.py-2(type="date" name="fecha" id="inputFecha" required disabled)
+                //- Cambiado a text para que Flatpickr funcione impecable
+                input.form-control.rounded-3.py-2(type="text" name="fecha" id="inputFecha" required disabled placeholder="Elegí una fecha...")
               
               .col-md-6
                 label.form-label.fw-bold Horario Disponible *
@@ -90,14 +97,44 @@ block content
       const opcionesProfesionalesOriginales = Array.from(selectProf.querySelectorAll('option:not([disabled])'));
       const nombresDias = ['Domingos', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábados'];
 
+      // 🟢 TRADUCTOR: Convierte los textos de la BD a los números que usa el calendario
+      const mapaDiasA_Numeros = {
+        'Domingo': 0, 'Lunes': 1, 'Martes': 2, 'Miércoles': 3, 'Jueves': 4, 'Viernes': 5, 'Sábado': 6
+      };
+
+      let configActual = {};
+      let calendario = null;
+
+      // Inicialización segura de Flatpickr
+      if (typeof flatpickr !== 'undefined') {
+        calendario = flatpickr(inputFecha, {
+          locale: "es",
+          dateFormat: "Y-m-d",
+          minDate: "today",
+          disable: [],
+          onChange: function(selectedDates, dateStr) {
+            if (dateStr) {
+              actualizarHorarios();
+              btnSubmit.disabled = false;
+            }
+          }
+        });
+      }
+
+      function parsearDias(str) {
+        if (!str || str.trim() === '') return [];
+        return str.split(',').map(d => {
+          const val = d.trim();
+          if (!isNaN(val)) return parseInt(val); 
+          return mapaDiasA_Numeros[val]; 
+        }).filter(n => n !== undefined && !isNaN(n));
+      }
+
       function formatearDias(arrStr) {
-        if (!arrStr || arrStr.trim() === '') return 'Ninguno';
-        const nums = arrStr.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+        const nums = parsearDias(arrStr);
         if (nums.length === 0) return 'Ninguno';
         return nums.map(d => nombresDias[d]).join(', ');
       }
-
-      let configActual = {};
 
       selectCliente.addEventListener('change', function() {
         const tipoCliente = this.options[this.selectedIndex].getAttribute('data-tipocobertura');
@@ -109,9 +146,10 @@ block content
         selectModalidad.innerHTML = '<option value="" disabled selected>Primero seleccioná un profesional...</option>';
         inputHora.disabled = true;
         infoAgenda.style.display = 'none';
+        if (calendario) calendario.clear();
 
         opcionesProfesionalesOriginales.forEach(opt => {
-          const cob = opt.getAttribute('data-cobertura');
+          const cob = opt.getAttribute('data-cobertura') || 'ambas';
           if ((tipoCliente === 'particular' && (cob === 'particular' || cob === 'ambas')) ||
               (tipoCliente === 'obra_social' && (cob === 'obra_social' || cob === 'ambas'))) {
             selectProf.appendChild(opt.cloneNode(true));
@@ -123,18 +161,18 @@ block content
         const opt = selectProf.options[selectProf.selectedIndex];
         
         configActual = {
-          diasRegulares: (opt.getAttribute('data-dias') || '').split(',').map(Number).filter(n => !isNaN(n)),
+          diasRegulares: parsearDias(opt.getAttribute('data-dias')),
           inicioReg: opt.getAttribute('data-inicio') || '08:00',
           finReg: opt.getAttribute('data-fin') || '18:00',
           duracionReg: parseInt(opt.getAttribute('data-duracion')) || 30,
           
           sobActivo: opt.getAttribute('data-sob-activo') === 'true',
-          diasSob: (opt.getAttribute('data-sob-dias') || '').split(',').map(Number).filter(n => !isNaN(n)),
+          diasSob: parsearDias(opt.getAttribute('data-sob-dias')),
           inicioSob: opt.getAttribute('data-sob-inicio'),
           finSob: opt.getAttribute('data-sob-fin'),
 
           telActivo: opt.getAttribute('data-tel-activo') === 'true',
-          diasTel: (opt.getAttribute('data-tel-dias') || '').split(',').map(Number).filter(n => !isNaN(n)),
+          diasTel: parsearDias(opt.getAttribute('data-tel-dias')),
           inicioTel: opt.getAttribute('data-tel-inicio'),
           finTel: opt.getAttribute('data-tel-fin')
         };
@@ -180,14 +218,28 @@ block content
 
         selectModalidad.disabled = false;
         inputFecha.disabled = true;
-        inputFecha.value = '';
+        if (calendario) calendario.clear();
         inputHora.disabled = true;
         btnSubmit.disabled = true;
       });
 
       selectModalidad.addEventListener('change', function() {
+        const modalidad = selectModalidad.value;
+        let diasPermitidos = configActual.diasRegulares;
+        if (modalidad === 'sobreturno') diasPermitidos = configActual.diasSob;
+        if (modalidad === 'telemedicina') diasPermitidos = configActual.diasTel;
+
+        if (calendario) {
+          // Bloqueamos los días que el médico NO atiende
+          calendario.set('disable', [
+            function(date) {
+              return !diasPermitidos.includes(date.getDay());
+            }
+          ]);
+          calendario.clear();
+        }
+
         inputFecha.disabled = false;
-        inputFecha.value = '';
         inputHora.disabled = true;
         inputHora.innerHTML = '<option value="" disabled selected>Primero elegí fecha...</option>';
         btnSubmit.disabled = true;
@@ -233,28 +285,7 @@ block content
           }
           inputHora.disabled = false;
         } catch (e) {
-          console.error(e);
+          console.error("Error al calcular horarios:", e);
         }
       }
-
-      inputFecha.addEventListener('change', function() {
-        if (!inputFecha.value) return;
-        const partes = inputFecha.value.split('-');
-        const diaSemana = new Date(partes[0], partes[1] - 1, partes[2]).getDay();
-        const modalidad = selectModalidad.value;
-
-        let diasPermitidos = configActual.diasRegulares;
-        if (modalidad === 'sobreturno') diasPermitidos = configActual.diasSob;
-        if (modalidad === 'telemedicina') diasPermitidos = configActual.diasTel;
-
-        if (diasPermitidos.length > 0 && !diasPermitidos.includes(diaSemana)) {
-          alert(`❌ La modalidad "${modalidad}" no está disponible para este día de la semana.`);
-          inputFecha.value = '';
-          inputHora.disabled = true;
-          btnSubmit.disabled = true;
-        } else {
-          actualizarHorarios();
-          btnSubmit.disabled = false;
-        }
-      });
     });
