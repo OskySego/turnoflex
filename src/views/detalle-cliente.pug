@@ -1,77 +1,1996 @@
 extends layout
 
 block content
-  - const iniciales = (nombre) => nombre ? nombre.split(' ').filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join('') : 'NN'
+
+  style.
+    .tf-paciente-header {
+      padding: 28px;
+      color: white;
+      background:
+        radial-gradient(circle at 90% 10%, rgba(139,92,246,.42), transparent 30%),
+        linear-gradient(135deg, #08132e 0%, #0D1B3E 65%, #312e81 100%);
+    }
+
+    .tf-avatar-paciente {
+      width: 70px;
+      height: 70px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #2563eb, #8B5CF6);
+      color: white;
+      font-weight: 900;
+      font-size: 1.3rem;
+      box-shadow: 0 10px 25px rgba(139,92,246,.30);
+    }
+
+    .tf-section-card {
+      border: 1px solid rgba(128,128,128,.15);
+      border-radius: 18px;
+      overflow: hidden;
+      margin-bottom: 26px;
+      background: var(--bs-body-bg);
+    }
+
+    .tf-section-header {
+      padding: 14px 18px;
+      font-size: .76rem;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      background: rgba(139,92,246,.07);
+      border-bottom: 1px solid rgba(128,128,128,.12);
+    }
+
+    .tf-section-body {
+      padding: 22px;
+    }
+
+    .tf-data-box {
+      height: 100%;
+      padding: 16px;
+      border-radius: 14px;
+      background: rgba(13,27,62,.035);
+    }
+
+    [data-bs-theme="dark"] .tf-data-box {
+      background: rgba(255,255,255,.04);
+    }
+
+    .tf-label {
+      display: block;
+      margin-bottom: 5px;
+      color: #6b7280;
+      font-size: .63rem;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .tf-left-purple {
+      border-left: 4px solid #8B5CF6;
+    }
+
+    .tf-left-blue {
+      border-left: 4px solid #2563eb;
+    }
+
+    .tf-left-green {
+      border-left: 4px solid #10b981;
+    }
+
+    .tf-left-orange {
+      border-left: 4px solid #f59e0b;
+    }
+
+    .tf-family-card {
+      padding: 17px;
+      border-radius: 15px;
+      border: 1px solid rgba(128,128,128,.14);
+      background: rgba(139,92,246,.035);
+      transition:
+        transform .2s ease,
+        box-shadow .2s ease;
+    }
+
+    .tf-family-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(13,27,62,.08);
+    }
+
+    [data-bs-theme="dark"] .tf-family-card {
+      background: rgba(255,255,255,.03);
+    }
+
+    .tf-family-avatar {
+      width: 46px;
+      height: 46px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 13px;
+      color: white;
+      font-weight: 850;
+      background: linear-gradient(135deg, #2563eb, #8B5CF6);
+    }
+
+    .tf-search-result {
+      padding: 13px;
+      border: 1px solid rgba(128,128,128,.15);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background .15s ease;
+    }
+
+    .tf-search-result:hover {
+      background: rgba(139,92,246,.07);
+    }
+
+    .tf-search-result.selected {
+      border-color: #8B5CF6;
+      background: rgba(139,92,246,.09);
+    }
+
+    .tf-family-mode-btn {
+      border-radius: 12px;
+      padding: 10px 16px;
+      font-size: .78rem;
+      font-weight: 800;
+    }
+
+    .tf-modal-title {
+      font-weight: 850;
+      color: #0D1B3E;
+    }
+
+    [data-bs-theme="dark"] .tf-modal-title {
+      color: #f3f4f6;
+    }
+
+
+  //- ============================================================
+  //- VARIABLES AUXILIARES
+  //- ============================================================
+
+  - const iniciales = (nombre) => nombre ? nombre.split(' ').filter(Boolean).slice(0, 2).map(function(n) { return n[0].toUpperCase(); }).join('') : 'PA'
+  - const familiaresLegacy = cliente && Array.isArray(cliente.grupoFamiliar) ? cliente.grupoFamiliar : []
+
+
+  //- ============================================================
+  //- ERRORES
+  //- ============================================================
 
   if error
-    .alert.alert-danger.shadow-sm.rounded-3(role="alert")
-      h4.alert-heading.fw-bold ¡Ocurrió un error!
-      p.mb-2= error
-      hr
-      a.btn.btn-outline-danger.btn-sm(href="/clientes") Volver al listado
+
+    .alert.alert-danger.shadow-sm.rounded-4
+      h4.alert-heading.fw-bold Ocurrió un error
+      p.mb-3= error
+      a.btn.btn-outline-danger(href="/clientes") Volver al listado
+
+
   else if !cliente
-    .alert.alert-warning.shadow-sm.rounded-3(role="alert")
-      h4.alert-heading.fw-bold Cliente no encontrado
-      p.mb-2 No se pudo obtener la información del cliente solicitado.
-      hr
-      a.btn.btn-outline-warning.btn-sm(href="/clientes") Volver al listado
+
+    .alert.alert-warning.shadow-sm.rounded-4
+      h4.alert-heading.fw-bold Paciente no encontrado
+      p.mb-3 No se pudo obtener la información del paciente solicitado.
+      a.btn.btn-outline-warning(href="/clientes") Volver al listado
+
+
   else
+
     .row.justify-content-center
-      .col-lg-9
-        .card.border-0.rounded-4.shadow-sm.overflow-hidden
+      .col-xl-10
 
-          //- Cabecera Principal
-          .p-4.text-white(style="background-color: #0D1B3E;")
-            .d-flex.align-items-center.gap-3
-              .rounded-circle.d-flex.align-items-center.justify-content-center.fw-bold.fs-4(
-                style="width:60px; height:60px; background:#3B82F6; color:white;"
-              )= iniciales(cliente.nombre)
+        .card.border-0.rounded-4.shadow-sm.overflow-hidden.tfu-card
+
+
+          //- ====================================================
+          //- CABECERA
+          //- ====================================================
+
+          .tf-paciente-header.tfu-hero
+
+            .d-flex.justify-content-between.align-items-center.flex-wrap.gap-4
+
+              .d-flex.align-items-center.gap-3
+
+                .tf-avatar-paciente
+                  = iniciales(cliente.nombre)
+
+                div
+                  small.text-uppercase.fw-bold(
+                    style="color:#c4b5fd;"
+                  )
+                    | Paciente TurnoFlex
+
+                  h3.mb-1.fw-bold
+                    = cliente.nombre
+
+                  p.mb-0.text-white-50
+                    | DNI: #{cliente.dni || 'No especificado'}
+
+
               div
-                h3.mb-1.fw-bold= cliente.nombre
-                p.mb-0.text-white-50 DNI: #{cliente.dni || 'No especificado'}
 
-          //- Cuerpo con secciones
-          .card-body.p-4.bg-white
-            
-            //- Datos Personales
-            h6.text-uppercase.text-muted.small.fw-bold.mb-3 Datos Personales
-            .row.g-3.mb-4.bg-light.p-3.rounded-3
-              .col-md-6
-                strong.d-block.small.text-muted Fecha de Nacimiento:
-                span= cliente.fechaNacimiento ? new Date(cliente.fechaNacimiento).toLocaleDateString() : 'N/D'
-              .col-md-6
-                strong.d-block.small.text-muted Género:
-                span= cliente.genero || 'N/D'
-
-            //- Contacto y Domicilio
-            h6.text-uppercase.text-muted.small.fw-bold.mb-3 Contacto y Domicilio
-            .row.g-3.mb-4.bg-light.p-3.rounded-3
-              .col-md-6
-                strong.d-block.small.text-muted Teléfono / WhatsApp:
-                span= cliente.telefono || 'N/D'
-              .col-md-6
-                strong.d-block.small.text-muted Correo Electrónico:
-                span= cliente.email || 'N/D'
-              .col-md-12
-                strong.d-block.small.text-muted Domicilio:
-                if cliente.domicilio
-                  span= `${cliente.domicilio.calle || ''} ${cliente.domicilio.numero || ''}, ${cliente.domicilio.localidad || ''} (${cliente.domicilio.provincia || ''})`
+                if cliente.obraSocial && cliente.obraSocial.empresa
+                  span.badge.fs-6.px-3.py-2(
+                    style="background:#8B5CF6;"
+                  )
+                    = cliente.obraSocial.empresa
                 else
-                  span N/D
+                  span.badge.bg-info.text-dark.fs-6.px-3.py-2
+                    | Paciente Particular
 
-            //- Cobertura Médica
-            h6.text-uppercase.text-muted.small.fw-bold.mb-3 Cobertura Médica
-            .row.g-3.mb-4.bg-light.p-3.rounded-3
-              .col-md-4
-                strong.d-block.small.text-muted Obra Social / Prepaga:
-                span= (cliente.obraSocial && cliente.obraSocial.empresa) ? cliente.obraSocial.empresa : 'Particular / Sin cobertura'
-              .col-md-4
-                strong.d-block.small.text-muted Nro de Afiliado:
-                span= (cliente.obraSocial && cliente.obraSocial.numeroAfiliado) ? cliente.obraSocial.numeroAfiliado : 'N/D'
-              .col-md-4
-                strong.d-block.small.text-muted Plan:
-                span= (cliente.obraSocial && cliente.obraSocial.plan) ? cliente.obraSocial.plan : 'N/D'
 
-            //- Botón volver
-            .d-flex.justify-content-end
-              a.btn.btn-outline-secondary.px-4.rounded-3(href="/clientes") Volver al listado
+          //- ====================================================
+          //- CUERPO
+          //- ====================================================
+
+          .card-body.p-4.p-md-5
+
+
+            //- ==================================================
+            //- 1. DATOS PERSONALES
+            //- ==================================================
+
+            .tf-section-card.tf-left-purple.tfu-card
+
+              .tf-section-header
+                | 1. Datos Personales e Identificación
+
+              .tf-section-body
+
+                .row.g-4
+
+                  .col-md-4
+                    .tf-data-box
+                      span.tf-label Nombre y apellido
+                      strong= cliente.nombre || 'N/D'
+
+                  .col-md-4
+                    .tf-data-box
+                      span.tf-label DNI
+                      strong= cliente.dni || 'N/D'
+
+                  .col-md-4
+                    .tf-data-box
+                      span.tf-label Género
+                      strong= cliente.genero || 'N/D'
+
+                  .col-md-6
+                    .tf-data-box
+                      span.tf-label Fecha de nacimiento
+                      strong= cliente.fechaNacimiento ? new Date(cliente.fechaNacimiento).toLocaleDateString('es-AR') : 'N/D'
+
+                  .col-md-6
+                    .tf-data-box
+                      span.tf-label Estado en TurnoFlex
+                      span.badge.bg-success.px-3.py-2
+                        | Paciente registrado
+
+
+            //- ==================================================
+            //- 2. CONTACTO
+            //- ==================================================
+
+            .tf-section-card.tf-left-blue.tfu-card
+
+              .tf-section-header
+                | 2. Datos de Contacto
+
+              .tf-section-body
+
+                .row.g-4
+
+                  .col-md-6
+                    .tf-data-box
+                      span.tf-label Teléfono / WhatsApp
+                      strong= cliente.telefono || 'N/D'
+
+                  .col-md-6
+                    .tf-data-box
+                      span.tf-label Correo electrónico
+                      strong= cliente.email || 'N/D'
+
+
+            //- ==================================================
+            //- 3. DOMICILIO
+            //- ==================================================
+
+            .tf-section-card.tf-left-blue.tfu-card
+
+              .tf-section-header
+                | 3. Domicilio
+
+              .tf-section-body
+
+                .row.g-4
+
+                  .col-md-4
+                    .tf-data-box
+                      span.tf-label Calle
+                      strong= cliente.domicilio && cliente.domicilio.calle ? cliente.domicilio.calle : 'N/D'
+
+                  .col-md-2
+                    .tf-data-box
+                      span.tf-label Número
+                      strong= cliente.domicilio && cliente.domicilio.numero ? cliente.domicilio.numero : 'N/D'
+
+                  .col-md-3
+                    .tf-data-box
+                      span.tf-label Localidad
+                      strong= cliente.domicilio && cliente.domicilio.localidad ? cliente.domicilio.localidad : 'N/D'
+
+                  .col-md-3
+                    .tf-data-box
+                      span.tf-label Provincia
+                      strong= cliente.domicilio && cliente.domicilio.provincia ? cliente.domicilio.provincia : 'N/D'
+
+
+            //- ==================================================
+            //- 4. COBERTURA
+            //- ==================================================
+
+            .tf-section-card.tf-left-green.tfu-card
+
+              .tf-section-header
+                | 4. Cobertura Médica
+
+              .tf-section-body
+
+                if cliente.obraSocial && cliente.obraSocial.empresa
+
+                  .row.g-4
+
+                    .col-md-4
+                      .tf-data-box
+                        span.tf-label Obra Social / Prepaga
+                        strong= cliente.obraSocial.empresa
+
+                    .col-md-4
+                      .tf-data-box
+                        span.tf-label Número de afiliado
+                        strong= cliente.obraSocial.numeroAfiliado || 'N/D'
+
+                    .col-md-4
+                      .tf-data-box
+                        span.tf-label Plan
+                        strong= cliente.obraSocial.plan || 'N/D'
+
+                else
+
+                  .alert.alert-info.mb-0
+                    strong.d-block.mb-1 Atención Particular
+                    p.mb-0.small No posee cobertura registrada.
+
+
+            //- ==================================================
+            //- 5. GRUPO FAMILIAR NUEVO
+            //- ==================================================
+
+            .tf-section-card.tf-left-orange.tfu-card
+
+              .tf-section-header
+
+                .d-flex.justify-content-between.align-items-center.flex-wrap.gap-2
+
+                  span
+                    | 5. Grupo Familiar
+
+                  if user && (user.rol === 'admin' || user.rol === 'personal')
+
+                    button.btn.btn-sm.text-white.rounded-3(
+                      type="button"
+                      data-bs-toggle="modal"
+                      data-bs-target="#modalFamilia"
+                      style="background:#8B5CF6;"
+                    )
+                      | + Agregar / Asociar familiar
+
+
+              .tf-section-body
+
+                #familiaresLoading.text-center.py-4
+                  .spinner-border.text-primary(
+                    role="status"
+                  )
+                  p.text-muted.small.mt-2.mb-0
+                    | Cargando grupo familiar...
+
+
+                #familiaresVacio.alert.alert-light.border.mb-0(
+                  style="display:none;"
+                )
+                  p.text-muted.mb-0
+                    | No hay familiares asociados actualmente.
+
+
+                #familiaresGrid.row.g-3
+
+
+            //- ==================================================
+            //- DATOS FAMILIARES ANTIGUOS
+            //- ==================================================
+
+            if familiaresLegacy.length > 0
+
+              .tf-section-card.tfu-card
+
+                .tf-section-header
+                  | Registros familiares anteriores
+
+                .tf-section-body
+
+                  p.text-muted.small.mb-3
+                    | Estos familiares pertenecen al sistema anterior de TurnoFlex. Se conservan para no perder información.
+
+                  .row.g-3
+
+                    each familiar in familiaresLegacy
+
+                      .col-md-6
+
+                        .tf-family-card.tfu-card
+
+                          strong.d-block
+                            = familiar.nombre || 'Sin nombre'
+
+                          small.text-muted.d-block.mt-1
+                            | DNI: #{familiar.dni || 'N/D'}
+
+                          if familiar.parentesco
+                            span.badge.bg-secondary.mt-2
+                              = familiar.parentesco
+
+
+            //- ==================================================
+            //- BOTONES
+            //- ==================================================
+
+            .d-flex.justify-content-between.align-items-center.flex-wrap.gap-3.mt-4
+
+              a.btn.btn-outline-secondary.px-4.py-2.rounded-3(
+                href="/clientes"
+              )
+                | ← Volver a pacientes
+
+              //- Secretaría incorpora estudios sin consultar contenido clínico.
+              if user && user.rol === 'personal' && cliente && cliente._id
+                a.btn.btn-outline-primary.px-4.py-2.rounded-3(
+                  href=`/clinica/pacientes/${cliente._id}/estudios/nuevo`
+                )
+                  | + Adjuntar estudio
+
+              if user && (user.rol === 'admin' || user.rol === 'personal')
+
+                a.btn.text-white.px-4.py-2.rounded-3(
+                  href="/turnos/nuevo"
+                  style="background:#8B5CF6;"
+                )
+                  | + Gestionar nuevo turno
+
+
+
+    //- ==========================================================
+    //- MODAL GRUPO FAMILIAR
+    //- ==========================================================
+
+    if user && (user.rol === 'admin' || user.rol === 'personal')
+
+      .modal.fade(
+        id="modalFamilia"
+        tabindex="-1"
+        aria-hidden="true"
+      )
+
+        .modal-dialog.modal-lg.modal-dialog-scrollable
+
+          .modal-content.border-0.rounded-4.shadow
+
+            .modal-header
+
+              div
+                h5.modal-title.tf-modal-title.mb-1
+                  | Agregar familiar
+
+                p.text-muted.small.mb-0
+                  | Paciente principal: #{cliente.nombre}
+
+              button.btn-close(
+                type="button"
+                data-bs-dismiss="modal"
+                aria-label="Cerrar"
+              )
+
+
+            .modal-body.p-4
+
+
+              //- =================================================
+              //- SELECTOR DE MODO
+              //- =================================================
+
+              .d-flex.flex-wrap.gap-2.mb-4
+
+                button.btn.btn-primary.tf-family-mode-btn(
+                  type="button"
+                  id="btnModoExistente"
+                )
+                  | Buscar paciente existente
+
+                button.btn.btn-outline-primary.tf-family-mode-btn(
+                  type="button"
+                  id="btnModoNuevo"
+                )
+                  | Registrar nuevo paciente
+
+
+              //- =================================================
+              //- PACIENTE EXISTENTE
+              //- =================================================
+
+              #panelExistente
+
+                .mb-4
+
+                  label.form-label.fw-bold
+                    | Buscar paciente
+
+                  input.form-control(
+                    id="buscarFamiliar"
+                    type="search"
+                    placeholder="Escribí nombre, DNI o correo..."
+                    autocomplete="off"
+                  )
+
+                  small.text-muted
+                    | Escribí al menos 2 caracteres.
+
+
+                #resultadosBusqueda.d-grid.gap-2.mb-4
+
+
+                #pacienteSeleccionado.alert.alert-primary(
+                  style="display:none;"
+                )
+
+
+                .row.g-3
+
+                  .col-md-6
+
+                    label.form-label.fw-bold
+                      | Parentesco
+
+                    select.form-select(
+                      id="parentescoExistente"
+                    )
+
+                      option(value="")
+                        | Seleccionar...
+
+                      option(value="padre")
+                        | Padre
+
+                      option(value="madre")
+                        | Madre
+
+                      option(value="hijo/a")
+                        | Hijo/a
+
+                      option(value="pareja")
+                        | Pareja
+
+                      option(value="esposo/a")
+                        | Esposo/a
+
+                      option(value="hermano/a")
+                        | Hermano/a
+
+                      option(value="abuelo/a")
+                        | Abuelo/a
+
+                      option(value="nieto/a")
+                        | Nieto/a
+
+                      option(value="tío/a")
+                        | Tío/a
+
+                      option(value="sobrino/a")
+                        | Sobrino/a
+
+                      option(value="tutor/a")
+                        | Tutor/a
+
+                      option(value="persona a cargo")
+                        | Persona a cargo
+
+                      option(value="otro familiar")
+                        | Otro familiar
+
+
+                  .col-md-6.d-flex.align-items-end
+
+                    button.btn.text-white.w-100(
+                      type="button"
+                      id="btnAsociarExistente"
+                      disabled
+                      style="background:#8B5CF6;"
+                    )
+                      | Asociar paciente
+
+
+              //- =================================================
+              //- NUEVO PACIENTE
+              //- =================================================
+
+              #panelNuevo(
+                style="display:none;"
+              )
+
+                form#formNuevoFamiliar
+
+                  h6.fw-bold.mb-3
+                    | Datos principales
+
+
+                  .row.g-3
+
+                    .col-md-8
+
+                      label.form-label.fw-bold
+                        | Nombre y apellido *
+
+                      input.form-control(
+                        type="text"
+                        name="nombre"
+                        required
+                      )
+
+
+                    .col-md-4
+
+                      label.form-label.fw-bold
+                        | DNI *
+
+                      input.form-control(
+                        type="text"
+                        name="dni"
+                        required
+                      )
+
+
+                    .col-md-6
+
+                      label.form-label.fw-bold
+                        | Fecha de nacimiento
+
+                      input.form-control(
+                        type="date"
+                        name="fechaNacimiento"
+                      )
+
+
+                    .col-md-6
+
+                      label.form-label.fw-bold
+                        | Género
+
+                      select.form-select(
+                        name="genero"
+                      )
+
+                        option(value="")
+                          | Seleccionar...
+
+                        option(value="Masculino")
+                          | Masculino
+
+                        option(value="Femenino")
+                          | Femenino
+
+                        option(value="Otro")
+                          | Otro
+
+
+                    .col-md-6
+
+                      label.form-label.fw-bold
+                        | Teléfono *
+
+                      input.form-control(
+                        type="text"
+                        name="telefono"
+                        required
+                      )
+
+
+                    .col-md-6
+
+                      label.form-label.fw-bold
+                        | Correo electrónico *
+
+                      input.form-control(
+                        type="email"
+                        name="email"
+                        required
+                      )
+
+
+                    .col-md-6
+
+                      label.form-label.fw-bold
+                        | Parentesco *
+
+                      select.form-select(
+                        name="parentesco"
+                        id="parentescoNuevo"
+                        required
+                      )
+
+                        option(value="")
+                          | Seleccionar...
+
+                        option(value="padre")
+                          | Padre
+
+                        option(value="madre")
+                          | Madre
+
+                        option(value="hijo/a")
+                          | Hijo/a
+
+                        option(value="pareja")
+                          | Pareja
+
+                        option(value="esposo/a")
+                          | Esposo/a
+
+                        option(value="hermano/a")
+                          | Hermano/a
+
+                        option(value="abuelo/a")
+                          | Abuelo/a
+
+                        option(value="nieto/a")
+                          | Nieto/a
+
+                        option(value="tío/a")
+                          | Tío/a
+
+                        option(value="sobrino/a")
+                          | Sobrino/a
+
+                        option(value="tutor/a")
+                          | Tutor/a
+
+                        option(value="persona a cargo")
+                          | Persona a cargo
+
+                        option(value="otro familiar")
+                          | Otro familiar
+
+
+                  hr.my-4
+
+
+                  details
+
+                    summary.fw-bold.mb-3(
+                      style="cursor:pointer;"
+                    )
+                      | Agregar domicilio y cobertura médica
+
+                    .row.g-3.mt-1
+
+                      .col-md-6
+
+                        label.form-label
+                          | Calle
+
+                        input.form-control(
+                          name="calle"
+                        )
+
+
+                      .col-md-3
+
+                        label.form-label
+                          | Número
+
+                        input.form-control(
+                          name="numero"
+                        )
+
+
+                      .col-md-3
+
+                        label.form-label
+                          | Localidad
+
+                        input.form-control(
+                          name="localidad"
+                        )
+
+
+                      .col-md-6
+
+                        label.form-label
+                          | Provincia
+
+                        input.form-control(
+                          name="provincia"
+                        )
+
+
+                      .col-md-6
+
+                        label.form-label
+                          | Obra Social / Prepaga
+
+                        input.form-control(
+                          name="empresa"
+                        )
+
+
+                      .col-md-6
+
+                        label.form-label
+                          | Número de afiliado
+
+                        input.form-control(
+                          name="numeroAfiliado"
+                        )
+
+
+                      .col-md-6
+
+                        label.form-label
+                          | Plan
+
+                        input.form-control(
+                          name="plan"
+                        )
+
+
+                  .d-flex.justify-content-end.mt-4
+
+                    button.btn.text-white.px-4(
+                      type="submit"
+                      style="background:#8B5CF6;"
+                    )
+                      | Registrar y asociar
+
+
+
+  //- ============================================================
+  //- JAVASCRIPT DEL GRUPO FAMILIAR
+  //- ============================================================
+
+  if cliente
+
+    script.
+      document.addEventListener('DOMContentLoaded', function () {
+
+        const pacienteId = '#{cliente._id}';
+        const generoPrincipal = '#{cliente.genero || ""}';
+
+        let familiarSeleccionado = null;
+        let timerBusqueda = null;
+
+
+        // ======================================================
+        // TOAST
+        // ======================================================
+
+        function notificar(mensaje, tipo) {
+
+          if (window.TurnoFlexToast) {
+
+            window.TurnoFlexToast(
+              mensaje,
+              tipo || 'info'
+            );
+
+          } else {
+
+            alert(mensaje);
+
+          }
+
+        }
+
+
+        // ======================================================
+        // PARENTESCO INVERSO
+        // ======================================================
+
+        function parentescoInverso(parentesco) {
+
+          switch (parentesco) {
+
+            case 'padre':
+            case 'madre':
+              return 'hijo/a';
+
+            case 'hijo/a':
+
+              if (
+                generoPrincipal
+                  .toLowerCase() === 'masculino'
+              ) {
+                return 'padre';
+              }
+
+              if (
+                generoPrincipal
+                  .toLowerCase() === 'femenino'
+              ) {
+                return 'madre';
+              }
+
+              return 'otro familiar';
+
+            case 'pareja':
+              return 'pareja';
+
+            case 'esposo/a':
+              return 'esposo/a';
+
+            case 'hermano/a':
+              return 'hermano/a';
+
+            case 'abuelo/a':
+              return 'nieto/a';
+
+            case 'nieto/a':
+              return 'abuelo/a';
+
+            case 'tío/a':
+              return 'sobrino/a';
+
+            case 'sobrino/a':
+              return 'tío/a';
+
+            case 'tutor/a':
+              return 'persona a cargo';
+
+            case 'persona a cargo':
+              return 'tutor/a';
+
+            default:
+              return 'otro familiar';
+
+          }
+
+        }
+
+
+        // ======================================================
+        // CARGAR FAMILIARES
+        // ======================================================
+
+        async function cargarFamiliares() {
+
+          const loading =
+            document.getElementById(
+              'familiaresLoading'
+            );
+
+          const vacio =
+            document.getElementById(
+              'familiaresVacio'
+            );
+
+          const grid =
+            document.getElementById(
+              'familiaresGrid'
+            );
+
+
+          if (!grid) {
+            return;
+          }
+
+
+          try {
+
+            const respuesta =
+              await fetch(
+                '/clientes/' +
+                pacienteId +
+                '/familiares',
+                {
+                  headers: {
+                    Accept: 'application/json'
+                  }
+                }
+              );
+
+
+            if (!respuesta.ok) {
+              throw new Error(
+                'No se pudo cargar el grupo familiar.'
+              );
+            }
+
+
+            const resultado =
+              await respuesta.json();
+
+
+            grid.innerHTML = '';
+
+
+            if (loading) {
+              loading.style.display = 'none';
+            }
+
+
+            const familiares =
+              resultado.familiares || [];
+
+
+            if (familiares.length === 0) {
+
+              if (vacio) {
+                vacio.style.display = 'block';
+              }
+
+              return;
+
+            }
+
+
+            if (vacio) {
+              vacio.style.display = 'none';
+            }
+
+
+            familiares.forEach(
+              function (item) {
+
+                crearTarjetaFamiliar(
+                  grid,
+                  item
+                );
+
+              }
+            );
+
+
+          } catch (error) {
+
+            if (loading) {
+              loading.style.display = 'none';
+            }
+
+
+            notificar(
+              error.message,
+              'error'
+            );
+
+          }
+
+        }
+
+
+        // ======================================================
+        // CREAR TARJETA
+        // ======================================================
+
+        function crearTarjetaFamiliar(
+          grid,
+          item
+        ) {
+
+          if (!item.paciente) {
+            return;
+          }
+
+
+          const paciente =
+            item.paciente;
+
+
+          const columna =
+            document.createElement('div');
+
+          columna.className =
+            'col-md-6';
+
+
+          const tarjeta =
+            document.createElement('div');
+
+          tarjeta.className =
+            'tf-family-card h-100';
+
+
+          const superior =
+            document.createElement('div');
+
+          superior.className =
+            'd-flex align-items-start gap-3';
+
+
+          const avatar =
+            document.createElement('div');
+
+          avatar.className =
+            'tf-family-avatar';
+
+
+          const partes =
+            String(
+              paciente.nombre || 'Familiar'
+            )
+              .split(' ')
+              .filter(Boolean);
+
+
+          avatar.textContent =
+            partes
+              .slice(0, 2)
+              .map(
+                function (parte) {
+                  return parte.charAt(0).toUpperCase();
+                }
+              )
+              .join('') || 'FA';
+
+
+          const contenido =
+            document.createElement('div');
+
+          contenido.className =
+            'flex-grow-1';
+
+
+          const nombre =
+            document.createElement('strong');
+
+          nombre.className =
+            'd-block';
+
+          nombre.textContent =
+            paciente.nombre ||
+            'Paciente';
+
+
+          const dni =
+            document.createElement('small');
+
+          dni.className =
+            'text-muted d-block mt-1';
+
+          dni.textContent =
+            'DNI: ' +
+            (
+              paciente.dni ||
+              'N/D'
+            );
+
+
+          const parentesco =
+            document.createElement('span');
+
+          parentesco.className =
+            'badge bg-warning text-dark mt-2';
+
+          parentesco.textContent =
+            item.parentesco ||
+            'Familiar';
+
+
+          contenido.appendChild(nombre);
+          contenido.appendChild(dni);
+          contenido.appendChild(parentesco);
+
+          superior.appendChild(avatar);
+          superior.appendChild(contenido);
+
+          tarjeta.appendChild(superior);
+
+
+          const acciones =
+            document.createElement('div');
+
+          acciones.className =
+            'd-flex flex-wrap gap-2 mt-3';
+
+
+          const ver =
+            document.createElement('a');
+
+          ver.className =
+            'btn btn-sm btn-outline-primary';
+
+          ver.href =
+            '/clientes/' +
+            paciente._id;
+
+          ver.textContent =
+            'Ver ficha';
+
+
+          acciones.appendChild(ver);
+
+
+          const puedeGestionar =
+            #{user && (user.rol === 'admin' || user.rol === 'personal') ? 'true' : 'false'};
+
+
+          if (puedeGestionar) {
+
+            const quitar =
+              document.createElement('button');
+
+            quitar.type =
+              'button';
+
+            quitar.className =
+              'btn btn-sm btn-outline-danger';
+
+            quitar.textContent =
+              'Desvincular';
+
+
+            quitar.addEventListener(
+              'click',
+              function () {
+
+                desvincularFamiliar(
+                  item.relacionId,
+                  paciente.nombre
+                );
+
+              }
+            );
+
+
+            acciones.appendChild(
+              quitar
+            );
+
+          }
+
+
+          tarjeta.appendChild(
+            acciones
+          );
+
+
+          columna.appendChild(
+            tarjeta
+          );
+
+
+          grid.appendChild(
+            columna
+          );
+
+        }
+
+
+        // ======================================================
+        // DESVINCULAR
+        // ======================================================
+
+        async function desvincularFamiliar(
+          relacionId,
+          nombre
+        ) {
+
+          const confirmar =
+            window.confirm(
+              '¿Querés desvincular a ' +
+              nombre +
+              ' del grupo familiar?'
+            );
+
+
+          if (!confirmar) {
+            return;
+          }
+
+
+          try {
+
+            const respuesta =
+              await fetch(
+                '/clientes/' +
+                pacienteId +
+                '/familiares/' +
+                relacionId +
+                '/desasociar',
+                {
+                  method: 'POST',
+                  headers: {
+                    Accept: 'application/json',
+                    ...(document.querySelector('meta[name="csrf-token"]')?.content ? { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content } : {})
+                  }
+                }
+              );
+
+
+            if (!respuesta.ok) {
+
+              throw new Error(
+                'No se pudo desvincular el familiar.'
+              );
+
+            }
+
+
+            notificar(
+              'Familiar desvinculado correctamente.',
+              'success'
+            );
+
+
+            cargarFamiliares();
+
+
+          } catch (error) {
+
+            notificar(
+              error.message,
+              'error'
+            );
+
+          }
+
+        }
+
+
+        // ======================================================
+        // MODO EXISTENTE / NUEVO
+        // ======================================================
+
+        const btnModoExistente =
+          document.getElementById(
+            'btnModoExistente'
+          );
+
+        const btnModoNuevo =
+          document.getElementById(
+            'btnModoNuevo'
+          );
+
+        const panelExistente =
+          document.getElementById(
+            'panelExistente'
+          );
+
+        const panelNuevo =
+          document.getElementById(
+            'panelNuevo'
+          );
+
+
+        if (
+          btnModoExistente &&
+          btnModoNuevo
+        ) {
+
+          btnModoExistente.addEventListener(
+            'click',
+            function () {
+
+              panelExistente.style.display =
+                'block';
+
+              panelNuevo.style.display =
+                'none';
+
+              btnModoExistente.className =
+                'btn btn-primary tf-family-mode-btn';
+
+              btnModoNuevo.className =
+                'btn btn-outline-primary tf-family-mode-btn';
+
+            }
+          );
+
+
+          btnModoNuevo.addEventListener(
+            'click',
+            function () {
+
+              panelExistente.style.display =
+                'none';
+
+              panelNuevo.style.display =
+                'block';
+
+              btnModoNuevo.className =
+                'btn btn-primary tf-family-mode-btn';
+
+              btnModoExistente.className =
+                'btn btn-outline-primary tf-family-mode-btn';
+
+            }
+          );
+
+        }
+
+
+        // ======================================================
+        // BUSCAR PACIENTES
+        // ======================================================
+
+        const buscador =
+          document.getElementById(
+            'buscarFamiliar'
+          );
+
+
+        if (buscador) {
+
+          buscador.addEventListener(
+            'input',
+            function () {
+
+              clearTimeout(
+                timerBusqueda
+              );
+
+
+              timerBusqueda =
+                setTimeout(
+                  function () {
+
+                    buscarPacientes(
+                      buscador.value
+                    );
+
+                  },
+                  300
+                );
+
+            }
+          );
+
+        }
+
+
+        async function buscarPacientes(
+          texto
+        ) {
+
+          const contenedor =
+            document.getElementById(
+              'resultadosBusqueda'
+            );
+
+
+          if (!contenedor) {
+            return;
+          }
+
+
+          contenedor.innerHTML = '';
+
+
+          if (
+            !texto ||
+            texto.trim().length < 2
+          ) {
+            return;
+          }
+
+
+          try {
+
+            const respuesta =
+              await fetch(
+                '/clientes/' +
+                pacienteId +
+                '/familiares/buscar?q=' +
+                encodeURIComponent(texto.trim()),
+                {
+                  headers: {
+                    Accept: 'application/json'
+                  }
+                }
+              );
+
+
+            const resultado =
+              await respuesta.json();
+
+
+            const pacientes =
+              resultado.data || [];
+
+
+            if (
+              pacientes.length === 0
+            ) {
+
+              const mensaje =
+                document.createElement('div');
+
+              mensaje.className =
+                'text-muted small';
+
+              mensaje.textContent =
+                'No encontramos pacientes coincidentes.';
+
+              contenedor.appendChild(
+                mensaje
+              );
+
+              return;
+
+            }
+
+
+            pacientes.forEach(
+              function (paciente) {
+
+                const item =
+                  document.createElement('div');
+
+                item.className =
+                  'tf-search-result';
+
+
+                const nombre =
+                  document.createElement('strong');
+
+                nombre.className =
+                  'd-block';
+
+                nombre.textContent =
+                  paciente.nombre;
+
+
+                const datos =
+                  document.createElement('small');
+
+                datos.className =
+                  'text-muted';
+
+                datos.textContent =
+                  'DNI: ' +
+                  (
+                    paciente.dni ||
+                    'N/D'
+                  ) +
+                  ' · ' +
+                  (
+                    paciente.email ||
+                    'Sin email'
+                  );
+
+
+                item.appendChild(nombre);
+                item.appendChild(datos);
+
+
+                item.addEventListener(
+                  'click',
+                  function () {
+
+                    document
+                      .querySelectorAll(
+                        '.tf-search-result'
+                      )
+                      .forEach(
+                        function (otro) {
+
+                          otro.classList.remove(
+                            'selected'
+                          );
+
+                        }
+                      );
+
+
+                    item.classList.add(
+                      'selected'
+                    );
+
+
+                    seleccionarPaciente(
+                      paciente
+                    );
+
+                  }
+                );
+
+
+                contenedor.appendChild(
+                  item
+                );
+
+              }
+            );
+
+
+          } catch (error) {
+
+            notificar(
+              'No se pudo realizar la búsqueda.',
+              'error'
+            );
+
+          }
+
+        }
+
+
+        // ======================================================
+        // SELECCIONAR PACIENTE
+        // ======================================================
+
+        function seleccionarPaciente(
+          paciente
+        ) {
+
+          familiarSeleccionado =
+            paciente;
+
+
+          const caja =
+            document.getElementById(
+              'pacienteSeleccionado'
+            );
+
+
+          const boton =
+            document.getElementById(
+              'btnAsociarExistente'
+            );
+
+
+          if (caja) {
+
+            caja.style.display =
+              'block';
+
+            caja.textContent =
+              'Seleccionado: ' +
+              paciente.nombre +
+              ' · DNI ' +
+              (
+                paciente.dni ||
+                'N/D'
+              );
+
+          }
+
+
+          if (boton) {
+
+            boton.disabled =
+              false;
+
+          }
+
+        }
+
+
+        // ======================================================
+        // ASOCIAR EXISTENTE
+        // ======================================================
+
+        const btnAsociar =
+          document.getElementById(
+            'btnAsociarExistente'
+          );
+
+
+        if (btnAsociar) {
+
+          btnAsociar.addEventListener(
+            'click',
+            async function () {
+
+              const select =
+                document.getElementById(
+                  'parentescoExistente'
+                );
+
+
+              if (
+                !familiarSeleccionado
+              ) {
+
+                notificar(
+                  'Primero seleccioná un paciente.',
+                  'warning'
+                );
+
+                return;
+
+              }
+
+
+              if (
+                !select ||
+                !select.value
+              ) {
+
+                notificar(
+                  'Seleccioná el parentesco.',
+                  'warning'
+                );
+
+                return;
+
+              }
+
+
+              try {
+
+                const datos =
+                  new URLSearchParams();
+
+                datos.append(
+                  'familiarId',
+                  familiarSeleccionado._id
+                );
+
+                datos.append(
+                  'parentesco',
+                  select.value
+                );
+
+                datos.append(
+                  'parentescoInverso',
+                  parentescoInverso(
+                    select.value
+                  )
+                );
+
+
+                const respuesta =
+                  await fetch(
+                    '/clientes/' +
+                    pacienteId +
+                    '/familiares/asociar',
+                    {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type':
+                          'application/x-www-form-urlencoded',
+                        Accept:
+                          'application/json',
+                        ...(document.querySelector('meta[name="csrf-token"]')?.content ? { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content } : {})
+                      },
+                      body:
+                        datos.toString()
+                    }
+                  );
+
+
+                const resultado =
+                  await respuesta.json();
+
+
+                if (!respuesta.ok) {
+
+                  throw new Error(
+                    resultado.message ||
+                    resultado.error ||
+                    'No se pudo asociar el familiar.'
+                  );
+
+                }
+
+
+                notificar(
+                  'Familiar asociado correctamente.',
+                  'success'
+                );
+
+
+                familiarSeleccionado =
+                  null;
+
+
+                document.getElementById(
+                  'resultadosBusqueda'
+                ).innerHTML = '';
+
+
+                document.getElementById(
+                  'pacienteSeleccionado'
+                ).style.display = 'none';
+
+
+                document.getElementById(
+                  'buscarFamiliar'
+                ).value = '';
+
+
+                select.value = '';
+
+
+                btnAsociar.disabled =
+                  true;
+
+
+                cargarFamiliares();
+
+
+              } catch (error) {
+
+                notificar(
+                  error.message,
+                  'error'
+                );
+
+              }
+
+            }
+          );
+
+        }
+
+
+        // ======================================================
+        // REGISTRAR NUEVO FAMILIAR
+        // ======================================================
+
+        const formNuevo =
+          document.getElementById(
+            'formNuevoFamiliar'
+          );
+
+
+        if (formNuevo) {
+
+          formNuevo.addEventListener(
+            'submit',
+            async function (evento) {
+
+              evento.preventDefault();
+
+
+              const datos =
+                new FormData(
+                  formNuevo
+                );
+
+
+              const parentesco =
+                datos.get(
+                  'parentesco'
+                );
+
+
+              datos.append(
+                'parentescoInverso',
+                parentescoInverso(
+                  parentesco
+                )
+              );
+
+
+              const body =
+                new URLSearchParams();
+
+
+              datos.forEach(
+                function (valor, clave) {
+
+                  body.append(
+                    clave,
+                    valor
+                  );
+
+                }
+              );
+
+
+              try {
+
+                const respuesta =
+                  await fetch(
+                    '/clientes/' +
+                    pacienteId +
+                    '/familiares/registrar',
+                    {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type':
+                          'application/x-www-form-urlencoded',
+                        Accept:
+                          'application/json',
+                        ...(document.querySelector('meta[name="csrf-token"]')?.content ? { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content } : {})
+                      },
+                      body:
+                        body.toString()
+                    }
+                  );
+
+
+                let resultado = {};
+
+
+                try {
+
+                  resultado =
+                    await respuesta.json();
+
+                } catch (e) {
+                }
+
+
+                if (!respuesta.ok) {
+
+                  throw new Error(
+                    resultado.message ||
+                    resultado.error ||
+                    'No se pudo registrar el familiar.'
+                  );
+
+                }
+
+
+                notificar(
+                  'Paciente registrado y asociado correctamente.',
+                  'success'
+                );
+
+
+                formNuevo.reset();
+
+
+                cargarFamiliares();
+
+
+                const modalElemento =
+                  document.getElementById(
+                    'modalFamilia'
+                  );
+
+
+                if (
+                  modalElemento &&
+                  window.bootstrap
+                ) {
+
+                  const instancia =
+                    bootstrap.Modal.getInstance(
+                      modalElemento
+                    );
+
+
+                  if (instancia) {
+                    instancia.hide();
+                  }
+
+                }
+
+
+              } catch (error) {
+
+                notificar(
+                  error.message,
+                  'error'
+                );
+
+              }
+
+            }
+          );
+
+        }
+
+
+        // ======================================================
+        // CARGA INICIAL
+        // ======================================================
+
+        cargarFamiliares();
+
+      });
