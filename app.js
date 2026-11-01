@@ -6,6 +6,9 @@ import { connectDB } from './src/config/db.js';
 import turnoRoutes from './src/routes/turnoRoutes.js';
 import profesionalRoutes from './src/routes/profesionalRoutes.js';
 import clienteRoutes from './src/routes/clienteRoutes.js';
+import authRoutes from './src/routes/authRoutes.js'; // Importar rutas de autenticación
+import { autenticador } from './src/controllers/authController.js'; // Importar el middleware de autenticación
+import { Usuario } from './src/models/Usuarios.js'; // Importar el modelo de Usuario
 
 await connectDB(); // Conectar a la base de datos
 
@@ -37,6 +40,7 @@ app.get('/bienvenida', (req, res) => {
 app.use('/turnos', turnoRoutes);
 app.use('/profesionales', profesionalRoutes);
 app.use('/clientes', clienteRoutes);
+app.use('/auth', authRoutes); // Autenticación
 
 // Manejo de errores 404
 app.use((req, res) => {

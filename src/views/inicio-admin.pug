@@ -1,0 +1,389 @@
+extends layout
+
+block content
+  - const nombreAdmin = user && user.nombre ? user.nombre : 'Administrador'
+
+  style.
+    .tf-office {
+      --office-ink: #17213c;
+      --office-muted: #65718b;
+      --office-surface: #ffffff;
+      --office-border: rgba(35, 52, 85, .10);
+      --office-soft: #f5f7fc;
+      --office-shadow: 0 18px 46px rgba(29, 43, 76, .07);
+      color: var(--office-ink);
+      padding-bottom: 36px;
+    }
+    [data-bs-theme="dark"] .tf-office {
+      --office-ink: #eef2ff;
+      --office-muted: #a6b2cf;
+      --office-surface: #171e2c;
+      --office-border: rgba(198, 208, 235, .11);
+      --office-soft: #111826;
+      --office-shadow: 0 18px 46px rgba(0,0,0,.13);
+    }
+    .tf-office a { text-decoration: none; }
+    .office-top {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(122deg,#101c40 0%,#233575 51%,#6137a7 100%);
+      color: #fff;
+      border-radius: 28px;
+      padding: clamp(26px, 4vw, 44px);
+      box-shadow: 0 24px 52px rgba(27,35,92,.22);
+    }
+    .office-top::before {
+      content: "";
+      width: 350px;
+      height: 350px;
+      position: absolute;
+      right: -90px;
+      top: -230px;
+      border: 70px solid rgba(255,255,255,.045);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .office-top::after {
+      content: "";
+      width: 290px;
+      height: 290px;
+      position: absolute;
+      left: 34%;
+      bottom: -230px;
+      border-radius: 50%;
+      background: rgba(126,89,255,.24);
+      filter: blur(26px);
+      pointer-events: none;
+    }
+    .office-layer { position: relative; z-index: 1; }
+    .office-kicker {
+      text-transform: uppercase;
+      letter-spacing: .18em;
+      font-size: .70rem;
+      font-weight: 800;
+      color: #c8d6ff;
+    }
+    .office-hello {
+      font-size: clamp(1.9rem,4vw,3.1rem);
+      font-weight: 850;
+      letter-spacing: -.055em;
+      line-height: 1.12;
+      margin: 14px 0;
+    }
+    .office-description {
+      color: #d5ddf4;
+      max-width: 560px;
+      line-height: 1.7;
+      font-size: .96rem;
+      margin: 0;
+    }
+    .office-primary-btn, .office-secondary-btn {
+      min-height: 44px;
+      padding: 11px 17px;
+      border-radius: 13px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      font-weight: 750;
+      font-size: .88rem;
+      transition: transform .2s ease, background .2s ease;
+    }
+    .office-primary-btn { background: #fff; color: #1b2960; }
+    .office-primary-btn:hover { color:#1b2960; transform:translateY(-2px); background:#f2f5ff; }
+    .office-secondary-btn { color:#fff; border:1px solid rgba(255,255,255,.33); background:rgba(255,255,255,.08); }
+    .office-secondary-btn:hover { color:#fff; background:rgba(255,255,255,.18); transform:translateY(-2px); }
+    .office-clock-card {
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.20);
+      backdrop-filter: blur(12px);
+      border-radius: 20px;
+      padding: 22px;
+    }
+    .office-clock-label { color:#d6e1ff; font-size:.75rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+    .office-time { font-variant-numeric: tabular-nums; font-size: clamp(2rem,4vw,3.4rem); font-weight: 800; letter-spacing:-.055em; }
+    .office-date { color:#d6e1ff; font-size:.85rem; text-transform:capitalize; }
+    .office-live { display:flex; align-items:center; gap:8px; font-size:.76rem; color:#d3fbe4; margin-top:15px; }
+    .office-live-dot { width:8px; height:8px; background:#60e3a3; border-radius:50%; box-shadow:0 0 0 5px rgba(96,227,163,.15); }
+    .office-toolbar {
+      margin-top: 25px;
+      background: var(--office-surface);
+      border: 1px solid var(--office-border);
+      box-shadow: var(--office-shadow);
+      border-radius: 19px;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+    .office-search-wrap { flex: 1 1 300px; position:relative; }
+    .office-search-icon { position:absolute; left:15px; top:50%; transform:translateY(-50%); color:var(--office-muted); pointer-events:none; }
+    .office-search {
+      width:100%; min-height:48px; border:1px solid var(--office-border);
+      background:var(--office-soft); color:var(--office-ink);
+      border-radius:13px; padding:11px 15px 11px 43px; outline:none;
+      transition:border-color .2s, box-shadow .2s;
+    }
+    .office-search:focus { border-color:#9872f2; box-shadow:0 0 0 4px rgba(139,92,246,.12); }
+    .office-search::placeholder { color:var(--office-muted); }
+    .office-hint { font-size:.76rem; color:var(--office-muted); }
+    .office-hint kbd { border:1px solid var(--office-border); border-radius:5px; padding:3px 7px; background:var(--office-soft); color:var(--office-muted); }
+    .office-section { margin: 34px 0 17px; }
+    .office-eyebrow { text-transform:uppercase; letter-spacing:.12em; font-size:.69rem; font-weight:850; color:#8b5cf6; margin-bottom:5px; }
+    .office-section h2 { font-size:clamp(1.28rem,2.4vw,1.65rem); letter-spacing:-.03em; font-weight:800; margin:0; color:var(--office-ink); }
+    .office-section p { font-size:.85rem; color:var(--office-muted); margin:5px 0 0; }
+    .office-action {
+      border:1px solid var(--office-border); border-radius:17px;
+      background:var(--office-surface); box-shadow:var(--office-shadow);
+      min-height:105px; display:flex; gap:15px; align-items:center;
+      padding:20px; transition:transform .2s, border-color .2s;
+    }
+    .office-action:hover { transform:translateY(-4px); border-color:rgba(139,92,246,.42); }
+    .office-action-ico {
+      width:49px; height:49px; border-radius:14px; flex-shrink:0;
+      display:grid;place-items:center; font-size:1.35rem;
+      background:var(--color-soft); color:var(--color-main);
+    }
+    .office-action-title { display:block; color:var(--office-ink); font-weight:800; font-size:.94rem; }
+    .office-action-description { display:block; color:var(--office-muted); font-size:.78rem; line-height:1.5; margin-top:4px; }
+    .office-card {
+      display:flex; flex-direction:column; height:100%; min-height:240px;
+      border:1px solid var(--office-border); border-radius:21px;
+      background:var(--office-surface); box-shadow:var(--office-shadow);
+      padding:25px; position:relative; overflow:hidden;
+      transition:transform .22s, border-color .22s, box-shadow .22s;
+    }
+    .office-card::after { content:""; position:absolute; right:-48px; top:-55px; width:150px; height:150px; border-radius:50%; background:var(--color-soft); opacity:.75; }
+    .office-card:hover { transform:translateY(-5px); border-color:var(--color-main); box-shadow:0 22px 42px rgba(29,43,76,.12); }
+    .office-card > * { position:relative; z-index:1; }
+    .office-card-ico { width:55px; height:55px; display:grid;place-items:center; border-radius:16px; font-size:1.5rem; background:var(--color-soft); color:var(--color-main); margin-bottom:17px; }
+    .office-card h3 { font-size:1.14rem; font-weight:850; letter-spacing:-.025em; color:var(--office-ink); margin:0 0 9px; }
+    .office-card p { font-size:.84rem; color:var(--office-muted); line-height:1.65; margin:0 0 24px; }
+    .office-card-link { margin-top:auto; color:var(--color-main); font-weight:800; font-size:.8rem; }
+    .office-note {
+      border:1px solid var(--office-border); background:var(--office-surface);
+      padding:24px; border-radius:21px; height:100%;
+    }
+    .office-step { display:flex; gap:14px; padding:13px 0; border-bottom:1px solid var(--office-border); }
+    .office-step:last-child { border-bottom:0; padding-bottom:0; }
+    .office-step-number { width:33px; height:33px; flex-shrink:0; display:grid;place-items:center; background:rgba(139,92,246,.12); border-radius:10px; font-weight:850; color:#8b5cf6; }
+    .office-step strong { color:var(--office-ink); font-size:.86rem; }
+    .office-step p { color:var(--office-muted); font-size:.78rem; margin:4px 0 0; line-height:1.5; }
+    .office-promo {
+      height:100%; border-radius:21px; color:white; padding:28px;
+      background:linear-gradient(130deg,#242364,#5034a0 65%,#703fba);
+      display:flex; flex-direction:column; justify-content:space-between;
+      overflow:hidden; position:relative;
+    }
+    .office-promo h3 { font-size:1.45rem; font-weight:850; letter-spacing:-.03em; }
+    .office-promo p { color:#dcd9fd; line-height:1.65; font-size:.87rem; max-width:430px; }
+    .office-empty { display:none; border:1px dashed var(--office-border); border-radius:15px; background:var(--office-surface); padding:30px; text-align:center; color:var(--office-muted); }
+    .office-foot { margin-top:32px; padding-top:16px; border-top:1px solid var(--office-border); color:var(--office-muted); font-size:.75rem; }
+    @media (max-width: 767px) {
+      .office-top { border-radius:20px; }
+      .office-toolbar { border-radius:16px; }
+      .office-card { min-height:210px; }
+      .office-hint { display:none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tf-office * { transition:none !important; }
+    }
+
+  .tf-office.tfu-page
+    section.office-top.tfu-hero(aria-label="Bienvenida al centro de operaciones")
+      .office-layer
+        .row.g-4.align-items-center
+          .col-lg-8
+            .office-kicker ◈ Centro de operaciones · TurnoFlex
+            h1.office-hello Hola, #{nombreAdmin}
+            p.office-description
+              | Todo tu centro médico, organizado en un solo lugar. Gestioná turnos,
+              |  pacientes y profesionales con acceso rápido a cada herramienta.
+            .d-flex.flex-wrap.gap-2.mt-4
+              a.office-primary-btn(href="/turnos/nuevo")
+                span(aria-hidden="true") ＋
+                span Crear nuevo turno
+              a.office-secondary-btn(href="/dashboard")
+                span(aria-hidden="true") ◈
+                span Ver panel gerencial
+          .col-lg-4
+            .office-clock-card
+              .office-clock-label Hoy en tu consultorio
+              .office-time#officeClock --:--
+              .office-date#officeDate Cargando fecha...
+              .office-live
+                span.office-live-dot(aria-hidden="true")
+                span Sesión de administrador
+
+    //- Barra de búsqueda: filtra accesos sin consultar pacientes ni datos privados.
+    .office-toolbar
+      .office-search-wrap
+        label.visually-hidden(for="officeSearch") Buscar sección de TurnoFlex
+        span.office-search-icon(aria-hidden="true") ⌕
+        input#officeSearch.office-search(type="search" placeholder="Buscar turnos, pacientes, profesionales, reportes..." autocomplete="off")
+      .office-hint Presioná #[kbd /] para buscar
+      span.office-hint#officeSearchCount(role="status" aria-live="polite") 4 secciones disponibles
+
+    section(aria-labelledby="officeQuickTitle")
+      .office-section
+        .office-eyebrow Tu trabajo, más simple
+        h2#officeQuickTitle Acciones rápidas
+        p Lo que más usás, a un clic de distancia.
+      .row.g-3
+        .col-md-4
+          a.office-action.tfu-card(href="/turnos/nuevo" style="--color-main:#4e75ee;--color-soft:rgba(78,117,238,.12)")
+            span.office-action-ico(aria-hidden="true") 📅
+            span
+              span.office-action-title Nuevo turno
+              span.office-action-description Crear una reserva médica
+        .col-md-4
+          a.office-action.tfu-card(href="/clientes/nuevo" style="--color-main:#8b5cf6;--color-soft:rgba(139,92,246,.12)")
+            span.office-action-ico(aria-hidden="true") 👤
+            span
+              span.office-action-title Nuevo paciente
+              span.office-action-description Registrar un paciente
+        .col-md-4
+          a.office-action.tfu-card(href="/profesionales/nuevo" style="--color-main:#059669;--color-soft:rgba(5,150,105,.12)")
+            span.office-action-ico(aria-hidden="true") 🩺
+            span
+              span.office-action-title Nuevo profesional
+              span.office-action-description Incorporar al equipo médico
+
+    section(aria-labelledby="officeModulesTitle")
+      .office-section
+        .office-eyebrow Áreas de trabajo
+        h2#officeModulesTitle ¿Qué necesitás gestionar?
+        p Elegí un módulo o buscá directamente por nombre.
+      .row.g-4#officeModules
+        .col-md-6.col-xl-3.office-searchable(data-label="turnos agenda reservas pagos cancelaciones")
+          a.office-card.tfu-card(href="/turnos" style="--color-main:#4e75ee;--color-soft:rgba(78,117,238,.12)")
+            span.office-card-ico(aria-hidden="true") 📆
+            h3 Agenda y turnos
+            p Consultá reservas, horarios, cambios de estado y disponibilidad.
+            span.office-card-link Abrir agenda →
+        .col-md-6.col-xl-3.office-searchable(data-label="pacientes clientes personas contactos perfiles")
+          a.office-card.tfu-card(href="/clientes" style="--color-main:#8b5cf6;--color-soft:rgba(139,92,246,.12)")
+            span.office-card-ico(aria-hidden="true") 👥
+            h3 Pacientes
+            p Administrá perfiles y datos de contacto desde un mismo lugar.
+            span.office-card-link Ver pacientes →
+        .col-md-6.col-xl-3.office-searchable(data-label="profesionales médicos doctores especialidades horarios staff")
+          a.office-card.tfu-card(href="/profesionales" style="--color-main:#059669;--color-soft:rgba(5,150,105,.12)")
+            span.office-card-ico(aria-hidden="true") 🩺
+            h3 Profesionales
+            p Gestioná especialidades, disponibilidad y equipo médico.
+            span.office-card-link Ver profesionales →
+        .col-md-6.col-xl-3.office-searchable(data-label="dashboard inteligencia gerencial estadísticas indicadores reportes análisis")
+          a.office-card.tfu-card(href="/dashboard" style="--color-main:#d97706;--color-soft:rgba(217,119,6,.12)")
+            span.office-card-ico(aria-hidden="true") 📊
+            h3 Estadísticas
+            p Visualizá la información gerencial y el rendimiento de TurnoFlex.
+            span.office-card-link Explorar reportes →
+      .office-empty#officeSearchEmpty(role="status")
+        strong No encontramos esa sección.
+        p.mb-0.mt-1 Probá con “turnos”, “pacientes”, “profesionales” o “reportes”.
+
+    section(aria-labelledby="officeWorkflowTitle")
+      .office-section
+        .office-eyebrow Trabajo organizado
+        h2#officeWorkflowTitle Una jornada más ordenada
+        p Un flujo simple para atender cada día.
+      .row.g-4
+        .col-lg-5
+          .office-note.tfu-card
+            .office-step
+              span.office-step-number 1
+              div
+                strong Revisar la agenda
+                p Comprobá los turnos próximos y los horarios disponibles.
+            .office-step
+              span.office-step-number 2
+              div
+                strong Gestionar la atención
+                p Actualizá pacientes y coordiná con los profesionales.
+            .office-step
+              span.office-step-number 3
+              div
+                strong Analizar resultados
+                p Consultá el panel gerencial para tomar decisiones.
+        .col-lg-7
+          .office-promo
+            div
+              .office-kicker(style="color:#d6d2ff") ◈ TurnoFlex Intelligence
+              h3.mt-3 Tu información, en perspectiva
+              p.mt-2.mb-4
+                | Accedé al panel gerencial para consultar indicadores de atención,
+                |  actividad y evolución de los turnos.
+            div
+              a.office-primary-btn(href="/dashboard")
+                span Ir al panel de estadísticas
+                span(aria-hidden="true") →
+
+    .office-foot.d-flex.justify-content-between.flex-wrap.gap-2
+      span TurnoFlex · Gestión Médica Inteligente
+      span Centro de operaciones · Administrador
+
+  script.
+    (() => {
+      const reloj = document.getElementById('officeClock');
+      const fecha = document.getElementById('officeDate');
+      const buscador = document.getElementById('officeSearch');
+      const contador = document.getElementById('officeSearchCount');
+      const vacio = document.getElementById('officeSearchEmpty');
+      const modulos = Array.from(document.querySelectorAll('.office-searchable'));
+      const zona = 'America/Argentina/Buenos_Aires';
+
+      function actualizarReloj() {
+        const ahora = new Date();
+        if (reloj) {
+          reloj.textContent = new Intl.DateTimeFormat('es-AR', {
+            timeZone: zona, hour: '2-digit', minute: '2-digit', hour12: false
+          }).format(ahora);
+        }
+        if (fecha) {
+          fecha.textContent = new Intl.DateTimeFormat('es-AR', {
+            timeZone: zona, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+          }).format(ahora);
+        }
+      }
+
+      function normalizar(texto) {
+        return String(texto || '').normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+      }
+
+      function filtrar() {
+        const busqueda = normalizar(buscador?.value);
+        let visibles = 0;
+        modulos.forEach((modulo) => {
+          const coincide = normalizar(modulo.dataset.label).includes(busqueda);
+          modulo.hidden = !coincide;
+          modulo.style.display = coincide ? '' : 'none';
+          if (coincide) visibles++;
+        });
+        if (contador) contador.textContent = `${visibles} ${visibles === 1 ? 'sección disponible' : 'secciones disponibles'}`;
+        if (vacio) vacio.style.display = visibles ? 'none' : 'block';
+      }
+
+      buscador?.addEventListener('input', filtrar);
+      document.addEventListener('keydown', (evento) => {
+        const destino = evento.target;
+        const escribiendo = destino && (
+          destino.matches?.('input, textarea, select') || destino.isContentEditable
+        );
+        if (evento.key === '/' && !escribiendo) {
+          evento.preventDefault();
+          buscador?.focus();
+        }
+        if (evento.key === 'Escape' && document.activeElement === buscador) {
+          buscador.value = '';
+          filtrar();
+          buscador.blur();
+        }
+      });
+
+      actualizarReloj();
+      setInterval(actualizarReloj, 30000);
+      filtrar();
+    })();
