@@ -1,0 +1,273 @@
+doctype html
+html(lang='es' data-tf-theme='dark')
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport' content='width=device-width, initial-scale=1.0')
+    meta(name='theme-color' content='#0B1535')
+    meta(name='description' content='TurnoFlex: una forma moderna y organizada de gestionar turnos médicos, profesionales y pacientes.')
+    title TurnoFlex | Tu salud, más cerca que nunca
+    //- Unico JS (tema + interacciones) y unico CSS (marca + temas).
+    script(src='/js/turnoflex.js?v=1')
+    link(rel='stylesheet' href='/css/turnoflex.css?v=header1')
+    link(rel='icon' type='image/svg+xml' href='/favicon.svg')
+    link(rel='preconnect' href='https://cdn.jsdelivr.net' crossorigin)
+    link(rel='stylesheet' href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css')
+  body.tfp-page.tfp-welcome
+    a.tfp-skip(href='#contenido') Saltar al contenido
+
+    - const tfHeaderContext = 'bienvenida'
+    include partials/header-public
+    main#contenido
+      section.tfp-hero(aria-labelledby='titulo-bienvenida')
+        .tfp-glow.tfp-glow-one(aria-hidden='true')
+        .tfp-glow.tfp-glow-two(aria-hidden='true')
+        .tfp-shell.tfp-hero-grid
+          .tfp-hero-copy
+            span.tfp-eyebrow
+              i.bi.bi-stars(aria-hidden='true')
+              |  UNA FORMA MÁS INTELIGENTE DE GESTIONAR LA SALUD
+            h1#titulo-bienvenida Tu salud, #[span.tfp-gradient-text más cerca] que nunca.
+            p.tfp-lead TurnoFlex conecta pacientes, profesionales y equipos de recepción en una experiencia más clara y organizada. Menos tiempo gestionando, más tiempo para lo importante.
+            .tfp-hero-actions
+              a.tfp-btn.tfp-btn-gradient.tfp-btn-lg(href='/auth/register')
+                i.bi.bi-calendar2-check(aria-hidden='true')
+                |  Crear mi cuenta
+                i.bi.bi-arrow-right(aria-hidden='true')
+              a.tfp-btn.tfp-btn-outline.tfp-btn-lg(href='#como-funciona')
+                i.bi.bi-play-circle(aria-hidden='true')
+                |  Ver cómo funciona
+            .tfp-hero-trust
+              span
+                i.bi.bi-check-circle-fill(aria-hidden='true')
+                |  Agenda centralizada
+              span
+                i.bi.bi-check-circle-fill(aria-hidden='true')
+                |  Acceso por perfiles
+              span
+                i.bi.bi-check-circle-fill(aria-hidden='true')
+                |  Recordatorios integrados
+
+          //- Panel ilustrativo retirado
+            .tfp-orb.tfp-orb-top(aria-hidden='true')
+            .tfp-orb.tfp-orb-bottom(aria-hidden='true')
+            .tfp-product
+              .tfp-product-topbar
+                span.tfp-mini-brand
+                  span.tfp-mini-mark T
+                  |  TurnoFlex
+                span.tfp-demo-chip
+                  span.tfp-online-dot
+                  |  Vista de ejemplo
+              .tfp-product-layout
+                aside.tfp-product-sidebar(aria-label='Secciones ilustrativas')
+                  span.tfp-demo-side-active
+                    i.bi.bi-grid-1x2(aria-hidden='true')
+                    |  Inicio
+                  span
+                    i.bi.bi-calendar3(aria-hidden='true')
+                    |  Turnos
+                  span
+                    i.bi.bi-people(aria-hidden='true')
+                    |  Pacientes
+                  span
+                    i.bi.bi-stethoscope(aria-hidden='true')
+                    |  Profesionales
+                  span
+                    i.bi.bi-graph-up(aria-hidden='true')
+                    |  Reportes
+                .tfp-product-main
+                  .tfp-demo-head
+                    div
+                      span.tfp-label-small CENTRO DE OPERACIONES
+                      h2 Un día más organizado.
+                    i.bi.bi-calendar-week(aria-hidden='true')
+                  .tfp-demo-stats
+                    .tfp-demo-stat
+                      i.bi.bi-calendar-check(aria-hidden='true')
+                      strong Turnos
+                      small Agenda del día
+                    .tfp-demo-stat
+                      i.bi.bi-person-heart(aria-hidden='true')
+                      strong Pacientes
+                      small Seguimiento claro
+                    .tfp-demo-stat
+                      i.bi.bi-bell(aria-hidden='true')
+                      strong Avisos
+                      small Recordatorios
+                  .tfp-demo-columns
+                    .tfp-demo-appointments
+                      .tfp-demo-section-title
+                        strong Agenda de ejemplo
+                        i.bi.bi-three-dots(aria-hidden='true')
+                      .tfp-demo-appointment
+                        span.tfp-demo-time 09:00
+                        span.tfp-demo-avatar AM
+                        span.tfp-demo-person
+                          strong Paciente de ejemplo A
+                          small Control médico
+                        span.tfp-demo-status Reservado
+                      .tfp-demo-appointment
+                        span.tfp-demo-time 10:30
+                        span.tfp-demo-avatar.tfp-demo-avatar-alt BL
+                        span.tfp-demo-person
+                          strong Paciente de ejemplo B
+                          small Consulta general
+                        span.tfp-demo-status.tfp-demo-status-done Atendido
+                      .tfp-demo-appointment
+                        span.tfp-demo-time 12:00
+                        span.tfp-demo-avatar.tfp-demo-avatar-third CR
+                        span.tfp-demo-person
+                          strong Paciente de ejemplo C
+                          small Consulta clínica
+                        span.tfp-demo-status Reservado
+                    .tfp-demo-next
+                      i.bi.bi-calendar-heart(aria-hidden='true')
+                      span Próxima consulta
+                      strong Tu agenda, a mano.
+                      p Consultá tus próximos turnos desde un solo lugar.
+                      span.tfp-demo-pill Ver mi agenda
+            .tfp-float.tfp-float-top(aria-hidden='true')
+              i.bi.bi-bell-fill
+              span
+                strong Recordatorios
+                small WhatsApp conectado
+            .tfp-float.tfp-float-right(aria-hidden='true')
+              i.bi.bi-shield-check
+              span
+                strong Accesos por rol
+                small Cada perfil, su espacio
+            .tfp-float.tfp-float-bottom(aria-hidden='true')
+              i.bi.bi-stars
+              span
+                strong Gestión simple
+                small Más claridad cada día
+            p.tfp-demo-caption Demostración visual. Los nombres y turnos no corresponden a pacientes reales.
+
+        .tfp-shell.tfp-advantages
+          .tfp-advantage
+            i.bi.bi-calendar2-week(aria-hidden='true')
+            div
+              strong Todo en una agenda
+              small Turnos organizados
+          .tfp-advantage
+            i.bi.bi-people(aria-hidden='true')
+            div
+              strong Perfiles personalizados
+              small Cada persona en su espacio
+          .tfp-advantage
+            i.bi.bi-bell(aria-hidden='true')
+            div
+              strong Avisos integrados
+              small Recordatorios útiles
+          .tfp-advantage
+            i.bi.bi-shield-lock(aria-hidden='true')
+            div
+              strong Acceso protegido
+              small Sesiones por usuario
+
+      section#beneficios.tfp-section(aria-labelledby='beneficios-titulo')
+        .tfp-shell
+          .tfp-section-head
+            span.tfp-kicker LO QUE IMPORTA
+            h2#beneficios-titulo Tecnología que hace más sencilla la atención.
+            p Herramientas para pacientes y equipos médicos que buscan un trabajo más ordenado.
+          .tfp-cards-three
+            article.tfp-feature-card
+              .tfp-feature-icon
+                i.bi.bi-calendar2-plus(aria-hidden='true')
+              h3 Turnos sin complicaciones
+              p Consultá reservas y organizá horarios desde un entorno intuitivo.
+              span Una agenda más clara
+            article.tfp-feature-card
+              .tfp-feature-icon.tfp-feature-blue
+                i.bi.bi-people-fill(aria-hidden='true')
+              h3 Una plataforma, cuatro perfiles
+              p Administración, recepción, profesionales y pacientes con espacios propios.
+              span Cada rol, su experiencia
+            article.tfp-feature-card
+              .tfp-feature-icon.tfp-feature-teal
+                i.bi.bi-chat-dots(aria-hidden='true')
+              h3 Recordatorios conectados
+              p Integración con WhatsApp para acompañar la comunicación sobre los turnos.
+              span Más cerca del paciente
+
+      section#como-funciona.tfp-section.tfp-section-tinted(aria-labelledby='pasos-titulo')
+        .tfp-shell
+          .tfp-section-head
+            span.tfp-kicker COMENZÁ EN MINUTOS
+            h2#pasos-titulo Así de fácil es empezar.
+            p Con una cuenta, podés acceder a las herramientas disponibles para tu perfil.
+          .tfp-steps
+            .tfp-step
+              span 01
+              i.bi.bi-person-plus(aria-hidden='true')
+              h3 Creá tu cuenta
+              p Registrate para acceder a tu espacio personal.
+            .tfp-step
+              span 02
+              i.bi.bi-search-heart(aria-hidden='true')
+              h3 Encontrá tu turno
+              p Elegí una de las opciones disponibles en el portal.
+            .tfp-step
+              span 03
+              i.bi.bi-calendar-check(aria-hidden='true')
+              h3 Consultá tu reserva
+              p Revisá el estado y la información de tu turno.
+
+      section#perfiles.tfp-section(aria-labelledby='perfiles-titulo')
+        .tfp-shell
+          .tfp-section-head
+            span.tfp-kicker PENSADO PARA VOS
+            h2#perfiles-titulo Un TurnoFlex para cada persona.
+          .tfp-roles
+            .tfp-role
+              i.bi.bi-person-heart(aria-hidden='true')
+              strong Pacientes
+              small Mis turnos y próximas consultas
+            .tfp-role
+              i.bi.bi-stethoscope(aria-hidden='true')
+              strong Profesionales
+              small Agenda médica personalizada
+            .tfp-role
+              i.bi.bi-headset(aria-hidden='true')
+              strong Recepción
+              small Agenda y atención al público
+            .tfp-role
+              i.bi.bi-gear-wide-connected(aria-hidden='true')
+              strong Administración
+              small Gestión integral de la plataforma
+
+      section#preguntas.tfp-section.tfp-section-tinted(aria-labelledby='preguntas-titulo')
+        .tfp-shell.tfp-faq-grid
+          .tfp-faq-intro
+            span.tfp-kicker TE AYUDAMOS
+            h2#preguntas-titulo Preguntas frecuentes.
+            p Todo lo que necesitás saber para dar el primer paso.
+            a.tfp-btn.tfp-btn-gradient(href='/auth/register') Crear cuenta
+              i.bi.bi-arrow-right(aria-hidden='true')
+          .tfp-faq-list
+            details.tfp-faq
+              summary ¿Cómo empiezo a usar TurnoFlex?
+              p Podés crear una cuenta y acceder al portal según el rol que tengas asignado.
+            details.tfp-faq
+              summary ¿Qué puedo consultar como paciente?
+              p Tus reservas, próximas consultas y los detalles disponibles en tu portal.
+            details.tfp-faq
+              summary ¿TurnoFlex tiene recordatorios?
+              p Incluye integración con WhatsApp. El envío depende de la conexión y de que el servicio esté en funcionamiento.
+            details.tfp-faq
+              summary ¿Puedo ingresar desde el celular?
+              p Sí, el diseño se adapta a pantallas de distintos tamaños.
+
+      section.tfp-bottom-cta(aria-labelledby='cta-titulo')
+        .tfp-shell.tfp-cta-panel
+          div
+            span.tfp-kicker TU SALUD, TU TIEMPO
+            h2#cta-titulo Empezá con una experiencia más simple.
+            p Tu próximo turno y la información que necesitás, en un mismo lugar.
+          .tfp-cta-actions
+            a.tfp-btn.tfp-btn-light(href='/auth/register') Crear cuenta
+              i.bi.bi-arrow-right(aria-hidden='true')
+            a.tfp-btn.tfp-btn-outline(href='/auth/login') Ya tengo cuenta
+
+    include partials/footer
