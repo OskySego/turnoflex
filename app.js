@@ -26,12 +26,8 @@ app.set('views', path.join(process.cwd(), 'src/views'));
 
 // Página principal
 app.get('/', (req, res) => {
-  res.render('inicio', {
-    tituloPage: 'Inicio - TurnoFlex'
-  });
+  res.render('bienvenida');
 });
-
-// ✨ SOLUCIÓN AL ERROR 404 DE BIENVENIDA ✨
 // Agregamos la ruta para que responda cuando el navegador la pida
 app.get('/bienvenida', (req, res) => {
   res.render('bienvenida'); 
