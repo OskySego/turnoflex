@@ -1,2 +1,3 @@
-2026/11/01-19:28:27.704 3cec Creating DB C:\Users\Osky Segovia\turnoflex\.wwebjs_auth\session\Default\GCM Store since it was missing.
-2026/11/01-19:28:27.710 3cec Reusing MANIFEST C:\Users\Osky Segovia\turnoflex\.wwebjs_auth\session\Default\GCM Store/MANIFEST-000001
+2026/11/01-20:06:55.246 3be8 Reusing MANIFEST C:\Users\Osky Segovia\turnoflex\.wwebjs_auth\session\Default\GCM Store/MANIFEST-000001
+2026/11/01-20:06:55.247 3be8 Recovering log #3
+2026/11/01-20:06:55.247 3be8 Reusing old log C:\Users\Osky Segovia\turnoflex\.wwebjs_auth\session\Default\GCM Store/000003.log 
