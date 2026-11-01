@@ -18,6 +18,17 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Configuración de sesiones
+app.use(session({
+  secret: process.env.JWT_SECRET || 'turnoflex_secreto',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { 
+    secure: false, // Dejar en false para localhost
+    httpOnly: true 
+  }
+}));
+
 // ✨ SOLUCIÓN AL ERROR 404 DE CSS Y JS ✨
 // Habilita la lectura de archivos estáticos en la carpeta "public"
 app.use(express.static(path.join(process.cwd(), 'public')));
