@@ -1,43 +1,578 @@
 extends layout
 
 block content
-  .d-flex.justify-content-between.align-items-center.mb-4.flex-wrap.gap-3
-    div
-      h2.mb-1.fw-bold Clientes
-      p.text-muted.mb-0 Clientes registrados en TurnoFlex
 
-    .d-flex.align-items-center.gap-2
-      span.badge.bg-primary.fs-6.px-3.py-2
-        | #{clientes ? clientes.length : 0} clientes
+  style.
+    .tf-pacientes-header {
+      padding: 25px;
+      margin-bottom: 24px;
+      border-radius: 22px;
+      color: #fff;
+      background:
+        radial-gradient(circle at 88% 5%, rgba(139,92,246,.40), transparent 30%),
+        linear-gradient(135deg, #08132e 0%, #0D1B3E 60%, #312e81 100%);
+    }
 
-      a.btn.btn-outline-secondary.rounded-3(href="/")
-        | Volver al inicio
+    .tf-pacientes-header p {
+      color: rgba(255,255,255,.65);
+    }
 
-      a.btn.btn-primary.rounded-3(href="/clientes/nuevo")
-        | + Nuevo cliente
+    .tf-search-box {
+      position: relative;
+    }
+
+    .tf-search-box input {
+      height: 46px;
+      padding-left: 42px;
+      border-radius: 14px;
+    }
+
+    .tf-search-icon {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #8B5CF6;
+      font-size: 1rem;
+      z-index: 2;
+    }
+
+    .tf-filter-btn {
+      padding: 7px 13px;
+      border-radius: 999px;
+      font-size: .72rem;
+      font-weight: 750;
+    }
+
+    .tf-paciente-card {
+      transition:
+        transform .2s ease,
+        box-shadow .2s ease;
+      border: 1px solid var(--tf-border, #e5e7eb) !important;
+    }
+
+    .tf-paciente-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 14px 32px rgba(13,27,62,.11) !important;
+    }
+
+    .tf-avatar {
+      width: 54px;
+      height: 54px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 16px;
+      color: #fff;
+      background: linear-gradient(135deg, #2563eb, #8B5CF6);
+      font-weight: 900;
+      font-size: 1rem;
+      box-shadow: 0 7px 18px rgba(139,92,246,.20);
+    }
+
+    .tf-patient-code {
+      font-size: .61rem;
+      font-weight: 800;
+      color: #8B5CF6;
+      letter-spacing: .06em;
+    }
+
+    .tf-data-box {
+      padding: 12px 13px;
+      border-radius: 13px;
+      background: rgba(139,92,246,.055);
+    }
+
+    [data-bs-theme="dark"] .tf-data-box {
+      background: rgba(255,255,255,.04);
+    }
+
+    .tf-label {
+      display: block;
+      margin-bottom: 3px;
+      color: #6b7280;
+      font-size: .60rem;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .tf-contact-row {
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(128,128,128,.12);
+      font-size: .75rem;
+    }
+
+    .tf-contact-row:last-child {
+      border-bottom: none;
+    }
+
+    .tf-coverage {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 9px;
+      border-radius: 9px;
+      font-size: .66rem;
+      font-weight: 800;
+    }
+
+    .tf-coverage-social {
+      color: #6d28d9;
+      background: rgba(139,92,246,.11);
+    }
+
+    .tf-coverage-private {
+      color: #0369a1;
+      background: rgba(14,165,233,.10);
+    }
+
+    [data-bs-theme="dark"] .tf-coverage-social {
+      color: #c4b5fd;
+    }
+
+    [data-bs-theme="dark"] .tf-coverage-private {
+      color: #7dd3fc;
+    }
+
+    .tf-empty-search {
+      display: none;
+      padding: 45px 20px;
+      text-align: center;
+    }
+
+
+  //- ============================================================
+  //- CABECERA
+  //- ============================================================
+
+  .tf-pacientes-header.tfu-hero
+
+    .d-flex.justify-content-between.align-items-center.flex-wrap.gap-3
+
+      div
+
+        small.text-uppercase.fw-bold(
+          style="color:#c4b5fd;"
+        )
+          | Gestión Médica
+
+        h2.mb-1.fw-bold
+          | Pacientes
+
+        p.mb-0
+          | Administración de datos personales, contacto y cobertura médica
+
+
+      .d-flex.flex-wrap.align-items-center.gap-2
+
+        span.badge.rounded-pill.px-3.py-2(
+          style="background:rgba(255,255,255,.12);"
+        )
+          | #{clientes ? clientes.length : 0} registrados
+
+        a.btn.btn-light.rounded-3(
+          href="/"
+        )
+          | Inicio
+
+        if user && (user.rol === 'admin' || user.rol === 'personal')
+
+          a.btn.text-white.rounded-3(
+            href="/clientes/nuevo"
+            style="background:#8B5CF6;"
+          )
+            | + Nuevo paciente
+
+
+  //- ============================================================
+  //- BUSCADOR Y FILTROS
+  //- ============================================================
+
+  if clientes && clientes.length > 0
+
+    .card.border-0.shadow-sm.rounded-4.mb-4.tfu-card
+
+      .card-body.p-3.p-md-4
+
+        .row.g-3.align-items-center
+
+          .col-lg-6
+
+            .tf-search-box
+
+              span.tf-search-icon
+                | ⌕
+
+              input.form-control(
+                type="search"
+                id="buscarPaciente"
+                placeholder="Buscar por nombre, DNI, email, teléfono o cobertura..."
+                autocomplete="off"
+              )
+
+
+          .col-lg-6
+
+            .d-flex.flex-wrap.gap-2.justify-content-lg-end
+
+              button.btn.btn-primary.tf-filter-btn(
+                type="button"
+                data-cobertura="todos"
+              )
+                | Todos
+
+              button.btn.btn-outline-primary.tf-filter-btn(
+                type="button"
+                data-cobertura="obra_social"
+              )
+                | Obra social
+
+              button.btn.btn-outline-info.tf-filter-btn(
+                type="button"
+                data-cobertura="particular"
+              )
+                | Particular
+
+
+  //- ============================================================
+  //- SIN PACIENTES
+  //- ============================================================
 
   if !clientes || clientes.length === 0
-    .alert.alert-info.shadow-sm.rounded-3
-      | No hay clientes registrados actualmente.
+
+    .card.border-0.shadow-sm.rounded-4.tfu-card
+
+      .card-body.text-center.p-5
+
+        .display-6.mb-3
+          | ♡
+
+        h5.fw-bold
+          | No hay pacientes registrados
+
+        p.text-muted.mb-4
+          | Los pacientes registrados aparecerán en este panel.
+
+        if user && (user.rol === 'admin' || user.rol === 'personal')
+
+          a.btn.btn-primary.rounded-3.px-4(
+            href="/clientes/nuevo"
+          )
+            | Registrar paciente
+
+
+  //- ============================================================
+  //- GRILLA DE PACIENTES
+  //- ============================================================
 
   else
-    .row.g-4
+
+    #pacientesGrid.row.g-4
+
       each cliente in clientes
+
         - const clienteId = cliente._id || cliente.id
-        .col-md-4
-          .card.border-0.rounded-4.shadow-sm.h-100
-            .card-body.p-4.d-flex.flex-column.justify-content-between
-              div
-                .d-flex.align-items-center.mb-3
-                  .bg-primary.bg-opacity-10.text-primary.rounded-circle.d-flex.align-items-center.justify-content-center.me-3.fw-bold.fs-5(style="width:48px; height:48px; flex-shrink:0;")
-                    | #{cliente.nombre ? cliente.nombre.substring(0, 2).toUpperCase() : 'CN'}
-                  div
-                    h3.h5.card-title.fw-bold.mb-0= cliente.nombre
-                    p.text-muted.small.mb-0= cliente.email || 'Sin email registrado'
+        - const nombre = cliente.nombre || 'Paciente'
+        - const partesNombre = nombre.split(' ').filter(Boolean)
+        - const inicial1 = partesNombre.length > 0 ? partesNombre[0].charAt(0) : 'P'
+        - const inicial2 = partesNombre.length > 1 ? partesNombre[1].charAt(0) : ''
+        - const iniciales = (inicial1 + inicial2).toUpperCase()
+        - const empresa = cliente.obraSocial && cliente.obraSocial.empresa ? cliente.obraSocial.empresa : ''
+        - const plan = cliente.obraSocial && cliente.obraSocial.plan ? cliente.obraSocial.plan : ''
+        - const localidad = cliente.domicilio && cliente.domicilio.localidad ? cliente.domicilio.localidad : ''
+        - const familiares = cliente.grupoFamiliar && Array.isArray(cliente.grupoFamiliar) ? cliente.grupoFamiliar.length : 0
+        - const tipoCobertura = empresa ? 'obra_social' : 'particular'
+        - const codigoPaciente = clienteId ? 'PAC-' + clienteId.toString().slice(-5).toUpperCase() : 'PAC-00000'
 
-                .bg-light.p-3.rounded-3.mb-3
-                  p.text-muted.small.mb-1.text-uppercase.fw-bold TELÉFONO / CONTACTO
-                  p.small.text-dark.fw-medium.mb-0= cliente.telefono || 'N/D'
+        .col-xl-4.col-lg-6.paciente-wrapper(
+          data-cobertura=tipoCobertura
+          data-search=`${nombre} ${cliente.dni || ''} ${cliente.email || ''} ${cliente.telefono || ''} ${empresa} ${plan} ${localidad}`.toLowerCase()
+        )
 
-              div.pt-2
-                a.btn.btn-outline-primary.w-100.rounded-3(href=`/clientes/${clienteId}`) Ver detalle
+          .card.tf-paciente-card.border-0.shadow-sm.rounded-4.h-100.tfu-card
+
+            .card-body.p-4.d-flex.flex-column
+
+
+              //- ==================================================
+              //- IDENTIDAD
+              //- ==================================================
+
+              .d-flex.align-items-center.gap-3.mb-4
+
+                .tf-avatar
+                  = iniciales
+
+                div.flex-grow-1
+
+                  span.tf-patient-code
+                    = codigoPaciente
+
+                  h5.fw-bold.mb-1
+                    = nombre
+
+                  p.text-muted.small.mb-0
+                    = cliente.email || 'Sin email registrado'
+
+
+              //- ==================================================
+              //- DNI + LOCALIDAD
+              //- ==================================================
+
+              .row.g-2.mb-3
+
+                .col-6
+
+                  .tf-data-box.h-100
+
+                    span.tf-label
+                      | DNI
+
+                    strong.small
+                      = cliente.dni || 'N/D'
+
+
+                .col-6
+
+                  .tf-data-box.h-100
+
+                    span.tf-label
+                      | Localidad
+
+                    strong.small
+                      = localidad || 'N/D'
+
+
+              //- ==================================================
+              //- CONTACTO
+              //- ==================================================
+
+              .mb-3
+
+                .tf-contact-row
+
+                  span.tf-label
+                    | Teléfono / WhatsApp
+
+                  strong
+                    = cliente.telefono || 'N/D'
+
+
+                .tf-contact-row
+
+                  span.tf-label
+                    | Correo electrónico
+
+                  span.text-muted
+                    = cliente.email || 'N/D'
+
+
+              //- ==================================================
+              //- COBERTURA
+              //- ==================================================
+
+              .mb-3
+
+                span.tf-label.mb-2
+                  | Cobertura médica
+
+                if empresa
+
+                  span.tf-coverage.tf-coverage-social
+                    | ✚ #{empresa}
+
+                  if plan
+
+                    small.text-muted.d-block.mt-2
+                      | Plan: #{plan}
+
+                  if cliente.obraSocial && cliente.obraSocial.numeroAfiliado
+
+                    small.text-muted.d-block
+                      | Afiliado: #{cliente.obraSocial.numeroAfiliado}
+
+                else
+
+                  span.tf-coverage.tf-coverage-private
+                    | Particular
+
+
+              //- ==================================================
+              //- GRUPO FAMILIAR
+              //- ==================================================
+
+              if familiares > 0
+
+                .mb-3
+
+                  span.badge.rounded-pill.bg-secondary.bg-opacity-10.text-secondary.px-3.py-2
+                    | 👥 #{familiares} familiar#{familiares === 1 ? '' : 'es'} registrado#{familiares === 1 ? '' : 's'}
+
+
+              //- ==================================================
+              //- ACCIONES
+              //- ==================================================
+
+              .mt-auto.pt-2
+
+                .d-grid.gap-2
+
+                  a.btn.btn-outline-primary.rounded-3.fw-bold(
+                    href=`/clientes/${clienteId}`
+                  )
+                    | Ver ficha completa
+
+                  if user && (user.rol === 'admin' || user.rol === 'personal')
+
+                    a.btn.btn-primary.rounded-3(
+                      href=`/turnos/nuevo?cliente=${clienteId}`
+                    )
+                      | + Nuevo turno
+
+
+    //- ============================================================
+    //- SIN RESULTADOS DE BÚSQUEDA
+    //- ============================================================
+
+    #sinResultados.tf-empty-search
+
+      .display-6.mb-2
+        | ⌕
+
+      h5.fw-bold
+        | No encontramos pacientes
+
+      p.text-muted.mb-0
+        | Probá con otro nombre, DNI, teléfono, email o cobertura.
+
+
+  //- ============================================================
+  //- BÚSQUEDA Y FILTROS
+  //- ============================================================
+
+  script.
+    document.addEventListener('DOMContentLoaded', function () {
+
+      const buscador =
+        document.getElementById('buscarPaciente');
+
+      const tarjetas =
+        Array.from(
+          document.querySelectorAll('.paciente-wrapper')
+        );
+
+      // Seleccionar únicamente los botones de filtro.
+      // No incluir las tarjetas de pacientes.
+
+      const botones =
+        document.querySelectorAll('button.tf-filter-btn[data-cobertura]'
+        );
+
+      const sinResultados =
+        document.getElementById('sinResultados');
+
+      let coberturaActiva =
+        'todos';
+
+
+      function aplicarFiltros() {
+
+        const texto =
+          buscador
+            ? buscador.value.toLowerCase().trim()
+            : '';
+
+        let visibles =
+          0;
+
+
+        tarjetas.forEach(function (tarjeta) {
+
+          const contenido =
+            tarjeta.dataset.search || '';
+
+          const cobertura =
+            tarjeta.dataset.cobertura || 'particular';
+
+          const coincideTexto =
+            !texto ||
+            contenido.includes(texto);
+
+          const coincideCobertura =
+            coberturaActiva === 'todos' ||
+            cobertura === coberturaActiva;
+
+
+          if (
+            coincideTexto &&
+            coincideCobertura
+          ) {
+
+            tarjeta.style.display = '';
+
+            visibles++;
+
+          } else {
+
+            tarjeta.style.display = 'none';
+
+          }
+
+        });
+
+
+        if (sinResultados) {
+
+          sinResultados.style.display =
+            visibles === 0
+              ? 'block'
+              : 'none';
+
+        }
+
+      }
+
+
+      if (buscador) {
+
+        buscador.addEventListener(
+          'input',
+          aplicarFiltros
+        );
+
+      }
+
+
+      botones.forEach(function (boton) {
+
+        boton.addEventListener(
+          'click',
+          function () {
+
+            coberturaActiva =
+              boton.dataset.cobertura;
+
+
+            botones.forEach(function (btn) {
+
+              btn.className =
+                btn.dataset.cobertura === 'particular'
+                  ? 'btn btn-outline-info tf-filter-btn'
+                  : 'btn btn-outline-primary tf-filter-btn';
+
+            });
+
+
+            boton.className =
+              'btn btn-primary tf-filter-btn';
+
+
+            aplicarFiltros();
+
+          }
+        );
+
+      });
+
+    });

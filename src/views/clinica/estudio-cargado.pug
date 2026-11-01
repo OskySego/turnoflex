@@ -1,0 +1,23 @@
+extends ../layout
+
+block content
+  .container.py-4(style='max-width:720px')
+    .alert.alert-success(role='status')
+      h1.h4.mb-1 Estudio incorporado
+      p.mb-0 Se agregó al expediente del paciente. Quedó pendiente de revisión médica.
+    .card
+      .card-body
+        p.mb-1
+          strong Paciente:
+          |  #{paciente.nombre}
+        p.mb-1
+          strong Tipo:
+          |  #{estudio.tipoEstudio}
+        p.mb-1
+          strong Archivo:
+          |  #{estudio.nombreOriginal}
+        p.mb-0
+          strong Estado:
+          |  Pendiente de revisión
+    a.btn.btn-primary.mt-3(href=`/clinica/pacientes/${paciente._id}/estudios/nuevo`) Adjuntar otro estudio
+    a.btn.btn-outline-secondary.mt-3.ms-2(href='/clientes') Volver a pacientes

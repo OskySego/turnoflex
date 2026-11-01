@@ -457,7 +457,7 @@ block content
                     else
                       | Copago de obra social
                 else
-                  span.badge.rounded-pill.bg-secondary Historial de seña (formato anterior)
+                  span.badge.rounded-pill.bg-secondary= turno.estadoPago === 'total_pagado' ? 'Pago registrado' : 'Importe a confirmar'
 
               if turno && turno.tipoCobro && turno.tipoCobro !== 'legacy'
                 .row.g-2.mb-3
@@ -471,7 +471,7 @@ block content
                     small.text-muted Total a abonar
                     p.fw-bold.fs-5.mb-0 $#{Number(turno.montoTotal || 0).toLocaleString('es-AR')}
               else if turno && turno.montoSena
-                p.text-muted.mb-3 Seña histórica: $#{Number(turno.montoSena).toLocaleString('es-AR')}
+                p.text-muted.mb-3= turno.estadoPago === 'pendiente' ? 'Importe a confirmar en recepci\u00f3n antes de pagar.' : 'Consult\u00e1 con recepci\u00f3n el detalle de los pagos registrados.'
 
               .row.g-3
                 .col-md-6
@@ -480,11 +480,11 @@ block content
                     if turno && turno.metodoPago === 'transferencia'
                       span.badge.bg-primary PagoFlex · Transferencia bancaria
                     else if turno && turno.metodoPago === 'pagoflex'
-                      span.badge.bg-secondary PagoFlex histórico (simulación)
+                      span.badge.bg-secondary PagoFlex (registro anterior)
                     else if turno && turno.metodoPago === 'mercadopago'
                       span.badge.bg-primary Mercado Pago
                     else if turno && turno.metodoPago === 'efectivo'
-                      span.badge.bg-success Efectivo / Sin cargo
+                      span.badge(class= turno.tipoCobro === 'legacy' && turno.estadoPago === 'pendiente' ? 'bg-secondary' : 'bg-success')= turno.tipoCobro === 'legacy' && turno.estadoPago === 'pendiente' ? 'Medio a confirmar' : (turno.tipoCobro === 'sin_cargo' || turno.estadoPago === 'sin_cargo' ? 'Sin cargo' : 'Efectivo')
                     else
                       span.badge.bg-secondary Sin definir
                 .col-md-6
@@ -495,7 +495,7 @@ block content
                     else if turno && turno.estadoPago === 'sin_cargo'
                       span.badge.bg-success No requiere pago
                     else if turno && turno.estadoPago === 'sena_pagada'
-                      span.badge.bg-info.text-dark Seña histórica abonada
+                      span.badge.bg-info.text-dark Pago parcial registrado
                     else if turno && turno.metodoPago === 'transferencia' && turno.transferencia && turno.transferencia.estado === 'informada'
                       span.badge.bg-warning.text-dark Transferencia en verificación
                     else
@@ -504,12 +504,12 @@ block content
               if turno && turno.estadoPago === 'pendiente' && !esFinalizado
                 .mt-3.pt-3.border-top
                   if turno.tipoCobro === 'legacy'
-                    p.small.text-muted Los turnos anteriores conservan su lógica de seña. Para probar copagos y descuentos utilizá una nueva reserva.
+                    p.small.text-muted= 'El importe de esta atenci\u00f3n debe ser confirmado por recepci\u00f3n seg\u00fan la cobertura.'
                   .d-flex.flex-wrap.align-items-center.gap-2
-                    if puedeGestionar && !(turno.mercadoPago && turno.mercadoPago.preferenceId) && !(turno.pagoFlex && turno.pagoFlex.ordenId) && turno.metodoPago !== 'transferencia'
+                    if puedeGestionar && turno.tipoCobro !== 'legacy' && turno.tipoCobro !== 'sin_cargo' && Number(turno.montoTotal || 0) > 0 && !(turno.mercadoPago && turno.mercadoPago.preferenceId) && !(turno.pagoFlex && turno.pagoFlex.ordenId) && turno.metodoPago !== 'transferencia'
                       form(action=`/turnos/${turnoId}/cobrar` method="POST")
                         button.btn.btn-success.fw-bold.rounded-3(type="submit") Registrar efectivo
-                    if turno.metodoPago !== 'transferencia' && (!turno.pagoFlex || !turno.pagoFlex.ordenId) && !(turno.mercadoPago && turno.mercadoPago.preferenceId)
+                    if turno.tipoCobro !== 'legacy' && turno.tipoCobro !== 'sin_cargo' && Number(turno.montoTotal || 0) > 0 && turno.metodoPago !== 'transferencia' && (!turno.pagoFlex || !turno.pagoFlex.ordenId) && !(turno.mercadoPago && turno.mercadoPago.preferenceId)
                       a.btn.btn-primary.fw-bold.rounded-3(href=`/turnos/${turnoId}/pagar-mp`) Pagar con Mercado Pago
                     if (puedeGestionar || esCliente) && (turno.tipoCobro === 'particular' || turno.tipoCobro === 'copago') && !(turno.mercadoPago && turno.mercadoPago.preferenceId) && !(turno.pagoFlex && turno.pagoFlex.ordenId) && turno.metodoPago !== 'mercadopago' && (!turno.transferencia || turno.transferencia.estado === 'sin_iniciar')
                       form(action=`/turnos/${turnoId}/transferencia/iniciar` method="POST")

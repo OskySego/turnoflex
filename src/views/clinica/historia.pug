@@ -1,0 +1,87 @@
+extends ../layout
+
+block content
+  - const formatoFecha = valor => valor ? new Date(valor).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }) : 'Sin fecha'
+  .container.py-4
+    .d-flex.justify-content-between.flex-wrap.align-items-center.gap-3.mb-4
+      div
+        p.text-primary.fw-bold.text-uppercase.small.mb-1 TurnoFlex · Área clínica
+        h1.h3.mb-1 Historia clínica
+        p.text-body-secondary.mb-0 #{paciente.nombre} · DNI #{paciente.dni || 'No informado'}
+      a.btn.btn-outline-secondary(href=esMedico ? '/medico/agenda' : '/') Volver
+
+    .alert.alert-warning(role='status')
+      strong Entorno de desarrollo.
+      |  Las evoluciones de esta etapa están pendientes de firma digital y no son válidas como historia clínica electrónica en producción.
+
+    section.mb-4(aria-labelledby='tituloNotas')
+      h2.h5#tituloNotas Evoluciones y registros médicos
+      if !notas.length
+        .card
+          .card-body.text-body-secondary Aún no hay evoluciones registradas.
+      else
+        each nota in notas
+          article.card.mb-3
+            .card-body
+              .d-flex.justify-content-between.flex-wrap.gap-2.mb-3
+                div
+                  strong= nota.tipo === 'rectificacion' ? 'Rectificación clínica' : 'Evolución clínica'
+                  p.text-body-secondary.small.mb-0= formatoFecha(nota.registradoEn)
+                span.badge.text-bg-warning Pendiente de firma digital
+              if nota.tipo === 'rectificacion'
+                p.small.text-body-secondary Referencia al registro: #{nota.rectificaNotaId}
+                p
+                  strong Motivo de rectificación:
+                  |  #{nota.motivoRectificacion}
+              p
+                strong Motivo de consulta:
+                |  #{nota.motivoConsulta}
+              if nota.anamnesis
+                p
+                  strong Anamnesis:
+                  |  #{nota.anamnesis}
+              if nota.examenFisico
+                p
+                  strong Examen físico:
+                  |  #{nota.examenFisico}
+              if nota.diagnostico
+                p
+                  strong Diagnóstico:
+                  |  #{nota.diagnostico}
+              if nota.indicaciones
+                p.mb-2
+                  strong Indicaciones:
+                  |  #{nota.indicaciones}
+              p.text-body-secondary.small.mb-2 Autor profesional (ID): #{nota.profesionalId}
+              //- Mostrar rectificación solo al profesional y usuario autor.
+              //- El servidor realiza nuevamente la misma validación.
+              if esMedico && String(nota.profesionalId) === String(profesionalActualId) && String(nota.usuarioAutorId) === String(usuarioClinicoId)
+                a.btn.btn-sm.btn-outline-primary(href=`/clinica/pacientes/${paciente._id}/evoluciones/${nota._id}/rectificar`) Rectificar con nuevo asiento
+
+    section(aria-labelledby='tituloEstudios')
+      h2.h5#tituloEstudios Estudios adjuntos
+      if !estudios.length
+        .card
+          .card-body.text-body-secondary Todavía no hay estudios cargados.
+      else
+        each estudio in estudios
+          article.card.mb-3
+            .card-body
+              .d-flex.justify-content-between.align-items-start.gap-2.flex-wrap
+                div
+                  h3.h6.mb-1= estudio.tipoEstudio
+                  p.text-body-secondary.small.mb-1 Estudio: #{formatoFecha(estudio.fechaEstudio)} · Incorporado: #{formatoFecha(estudio.registradoEn)}
+                  p.small.mb-1= estudio.revision.estado === 'revisado' ? 'Revisado por profesional' : 'Pendiente de revisión médica'
+                  if estudio.revision.estado === 'revisado' && estudio.revision.observacion
+                    p.mb-1
+                      strong Observación médica:
+                      |  #{estudio.revision.observacion}
+                a.btn.btn-sm.btn-outline-primary(href=`/clinica/pacientes/${paciente._id}/estudios/${estudio._id}/archivo`) Descargar estudio
+              if esMedico && estudio.revision.estado === 'pendiente'
+                form.mt-3(method='POST' action=`/clinica/pacientes/${paciente._id}/estudios/${estudio._id}/revisar`)
+                  if typeof csrfToken !== 'undefined' && csrfToken
+                    input(type='hidden' name='_csrf' value=csrfToken)
+                  input(type='hidden' name='_tfClinicaCsrf' value=tfClinicaCsrf)
+                  label.form-label(for=`observacion-${estudio._id}`) Observación médica de revisión (opcional)
+                  textarea.form-control.mb-2(id=`observacion-${estudio._id}` name='observacion' maxlength='3000' rows='2')
+                  button.btn.btn-primary.btn-sm(type='submit') Marcar revisado

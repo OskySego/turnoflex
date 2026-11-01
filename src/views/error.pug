@@ -1,0 +1,561 @@
+extends layout
+
+block content
+
+  - const codigoError = (typeof statusCode !== 'undefined' && statusCode) ? statusCode : 500
+  - const textoError = (typeof error !== 'undefined' && error) ? error : ((typeof mensaje !== 'undefined' && mensaje) ? mensaje : 'No fue posible completar la operación.')
+  - var tituloError = 'Ocurrió un inconveniente'
+  - var descripcionError = 'No pudimos completar la operación solicitada.'
+  - var iconoError = '!'
+
+  if codigoError === 400
+    - tituloError = 'Solicitud inválida'
+    - descripcionError = 'Algunos datos de la solicitud no pudieron ser procesados.'
+    - iconoError = '⚠'
+
+  else if codigoError === 401
+    - tituloError = 'Necesitás iniciar sesión'
+    - descripcionError = 'Tu sesión no está disponible o necesitás autenticarte nuevamente.'
+    - iconoError = '🔐'
+
+  else if codigoError === 403
+    - tituloError = 'Acceso restringido'
+    - descripcionError = 'Tu perfil no tiene permisos para ingresar a esta sección.'
+    - iconoError = '🔒'
+
+  else if codigoError === 404
+    - tituloError = 'No encontramos esta página'
+    - descripcionError = 'La dirección solicitada no existe, fue modificada o ya no está disponible.'
+    - iconoError = '⌕'
+
+  else if codigoError === 409
+    - tituloError = 'No se pudo completar la operación'
+    - descripcionError = 'La información cambió o existe un conflicto con otro registro.'
+    - iconoError = '↻'
+
+  else if codigoError >= 500
+    - tituloError = 'TurnoFlex encontró un inconveniente'
+    - descripcionError = 'El sistema no pudo completar esta operación en este momento.'
+    - iconoError = '⚙'
+
+
+  style.
+    .tf-error-page {
+      min-height: 66vh;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding:
+        30px 0 45px;
+    }
+
+    .tf-error-card {
+      position: relative;
+
+      width: 100%;
+      max-width: 780px;
+
+      overflow: hidden;
+
+      border-radius: 30px;
+
+      background:
+        var(--tf-surface, #ffffff);
+
+      border:
+        1px solid var(--tf-border, rgba(15,23,42,.08));
+
+      box-shadow:
+        0 25px 65px rgba(15,23,42,.13);
+    }
+
+    .tf-error-header {
+      position: relative;
+
+      overflow: hidden;
+
+      padding:
+        42px 38px 38px;
+
+      text-align: center;
+
+      color: #ffffff;
+
+      background:
+        radial-gradient(
+          circle at 90% 0%,
+          rgba(139,92,246,.52),
+          transparent 32%
+        ),
+        radial-gradient(
+          circle at 5% 100%,
+          rgba(37,99,235,.30),
+          transparent 37%
+        ),
+        linear-gradient(
+          135deg,
+          #08132e,
+          #10245d 52%,
+          #312e81
+        );
+    }
+
+    .tf-error-header::after {
+      content: "";
+
+      position: absolute;
+
+      width: 280px;
+      height: 280px;
+
+      right: -145px;
+      bottom: -190px;
+
+      border-radius: 50%;
+
+      background:
+        rgba(255,255,255,.06);
+    }
+
+    .tf-error-icon {
+      position: relative;
+
+      z-index: 2;
+
+      width: 78px;
+      height: 78px;
+
+      margin:
+        0 auto 17px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 23px;
+
+      background:
+        linear-gradient(
+          135deg,
+          #2563eb,
+          #8b5cf6
+        );
+
+      border:
+        1px solid rgba(255,255,255,.22);
+
+      box-shadow:
+        0 15px 35px rgba(0,0,0,.20);
+
+      font-size: 1.9rem;
+
+      font-weight: 900;
+    }
+
+    .tf-error-code {
+      position: relative;
+
+      z-index: 2;
+
+      display: inline-flex;
+
+      align-items: center;
+
+      padding:
+        6px 11px;
+
+      margin-bottom: 11px;
+
+      border-radius: 999px;
+
+      background:
+        rgba(255,255,255,.11);
+
+      border:
+        1px solid rgba(255,255,255,.15);
+
+      color:
+        rgba(255,255,255,.82);
+
+      font-size: .62rem;
+
+      font-weight: 850;
+
+      text-transform: uppercase;
+
+      letter-spacing: .12em;
+    }
+
+    .tf-error-title {
+      position: relative;
+
+      z-index: 2;
+
+      margin-bottom: 8px;
+
+      font-size:
+        clamp(1.65rem,4vw,2.35rem);
+
+      font-weight: 900;
+
+      letter-spacing: -.035em;
+    }
+
+    .tf-error-description {
+      position: relative;
+
+      z-index: 2;
+
+      max-width: 570px;
+
+      margin:
+        0 auto;
+
+      color:
+        rgba(255,255,255,.68);
+
+      font-size: .8rem;
+
+      line-height: 1.6;
+    }
+
+    .tf-error-body {
+      padding:
+        32px 38px 36px;
+    }
+
+    .tf-error-message {
+      display: flex;
+
+      gap: 13px;
+
+      padding: 17px;
+
+      border-radius: 16px;
+
+      background:
+        linear-gradient(
+          135deg,
+          rgba(37,99,235,.05),
+          rgba(139,92,246,.08)
+        );
+
+      border:
+        1px solid rgba(139,92,246,.12);
+    }
+
+    .tf-error-message-icon {
+      width: 36px;
+      height: 36px;
+
+      flex-shrink: 0;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 10px;
+
+      color: #7c3aed;
+
+      background:
+        rgba(139,92,246,.12);
+
+      font-weight: 900;
+    }
+
+    .tf-error-message-label {
+      display: block;
+
+      margin-bottom: 4px;
+
+      color:
+        var(--tf-text, #0f172a);
+
+      font-size: .7rem;
+
+      font-weight: 900;
+    }
+
+    .tf-error-message-text {
+      margin: 0;
+
+      color:
+        var(--tf-muted, #64748b);
+
+      font-size: .72rem;
+
+      line-height: 1.55;
+    }
+
+    .tf-error-help {
+      margin-top: 18px;
+
+      padding: 14px 16px;
+
+      border-radius: 14px;
+
+      color:
+        var(--tf-muted, #64748b);
+
+      background:
+        var(--tf-bg, #f8fafc);
+
+      border:
+        1px solid var(--tf-border, rgba(15,23,42,.08));
+
+      font-size: .67rem;
+
+      line-height: 1.55;
+    }
+
+    .tf-error-actions {
+      display: flex;
+
+      justify-content: center;
+
+      gap: 9px;
+
+      flex-wrap: wrap;
+
+      margin-top: 25px;
+    }
+
+    .tf-error-primary {
+      min-height: 44px;
+
+      display: inline-flex;
+
+      align-items: center;
+      justify-content: center;
+
+      gap: 7px;
+
+      padding:
+        0 19px;
+
+      border: 0;
+
+      border-radius: 12px;
+
+      color: #ffffff;
+
+      background:
+        linear-gradient(
+          135deg,
+          #2563eb,
+          #8b5cf6
+        );
+
+      text-decoration: none;
+
+      font-size: .73rem;
+
+      font-weight: 850;
+
+      box-shadow:
+        0 10px 25px rgba(139,92,246,.21);
+    }
+
+    .tf-error-primary:hover {
+      color: #ffffff;
+
+      transform:
+        translateY(-2px);
+    }
+
+    .tf-error-secondary {
+      min-height: 44px;
+
+      display: inline-flex;
+
+      align-items: center;
+      justify-content: center;
+
+      padding:
+        0 19px;
+
+      border-radius: 12px;
+
+      color:
+        var(--tf-muted, #64748b);
+
+      background:
+        var(--tf-bg, #f8fafc);
+
+      border:
+        1px solid var(--tf-border, rgba(15,23,42,.08));
+
+      font-size: .73rem;
+
+      font-weight: 800;
+    }
+
+    .tf-error-secondary:hover {
+      color:
+        var(--tf-text, #0f172a);
+    }
+
+    .tf-error-footer {
+      margin-top: 23px;
+
+      text-align: center;
+
+      color:
+        var(--tf-muted, #64748b);
+
+      font-size: .61rem;
+    }
+
+    @media (max-width: 575px) {
+
+      .tf-error-header {
+        padding:
+          32px 21px;
+      }
+
+      .tf-error-body {
+        padding:
+          25px 20px 28px;
+      }
+
+      .tf-error-actions {
+        flex-direction: column;
+      }
+
+      .tf-error-actions > * {
+        width: 100%;
+      }
+    }
+
+
+  .tf-error-page.tfu-page
+
+    .tf-error-card.tfu-card
+
+
+      //- ========================================================
+      //- CABECERA
+      //- ========================================================
+
+      .tf-error-header.tfu-hero
+
+        .tf-error-icon
+          = iconoError
+
+        .tf-error-code
+          | TurnoFlex · Error #{codigoError}
+
+        h1.tf-error-title
+          = tituloError
+
+        p.tf-error-description
+          = descripcionError
+
+
+      //- ========================================================
+      //- CUERPO
+      //- ========================================================
+
+      .tf-error-body
+
+
+        .tf-error-message
+
+          .tf-error-message-icon
+            | i
+
+          div
+
+            span.tf-error-message-label
+              | Información
+
+            p.tf-error-message-text
+              = textoError
+
+
+        //- ======================================================
+        //- AYUDA SEGÚN ERROR
+        //- ======================================================
+
+        if codigoError === 403
+
+          .tf-error-help
+            | Este acceso está protegido según el rol de usuario.
+            | Volvé a tu panel principal para continuar utilizando
+            | las funciones disponibles para tu perfil.
+
+
+        else if codigoError === 404
+
+          .tf-error-help
+            | Verificá la dirección o regresá al inicio.
+            | Si llegaste hasta acá mediante un enlace de TurnoFlex,
+            | es posible que el recurso ya no esté disponible.
+
+
+        else if codigoError === 409
+
+          .tf-error-help
+            | Esto puede ocurrir cuando otra operación modificó
+            | la información antes de que pudieras confirmarla.
+            | Volvé e intentá nuevamente con los datos actualizados.
+
+
+        else if codigoError >= 500
+
+          .tf-error-help
+            | Tus datos no necesitan volver a cargarse de inmediato.
+            | Regresá a la pantalla anterior o al inicio y volvé
+            | a intentar la operación.
+
+
+        else
+
+          .tf-error-help
+            | Revisá la información ingresada e intentá nuevamente.
+            | Si el inconveniente continúa, regresá al inicio.
+
+
+        //- ======================================================
+        //- ACCIONES
+        //- ======================================================
+
+        .tf-error-actions
+
+
+          if user
+
+            a.tf-error-primary(
+              href="/"
+            )
+              span
+                | ⌂
+
+              span
+                | Volver a TurnoFlex
+
+
+          else
+
+            a.tf-error-primary(
+              href="/auth/login"
+            )
+              span
+                | →
+
+              span
+                | Iniciar sesión
+
+
+          button.tf-error-secondary(
+            type="button"
+            onclick="window.history.back()"
+          )
+            | ← Volver atrás
+
+
+        .tf-error-footer
+          | TurnoFlex · Plataforma de Gestión Médica

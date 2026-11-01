@@ -1,0 +1,24 @@
+extends ../layout
+
+block content
+  .container.py-4(style='max-width:760px')
+    p.text-primary.text-uppercase.small.fw-bold TurnoFlex · Recepción
+    h1.h3 Adjuntar estudio del paciente
+    p.text-body-secondary #{paciente.nombre} · DNI #{paciente.dni || 'No informado'}
+    .alert.alert-info La recepción puede incorporar documentación, pero no consultar ni modificar diagnósticos o evoluciones médicas.
+    form.card(method='POST' enctype='multipart/form-data' action=`/clinica/pacientes/${paciente._id}/estudios`)
+      .card-body.p-4
+        if typeof csrfToken !== 'undefined' && csrfToken
+          input(type='hidden' name='_csrf' value=csrfToken)
+        input(type='hidden' name='_tfClinicaCsrf' value=tfClinicaCsrf)
+        .mb-3
+          label.form-label(for='tipoEstudio') Tipo de estudio *
+          input.form-control#tipoEstudio(type='text' name='tipoEstudio' maxlength='120' placeholder='Ej.: Hemograma, radiografía, electrocardiograma' required)
+        .mb-3
+          label.form-label(for='fechaEstudio') Fecha del estudio *
+          input.form-control#fechaEstudio(type='date' name='fechaEstudio' required)
+        .mb-4
+          label.form-label(for='archivo') Archivo PDF, PNG o JPG (máx. 10 MB) *
+          input.form-control#archivo(type='file' name='archivo' accept='.pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg' required)
+        button.btn.btn-primary(type='submit') Incorporar estudio pendiente de revisión
+        a.btn.btn-outline-secondary.ms-2(href='/clientes') Cancelar

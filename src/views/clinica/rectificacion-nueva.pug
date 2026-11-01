@@ -1,0 +1,37 @@
+extends ../layout
+
+block content
+  .container.py-4(style='max-width:900px')
+    h1.h3 Rectificar evolución
+    p.text-body-secondary Paciente: #{paciente.nombre}
+    .alert.alert-info Se creará un asiento nuevo; la evolución original no se modifica ni se elimina.
+    .card.mb-3
+      .card-body
+        p.mb-1.fw-bold Registro original (solo lectura)
+        p.mb-1= anterior.motivoConsulta
+        p.text-body-secondary.small ID: #{anterior._id}
+    form.card(method='POST' action=`/clinica/pacientes/${paciente._id}/evoluciones/${anterior._id}/rectificar`)
+      .card-body.p-4
+        if typeof csrfToken !== 'undefined' && csrfToken
+          input(type='hidden' name='_csrf' value=csrfToken)
+        input(type='hidden' name='_tfClinicaCsrf' value=tfClinicaCsrf)
+        .mb-3
+          label.form-label(for='motivoRectificacion') Motivo de rectificación *
+          textarea.form-control#motivoRectificacion(name='motivoRectificacion' maxlength='1000' required)
+        .mb-3
+          label.form-label(for='motivoConsulta') Motivo de consulta corregido *
+          textarea.form-control#motivoConsulta(name='motivoConsulta' maxlength='2000' required)= anterior.motivoConsulta
+        .mb-3
+          label.form-label(for='anamnesis') Anamnesis corregida
+          textarea.form-control#anamnesis(name='anamnesis' maxlength='8000')= anterior.anamnesis
+        .mb-3
+          label.form-label(for='examenFisico') Examen físico corregido
+          textarea.form-control#examenFisico(name='examenFisico' maxlength='8000')= anterior.examenFisico
+        .mb-3
+          label.form-label(for='diagnostico') Diagnóstico corregido
+          textarea.form-control#diagnostico(name='diagnostico' maxlength='4000')= anterior.diagnostico
+        .mb-3
+          label.form-label(for='indicaciones') Indicaciones corregidas
+          textarea.form-control#indicaciones(name='indicaciones' maxlength='8000')= anterior.indicaciones
+        button.btn.btn-primary(type='submit') Registrar rectificación no firmada
+        a.btn.btn-outline-secondary.ms-2(href=`/clinica/pacientes/${paciente._id}/historia`) Cancelar

@@ -1,0 +1,32 @@
+extends ../layout
+
+block content
+  .container.py-4(style='max-width:900px')
+    p.text-uppercase.text-primary.small.fw-bold TurnoFlex · Médico autorizado
+    h1.h3.mb-2 Nueva evolución clínica
+    p.text-body-secondary Paciente: #{paciente.nombre} · DNI #{paciente.dni || 'No informado'}
+    .alert.alert-warning Esta etapa registra un asiento pendiente de firma digital. No equivale a una firma médica válida.
+    form.card(method='POST' action=`/clinica/pacientes/${paciente._id}/evoluciones`)
+      .card-body.p-4
+        if typeof csrfToken !== 'undefined' && csrfToken
+          input(type='hidden' name='_csrf' value=csrfToken)
+        input(type='hidden' name='_tfClinicaCsrf' value=tfClinicaCsrf)
+        input(type='hidden' name='turnoId' value=turnoId)
+        .mb-3
+          label.form-label(for='motivoConsulta') Motivo de consulta *
+          textarea.form-control#motivoConsulta(name='motivoConsulta' rows='3' maxlength='2000' required)
+        .mb-3
+          label.form-label(for='anamnesis') Anamnesis y antecedentes relevantes
+          textarea.form-control#anamnesis(name='anamnesis' rows='4' maxlength='8000')
+        .mb-3
+          label.form-label(for='examenFisico') Examen físico
+          textarea.form-control#examenFisico(name='examenFisico' rows='4' maxlength='8000')
+        .mb-3
+          label.form-label(for='diagnostico') Diagnóstico
+          textarea.form-control#diagnostico(name='diagnostico' rows='3' maxlength='4000')
+        .mb-4
+          label.form-label(for='indicaciones') Plan terapéutico e indicaciones
+          textarea.form-control#indicaciones(name='indicaciones' rows='4' maxlength='8000')
+        .d-flex.flex-wrap.gap-2
+          button.btn.btn-primary(type='submit') Registrar asiento no firmado
+          a.btn.btn-outline-secondary(href=`/clinica/pacientes/${paciente._id}/historia`) Cancelar

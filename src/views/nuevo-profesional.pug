@@ -1,148 +1,1830 @@
 extends layout
 
 block content
-  .row.justify-content-center
-    .col-lg-10
-      .card.border-0.rounded-4.shadow-sm.overflow-hidden
-        .p-4.text-white(style="background-color: #0D1B3E;")
-          h2.h4.mb-0.fw-bold Registrar Nuevo Profesional
-        
-        .card-body.p-4.p-md-5.bg-white
-          form(action="/profesionales" method="POST")
-            
-            //- 1. Identificación y Contacto
-            h5.text-primary.fw-bold.mb-3 1. Identificación y Contacto
-            .row.g-3.mb-4
+
+  - const diasSemana = [{ id: 'lunes', nombre: 'Lunes' }, { id: 'martes', nombre: 'Martes' }, { id: 'miercoles', nombre: 'Miércoles' }, { id: 'jueves', nombre: 'Jueves' }, { id: 'viernes', nombre: 'Viernes' }, { id: 'sabado', nombre: 'Sábado' }, { id: 'domingo', nombre: 'Domingo' }]
+
+  style.
+    .new-prof-page {
+      --npr-navy: #0d1b3e;
+      --npr-blue: #2563eb;
+      --npr-violet: #8b5cf6;
+      --npr-green: #10b981;
+      --npr-yellow: #f59e0b;
+      --npr-cyan: #06b6d4;
+      --npr-red: #ef4444;
+
+      --npr-surface: #ffffff;
+      --npr-soft: #f8fafc;
+      --npr-text: #0f172a;
+      --npr-muted: #64748b;
+      --npr-border: rgba(15, 23, 42, .08);
+
+      color: var(--npr-text);
+    }
+
+    [data-bs-theme="dark"] .new-prof-page {
+      --npr-surface: #171d27;
+      --npr-soft: #111827;
+      --npr-text: #f8fafc;
+      --npr-muted: #94a3b8;
+      --npr-border: rgba(255,255,255,.08);
+    }
+
+    /* ==========================================================
+       HERO
+       ========================================================== */
+
+    .new-prof-hero {
+      position: relative;
+      overflow: hidden;
+      padding: 32px;
+      border-radius: 28px;
+      color: #ffffff;
+
+      background:
+        radial-gradient(
+          circle at 90% 0%,
+          rgba(139,92,246,.50),
+          transparent 33%
+        ),
+        radial-gradient(
+          circle at 8% 100%,
+          rgba(6,182,212,.28),
+          transparent 36%
+        ),
+        linear-gradient(
+          135deg,
+          #08132e 0%,
+          #10245d 52%,
+          #312e81 100%
+        );
+
+      box-shadow:
+        0 23px 54px rgba(15,23,42,.21);
+    }
+
+    .new-prof-hero::after {
+      content: "";
+      position: absolute;
+      width: 340px;
+      height: 340px;
+      right: -170px;
+      bottom: -210px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.07);
+    }
+
+    .new-prof-hero-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .new-prof-icon {
+      width: 70px;
+      height: 70px;
+      flex-shrink: 0;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 21px;
+
+      background:
+        linear-gradient(
+          135deg,
+          #2563eb,
+          #8b5cf6
+        );
+
+      border:
+        1px solid rgba(255,255,255,.22);
+
+      box-shadow:
+        0 13px 30px rgba(0,0,0,.17);
+
+      font-size: 1.6rem;
+    }
+
+    .new-prof-eyebrow {
+      margin-bottom: 5px;
+      color: rgba(255,255,255,.63);
+
+      font-size: .68rem;
+      font-weight: 850;
+
+      text-transform: uppercase;
+      letter-spacing: .14em;
+    }
+
+    .new-prof-title {
+      margin-bottom: 6px;
+
+      font-size:
+        clamp(1.8rem,4vw,2.5rem);
+
+      font-weight: 900;
+
+      letter-spacing: -.04em;
+    }
+
+    .new-prof-description {
+      max-width: 700px;
+
+      margin-bottom: 0;
+
+      color:
+        rgba(255,255,255,.73);
+
+      font-size: .83rem;
+
+      line-height: 1.6;
+    }
+
+    .new-prof-status {
+      display: inline-flex;
+
+      align-items: center;
+
+      gap: 8px;
+
+      padding: 9px 14px;
+
+      border-radius: 999px;
+
+      background:
+        rgba(255,255,255,.10);
+
+      border:
+        1px solid rgba(255,255,255,.16);
+
+      font-size: .75rem;
+
+      font-weight: 800;
+    }
+
+    .new-prof-status-dot {
+      width: 8px;
+      height: 8px;
+
+      border-radius: 50%;
+
+      background: #34d399;
+
+      box-shadow:
+        0 0 0 5px rgba(52,211,153,.12);
+    }
+
+    /* ==========================================================
+       PASOS
+       ========================================================== */
+
+    .prof-steps {
+      display: grid;
+
+      grid-template-columns:
+        repeat(5,minmax(0,1fr));
+
+      gap: 9px;
+
+      margin-top: 24px;
+    }
+
+    .prof-step {
+      display: flex;
+
+      align-items: center;
+
+      gap: 9px;
+
+      padding: 12px;
+
+      border-radius: 14px;
+
+      background:
+        var(--npr-surface);
+
+      border:
+        1px solid var(--npr-border);
+
+      box-shadow:
+        0 8px 24px rgba(15,23,42,.04);
+    }
+
+    .prof-step-number {
+      width: 30px;
+      height: 30px;
+
+      flex-shrink: 0;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 9px;
+
+      color: #ffffff;
+
+      background:
+        linear-gradient(
+          135deg,
+          var(--npr-blue),
+          var(--npr-violet)
+        );
+
+      font-size: .68rem;
+
+      font-weight: 900;
+    }
+
+    .prof-step-title {
+      color:
+        var(--npr-text);
+
+      font-size: .68rem;
+
+      font-weight: 850;
+    }
+
+    .prof-step-text {
+      color:
+        var(--npr-muted);
+
+      font-size: .58rem;
+    }
+
+    /* ==========================================================
+       FORMULARIO
+       ========================================================== */
+
+    .new-prof-form {
+      margin-top: 24px;
+
+      padding: 28px;
+
+      border-radius: 24px;
+
+      background:
+        var(--npr-surface);
+
+      border:
+        1px solid var(--npr-border);
+
+      box-shadow:
+        0 13px 35px rgba(15,23,42,.06);
+    }
+
+    .prof-form-section {
+      padding-bottom: 28px;
+
+      margin-bottom: 28px;
+
+      border-bottom:
+        1px solid var(--npr-border);
+    }
+
+    .prof-form-section:last-of-type {
+      margin-bottom: 0;
+
+      border-bottom: 0;
+    }
+
+    .prof-section-header {
+      display: flex;
+
+      align-items: center;
+
+      gap: 12px;
+
+      margin-bottom: 21px;
+    }
+
+    .prof-section-icon {
+      width: 44px;
+      height: 44px;
+
+      flex-shrink: 0;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 13px;
+
+      background:
+        linear-gradient(
+          135deg,
+          rgba(37,99,235,.11),
+          rgba(139,92,246,.14)
+        );
+
+      font-size: 1.15rem;
+    }
+
+    .prof-section-label {
+      margin-bottom: 2px;
+
+      color:
+        var(--npr-violet);
+
+      font-size: .62rem;
+
+      font-weight: 850;
+
+      text-transform: uppercase;
+
+      letter-spacing: .10em;
+    }
+
+    .prof-section-title {
+      margin-bottom: 0;
+
+      color:
+        var(--npr-text);
+
+      font-size: 1rem;
+
+      font-weight: 900;
+    }
+
+    .prof-field-label {
+      margin-bottom: 7px;
+
+      color:
+        var(--npr-text);
+
+      font-size: .72rem;
+
+      font-weight: 800;
+    }
+
+    .required-mark {
+      color:
+        var(--npr-red);
+    }
+
+    .prof-control {
+      min-height: 47px;
+
+      border-radius: 12px;
+
+      color:
+        var(--npr-text);
+
+      background:
+        var(--npr-soft);
+
+      border:
+        1px solid var(--npr-border);
+
+      font-size: .78rem;
+    }
+
+    .prof-control:focus {
+      color:
+        var(--npr-text);
+
+      background:
+        var(--npr-surface);
+
+      border-color:
+        var(--npr-violet);
+
+      box-shadow:
+        0 0 0 4px rgba(139,92,246,.10);
+    }
+
+    .prof-control::placeholder {
+      color:
+        var(--npr-muted);
+
+      opacity: .7;
+    }
+
+    .prof-help {
+      margin-top: 5px;
+
+      color:
+        var(--npr-muted);
+
+      font-size: .62rem;
+
+      line-height: 1.45;
+    }
+
+    /* ==========================================================
+       DÍAS
+       ========================================================== */
+
+    .days-panel {
+      padding: 17px;
+
+      border-radius: 16px;
+
+      background:
+        var(--npr-soft);
+
+      border:
+        1px solid var(--npr-border);
+    }
+
+    .days-grid {
+      display: flex;
+
+      flex-wrap: wrap;
+
+      gap: 8px;
+    }
+
+    .day-option {
+      position: relative;
+    }
+
+    .day-checkbox {
+      position: absolute;
+
+      opacity: 0;
+
+      pointer-events: none;
+    }
+
+    .day-label {
+      display: inline-flex;
+
+      align-items: center;
+      justify-content: center;
+
+      min-height: 36px;
+
+      padding: 0 12px;
+
+      border-radius: 999px;
+
+      cursor: pointer;
+
+      color:
+        var(--npr-muted);
+
+      background:
+        var(--npr-surface);
+
+      border:
+        1px solid var(--npr-border);
+
+      font-size: .67rem;
+
+      font-weight: 800;
+
+      transition: .2s ease;
+    }
+
+    .day-checkbox:checked + .day-label {
+      color: #6d28d9;
+
+      background:
+        rgba(139,92,246,.12);
+
+      border-color:
+        rgba(139,92,246,.32);
+
+      box-shadow:
+        0 0 0 3px rgba(139,92,246,.05);
+    }
+
+    /* ==========================================================
+       OPCIONES GRANDES
+       ========================================================== */
+
+    .feature-toggle {
+      padding: 18px;
+
+      border-radius: 17px;
+
+      background:
+        linear-gradient(
+          135deg,
+          rgba(37,99,235,.05),
+          rgba(139,92,246,.08)
+        );
+
+      border:
+        1px solid rgba(139,92,246,.12);
+    }
+
+    .feature-toggle-header {
+      display: flex;
+
+      align-items: center;
+
+      justify-content: space-between;
+
+      gap: 15px;
+    }
+
+    .feature-toggle-title {
+      margin-bottom: 3px;
+
+      color:
+        var(--npr-text);
+
+      font-size: .83rem;
+
+      font-weight: 900;
+    }
+
+    .feature-toggle-text {
+      margin-bottom: 0;
+
+      color:
+        var(--npr-muted);
+
+      font-size: .66rem;
+
+      line-height: 1.45;
+    }
+
+    .big-switch {
+      width: 2.8em !important;
+      height: 1.45em;
+      cursor: pointer;
+    }
+
+    .feature-settings {
+      display: none;
+
+      margin-top: 18px;
+
+      padding-top: 18px;
+
+      border-top:
+        1px solid var(--npr-border);
+    }
+
+    .feature-settings.active {
+      display: block;
+    }
+
+    /* ==========================================================
+       INFO
+       ========================================================== */
+
+    .configuration-info {
+      margin-top: 19px;
+
+      padding: 17px;
+
+      border-radius: 15px;
+
+      color:
+        var(--npr-muted);
+
+      background:
+        rgba(139,92,246,.06);
+
+      border:
+        1px solid rgba(139,92,246,.10);
+
+      font-size: .67rem;
+
+      line-height: 1.55;
+    }
+
+    /* ==========================================================
+       BOTONES
+       ========================================================== */
+
+    .prof-form-actions {
+      display: flex;
+
+      justify-content: flex-end;
+
+      align-items: center;
+
+      gap: 10px;
+
+      flex-wrap: wrap;
+
+      padding-top: 6px;
+    }
+
+    .prof-cancel-btn {
+      min-height: 45px;
+
+      display: inline-flex;
+
+      align-items: center;
+      justify-content: center;
+
+      padding: 0 19px;
+
+      border-radius: 12px;
+
+      color:
+        var(--npr-muted);
+
+      background:
+        var(--npr-soft);
+
+      border:
+        1px solid var(--npr-border);
+
+      text-decoration: none;
+
+      font-size: .75rem;
+
+      font-weight: 800;
+    }
+
+    .prof-save-btn {
+      min-height: 45px;
+
+      display: inline-flex;
+
+      align-items: center;
+      justify-content: center;
+
+      gap: 7px;
+
+      padding: 0 21px;
+
+      border: 0;
+
+      border-radius: 12px;
+
+      color: #ffffff;
+
+      background:
+        linear-gradient(
+          135deg,
+          #2563eb,
+          #8b5cf6
+        );
+
+      box-shadow:
+        0 10px 24px rgba(139,92,246,.20);
+
+      font-size: .75rem;
+
+      font-weight: 850;
+
+      transition:
+        transform .2s ease,
+        box-shadow .2s ease;
+    }
+
+    .prof-save-btn:hover {
+      transform:
+        translateY(-2px);
+
+      box-shadow:
+        0 14px 30px rgba(139,92,246,.27);
+    }
+
+    .prof-save-btn:disabled {
+      opacity: .65;
+
+      transform: none;
+
+      cursor: wait;
+    }
+
+    /* ==========================================================
+       RESPONSIVE
+       ========================================================== */
+
+    @media (max-width: 991px) {
+
+      .prof-steps {
+        grid-template-columns:
+          repeat(2,minmax(0,1fr));
+      }
+    }
+
+    @media (max-width: 767px) {
+
+      .new-prof-hero {
+        padding: 24px;
+      }
+
+      .new-prof-icon {
+        width: 58px;
+        height: 58px;
+      }
+
+      .new-prof-form {
+        padding: 20px;
+      }
+
+      .prof-steps {
+        grid-template-columns: 1fr;
+      }
+
+      .prof-form-actions {
+        flex-direction: column-reverse;
+      }
+
+      .prof-form-actions > * {
+        width: 100%;
+      }
+    }
+
+
+  //- ============================================================
+  //- CONTENIDO
+  //- ============================================================
+
+  .new-prof-page.tfu-page
+
+
+    //- ==========================================================
+    //- HERO
+    //- ==========================================================
+
+    .new-prof-hero.tfu-hero
+
+      .new-prof-hero-content
+
+        .row.align-items-center.g-4
+
+          .col-lg-8
+
+            .d-flex.align-items-center.gap-3
+
+              .new-prof-icon
+                | 🩺
+
+              div
+
+                .new-prof-eyebrow
+                  | ◆ TurnoFlex · Equipo Médico
+
+                h1.new-prof-title
+                  | Registrar profesional
+
+                p.new-prof-description
+                  | Configurá el perfil profesional, cobertura aceptada,
+                  | agenda regular, sobreturnos y telemedicina desde un único formulario.
+
+
+          .col-lg-4
+
+            .d-flex.justify-content-lg-end
+
+              .new-prof-status
+
+                span.new-prof-status-dot
+
+                span
+                  | Nuevo profesional
+
+
+    //- ==========================================================
+    //- PASOS
+    //- ==========================================================
+
+    .prof-steps
+
+
+      .prof-step
+
+        .prof-step-number
+          | 01
+
+        div
+
+          .prof-step-title
+            | Identificación
+
+          .prof-step-text
+            | Datos y contacto
+
+
+      .prof-step
+
+        .prof-step-number
+          | 02
+
+        div
+
+          .prof-step-title
+            | Profesional
+
+          .prof-step-text
+            | Matrícula y especialidad
+
+
+      .prof-step
+
+        .prof-step-number
+          | 03
+
+        div
+
+          .prof-step-title
+            | Agenda
+
+          .prof-step-text
+            | Días y horarios
+
+
+      .prof-step
+
+        .prof-step-number
+          | 04
+
+        div
+
+          .prof-step-title
+            | Sobreturnos
+
+          .prof-step-text
+            | Configuración opcional
+
+
+      .prof-step
+
+        .prof-step-number
+          | 05
+
+        div
+
+          .prof-step-title
+            | Telemedicina
+
+          .prof-step-text
+            | Videoconsultas
+
+
+    //- ==========================================================
+    //- FORMULARIO
+    //- ==========================================================
+
+    form.new-prof-form.tfu-card(
+      action="/profesionales"
+      method="POST"
+      id="formNuevoProfesional"
+    )
+      if typeof csrfToken !== "undefined" && csrfToken
+        input(type="hidden" name="_csrf" value=csrfToken)
+
+
+      //- ========================================================
+      //- 1. IDENTIFICACIÓN
+      //- ========================================================
+
+      .prof-form-section
+
+        .prof-section-header
+
+          .prof-section-icon
+            | 👤
+
+          div
+
+            .prof-section-label
+              | Paso 1
+
+            h4.prof-section-title
+              | Identificación y contacto
+
+
+        .row.g-4
+
+
+          .col-md-6
+
+            label.prof-field-label(
+              for="nombre"
+            )
+              | Nombre completo
+              span.required-mark
+                |  *
+
+            input.form-control.prof-control(
+              type="text"
+              id="nombre"
+              name="nombre"
+              required
+              autocomplete="name"
+              placeholder="Ej: Dra. Laura Fernández"
+            )
+
+
+          .col-md-6
+
+            label.prof-field-label(
+              for="dni"
+            )
+              | DNI / Pasaporte
+              span.required-mark
+                |  *
+
+            input.form-control.prof-control(
+              type="text"
+              id="dni"
+              name="dni"
+              required
+              placeholder="Número de documento"
+            )
+
+            .prof-help
+              | Debe ser único para cada profesional.
+
+
+          .col-md-4
+
+            label.prof-field-label(
+              for="genero"
+            )
+              | Género
+              span.required-mark
+                |  *
+
+            select.form-select.prof-control(
+              id="genero"
+              name="genero"
+              required
+            )
+
+              option(
+                value=""
+                selected
+                disabled
+              )
+                | Seleccionar...
+
+              option(value="Masculino")
+                | Masculino
+
+              option(value="Femenino")
+                | Femenino
+
+              option(value="Otro")
+                | Otro
+
+
+          .col-md-4
+
+            label.prof-field-label(
+              for="email"
+            )
+              | Correo electrónico
+              span.required-mark
+                |  *
+
+            input.form-control.prof-control(
+              type="email"
+              id="email"
+              name="email"
+              required
+              autocomplete="email"
+              placeholder="profesional@correo.com"
+            )
+
+            .prof-help
+              | Este correo puede asociarse al acceso profesional.
+
+
+          .col-md-4
+
+            label.prof-field-label(
+              for="telefono"
+            )
+              | Teléfono
+              span.required-mark
+                |  *
+
+            input.form-control.prof-control(
+              type="text"
+              id="telefono"
+              name="telefono"
+              required
+              autocomplete="tel"
+              placeholder="Ej: 1155443322"
+            )
+
+
+      //- ========================================================
+      //- 2. INFORMACIÓN PROFESIONAL
+      //- ========================================================
+
+      .prof-form-section
+
+        .prof-section-header
+
+          .prof-section-icon
+            | 🪪
+
+          div
+
+            .prof-section-label
+              | Paso 2
+
+            h4.prof-section-title
+              | Información profesional y cobertura
+
+
+        .row.g-4
+
+
+          .col-md-6.col-lg-4
+
+            label.prof-field-label(
+              for="matricula"
+            )
+              | Matrícula profesional
+              span.required-mark
+                |  *
+
+            input.form-control.prof-control(
+              type="text"
+              id="matricula"
+              name="matricula"
+              required
+              placeholder="Ej: MN 123456"
+            )
+
+            .prof-help
+              | La matrícula debe ser única dentro del sistema.
+
+
+          .col-md-6.col-lg-4
+
+            label.prof-field-label(
+              for="especialidad"
+            )
+              | Especialidad principal
+              span.required-mark
+                |  *
+
+            input.form-control.prof-control(
+              type="text"
+              id="especialidad"
+              name="especialidad"
+              required
+              placeholder="Ej: Clínica Médica"
+            )
+
+
+          .col-md-6.col-lg-4
+
+            label.prof-field-label(
+              for="subespecialidades"
+            )
+              | Subespecialidad
+              span.required-mark
+                |  *
+
+            input.form-control.prof-control(
+              type="text"
+              id="subespecialidades"
+              name="subespecialidades"
+              required
+              placeholder="Ej: Diabetes y metabolismo"
+            )
+
+            .prof-help
+              | Si no posee, podés ingresar “General”.
+
+
+          .col-md-6
+
+            label.prof-field-label(
+              for="tipoCobertura"
+            )
+              | Cobertura aceptada
+              span.required-mark
+                |  *
+
+            select.form-select.prof-control(
+              id="tipoCobertura"
+              name="tipoCobertura"
+              required
+            )
+
+              option(value="ambas")
+                | Particular y Obra Social
+
+              option(value="particular")
+                | Solo Particular
+
+              option(value="obra_social")
+                | Solo Obra Social / Prepaga
+
+
+          .col-md-6
+
+            label.prof-field-label(
+              for="sede"
+            )
+              | Sede / Consultorio
+
+            input.form-control.prof-control(
+              type="text"
+              id="sede"
+              name="sede"
+              placeholder="Ej: Sede Central - Consultorio 3"
+            )
+
+
+      //- ========================================================
+      //- 3. AGENDA REGULAR
+      //- ========================================================
+
+      .prof-form-section
+
+        .prof-section-header
+
+          .prof-section-icon
+            | 📅
+
+          div
+
+            .prof-section-label
+              | Paso 3
+
+            h4.prof-section-title
+              | Configuración de agenda regular
+
+
+        .mb-4
+
+          label.prof-field-label
+            | Días de atención
+            span.required-mark
+              |  *
+
+          .days-panel
+
+            .days-grid
+
+              each dia in diasSemana
+
+                .day-option
+
+                  input.day-checkbox.dia-regular(
+                    type="checkbox"
+                    id=`regular-${dia.id}`
+                    name="diasAtencion"
+                    value=dia.nombre
+                    checked=(dia.id !== 'sabado' && dia.id !== 'domingo')
+                  )
+
+                  label.day-label(
+                    for=`regular-${dia.id}`
+                  )
+                    = dia.nombre
+
+          .prof-help
+            | Seleccioná al menos un día de atención regular.
+
+
+        .row.g-4
+
+
+          .col-md-6
+
+            label.prof-field-label(
+              for="modalidad"
+            )
+              | Modalidad principal
+
+            select.form-select.prof-control(
+              id="modalidad"
+              name="modalidad"
+            )
+
+              option(value="presencial")
+                | Presencial
+
+              option(value="telemedicina")
+                | Telemedicina
+
+              option(value="ambas")
+                | Presencial y Telemedicina
+
+
+          .col-md-6
+
+            label.prof-field-label(
+              for="duracionTurnoMinutos"
+            )
+              | Duración de cada turno
+
+            select.form-select.prof-control(
+              id="duracionTurnoMinutos"
+              name="duracionTurnoMinutos"
+            )
+
+              option(value="15")
+                | 15 minutos
+
+              option(value="20")
+                | 20 minutos
+
+              option(value="30" selected)
+                | 30 minutos
+
+              option(value="40")
+                | 40 minutos
+
+              option(value="45")
+                | 45 minutos
+
+              option(value="60")
+                | 60 minutos
+
+
+          .col-md-6
+
+            label.prof-field-label(
+              for="horaInicio"
+            )
+              | Hora de inicio
+              span.required-mark
+                |  *
+
+            input.form-control.prof-control(
+              type="time"
+              id="horaInicio"
+              name="horaInicio"
+              value="08:00"
+              required
+            )
+
+
+          .col-md-6
+
+            label.prof-field-label(
+              for="horaFin"
+            )
+              | Hora de finalización
+              span.required-mark
+                |  *
+
+            input.form-control.prof-control(
+              type="time"
+              id="horaFin"
+              name="horaFin"
+              value="16:00"
+              required
+            )
+
+
+        .configuration-info
+          | 💡 Esta configuración determina los horarios regulares que
+          | TurnoFlex utilizará al momento de ofrecer turnos disponibles.
+
+
+      //- ========================================================
+      //- 4. SOBRETURNOS
+      //- ========================================================
+
+      .prof-form-section
+
+        .prof-section-header
+
+          .prof-section-icon
+            | ⚡
+
+          div
+
+            .prof-section-label
+              | Paso 4
+
+            h4.prof-section-title
+              | Configuración de sobreturnos
+
+
+        .feature-toggle
+
+          .feature-toggle-header
+
+            div
+
+              h5.feature-toggle-title
+                | Habilitar sobreturnos
+
+              p.feature-toggle-text
+                | Permite reservar espacios adicionales fuera de la agenda regular.
+
+            .form-check.form-switch.m-0
+
+              input.form-check-input.big-switch(
+                type="checkbox"
+                id="permiteSobreturnos"
+                name="permiteSobreturnos"
+              )
+
+
+          #configSobreturnos.feature-settings
+
+
+            .mb-4
+
+              label.prof-field-label
+                | Días habilitados para sobreturnos
+
+              .days-panel
+
+                .days-grid
+
+                  each dia in diasSemana
+
+                    .day-option
+
+                      input.day-checkbox(
+                        type="checkbox"
+                        id=`sob-${dia.id}`
+                        name="diasSobreturnos"
+                        value=dia.nombre
+                      )
+
+                      label.day-label(
+                        for=`sob-${dia.id}`
+                      )
+                        = dia.nombre
+
+
+            .row.g-4
+
+
+              .col-md-4
+
+                label.prof-field-label(
+                  for="horaInicioSobreturnos"
+                )
+                  | Hora de inicio
+
+                input.form-control.prof-control(
+                  type="time"
+                  id="horaInicioSobreturnos"
+                  name="horaInicioSobreturnos"
+                  value="12:00"
+                )
+
+
+              .col-md-4
+
+                label.prof-field-label(
+                  for="horaFinSobreturnos"
+                )
+                  | Hora de finalización
+
+                input.form-control.prof-control(
+                  type="time"
+                  id="horaFinSobreturnos"
+                  name="horaFinSobreturnos"
+                  value="13:00"
+                )
+
+
+              .col-md-4
+
+                label.prof-field-label(
+                  for="cantidadMaximaSobreturnos"
+                )
+                  | Cantidad máxima
+
+                input.form-control.prof-control(
+                  type="number"
+                  id="cantidadMaximaSobreturnos"
+                  name="cantidadMaximaSobreturnos"
+                  min="1"
+                  max="8"
+                  value="4"
+                )
+
+                .prof-help
+                  | El sistema admite hasta 8.
+
+
+      //- ========================================================
+      //- 5. TELEMEDICINA
+      //- ========================================================
+
+      .prof-form-section
+
+        .prof-section-header
+
+          .prof-section-icon
+            | 💻
+
+          div
+
+            .prof-section-label
+              | Paso 5
+
+            h4.prof-section-title
+              | Configuración de telemedicina
+
+
+        .feature-toggle
+
+          .feature-toggle-header
+
+            div
+
+              h5.feature-toggle-title
+                | Ofrece videoconsultas
+
+              p.feature-toggle-text
+                | Habilita una agenda específica para atención remota.
+
+            .form-check.form-switch.m-0
+
+              input.form-check-input.big-switch(
+                type="checkbox"
+                id="ofreceTelemedicina"
+                name="ofreceTelemedicina"
+              )
+
+
+          #configTelemedicina.feature-settings
+
+
+            .mb-4
+
+              label.prof-field-label
+                | Días habilitados para telemedicina
+
+              .days-panel
+
+                .days-grid
+
+                  each dia in diasSemana
+
+                    .day-option
+
+                      input.day-checkbox(
+                        type="checkbox"
+                        id=`tele-${dia.id}`
+                        name="diasTelemedicina"
+                        value=dia.nombre
+                      )
+
+                      label.day-label(
+                        for=`tele-${dia.id}`
+                      )
+                        = dia.nombre
+
+
+            .row.g-4
+
+
               .col-md-6
-                label.form-label.fw-bold(for="nombre") Nombre completo *
-                input.form-control.rounded-3(type="text" id="nombre" name="nombre" required placeholder="Ej: Dr. Juan Pérez")
-              .col-md-6
-                label.form-label.fw-bold(for="dni") DNI / Pasaporte *
-                input.form-control.rounded-3(type="text" id="dni" name="dni" required placeholder="Número de documento")
-              .col-md-4
-                label.form-label.fw-bold(for="genero") Género
-                select.form-select.rounded-3(id="genero" name="genero")
-                  option(value="") Seleccionar...
-                  option(value="Masculino") Masculino
-                  option(value="Femenino") Femenino
-                  option(value="Otro") Otro
-              .col-md-4
-                label.form-label.fw-bold(for="email") Correo electrónico *
-                input.form-control.rounded-3(type="email" id="email" name="email" required placeholder="correo@ejemplo.com")
-              .col-md-4
-                label.form-label.fw-bold(for="telefono") Teléfono celular *
-                input.form-control.rounded-3(type="text" id="telefono" name="telefono" required placeholder="1155443322")
 
-            hr.my-4
+                label.prof-field-label(
+                  for="horaInicioTelemedicina"
+                )
+                  | Hora de inicio
 
-            //- 2. Información Profesional y Regulatoria
-            h5.text-primary.fw-bold.mb-3 2. Información Profesional y Cobertura
-            .row.g-3.mb-4
-              .col-md-4
-                label.form-label.fw-bold(for="matricula") Matrícula Nacional/Provincial *
-                input.form-control.rounded-3(type="text" id="matricula" name="matricula" required placeholder="Ej: MN 123456")
-              .col-md-4
-                label.form-label.fw-bold(for="especialidad") Especialidad principal *
-                input.form-control.rounded-3(type="text" id="especialidad" name="especialidad" required placeholder="Ej: Clínica Médica")
-              .col-md-4
-                label.form-label.fw-bold(for="tipoCobertura") Tipo de atención aceptada *
-                select.form-select.rounded-3(id="tipoCobertura" name="tipoCobertura" required)
-                  option(value="ambas") Ambas (Particular y Obra Social)
-                  option(value="particular") Solo Particular
-                  option(value="obra_social") Solo Obra Social / Prepaga
+                input.form-control.prof-control(
+                  type="time"
+                  id="horaInicioTelemedicina"
+                  name="horaInicioTelemedicina"
+                  value="16:00"
+                )
 
-            hr.my-4
-
-            //- 3. Configuración de Agenda Regular
-            h5.text-primary.fw-bold.mb-3 3. Configuración de Agenda Regular
-            .row.g-3.mb-4
-              .col-md-12
-                label.form-label.fw-bold Días de atención regular *
-                .d-flex.flex-wrap.gap-3.p-3.border.rounded-3.bg-light
-                  each dia in ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
-                    .form-check
-                      //- Eliminado el atributo checked
-                      input.form-check-input(type="checkbox" id=`diaReg${dia}` name="diasAtencion" value=dia)
-                      label.form-check-label(for=`diaReg${dia}`)= dia
-                      
-              .col-md-6
-                label.form-label.fw-bold(for="sede") Sede / Consultorio
-                input.form-control.rounded-3(type="text" id="sede" name="sede" placeholder="Ej: Sede Central - Consultorio 3")
-              .col-md-6
-                label.form-label.fw-bold(for="modalidad") Modalidad Principal
-                select.form-select.rounded-3(id="modalidad" name="modalidad")
-                  option(value="presencial") Presencial
-                  option(value="telemedicina") Telemedicina
-                  option(value="ambas") Ambas
-
-              .col-md-4
-                label.form-label.fw-bold(for="horaInicio") Hora inicio regular
-                input.form-control.rounded-3(type="time" id="horaInicio" name="horaInicio" value="08:00")
-              .col-md-4
-                label.form-label.fw-bold(for="horaFin") Hora fin regular
-                input.form-control.rounded-3(type="time" id="horaFin" name="horaFin" value="16:00")
-              .col-md-4
-                label.form-label.fw-bold(for="duracionTurnoMinutos") Duración turno (min)
-                input.form-control.rounded-3(type="number" id="duracionTurnoMinutos" name="duracionTurnoMinutos" value="30" step="5")
-
-            hr.my-4
-
-            //- 4. Configuración de Sobreturnos
-            h5.text-primary.fw-bold.mb-3 4. Configuración de Sobreturnos (20 min c/u)
-            .row.g-3.mb-4
-              .col-md-12
-                .form-check
-                  input.form-check-input(type="checkbox" id="permiteSobreturnos" name="permiteSobreturnos")
-                  label.form-check-label.fw-bold(for="permiteSobreturnos") Habilitar Sobreturnos
-              
-              //- Días específicos para sobreturnos
-              .col-md-12
-                label.form-label.fw-bold Días habilitados para Sobreturnos
-                .d-flex.flex-wrap.gap-3.p-3.border.rounded-3.bg-light
-                  each dia in ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
-                    .form-check
-                      //- Eliminado el atributo checked
-                      input.form-check-input(type="checkbox" id=`diaSob${dia}` name="diasSobreturnos" value=dia)
-                      label.form-check-label(for=`diaSob${dia}`)= dia
-
-              .col-md-4
-                label.form-label.fw-bold(for="horaInicioSobreturnos") Hora inicio sobreturnos
-                input.form-control.rounded-3(type="time" id="horaInicioSobreturnos" name="horaInicioSobreturnos" value="12:00")
-              .col-md-4
-                label.form-label.fw-bold(for="horaFinSobreturnos") Hora fin sobreturnos
-                input.form-control.rounded-3(type="time" id="horaFinSobreturnos" name="horaFinSobreturnos" value="13:00")
-              .col-md-4
-                label.form-label.fw-bold(for="cantidadMaximaSobreturnos") Cantidad máxima (Máx. 8)
-                input.form-control.rounded-3(type="number" id="cantidadMaximaSobreturnos" name="cantidadMaximaSobreturnos" min="1" max="8" value="4")
-
-            hr.my-4
-
-            //- 5. Configuración de Telemedicina
-            h5.text-primary.fw-bold.mb-3 5. Configuración de Telemedicina (20 min c/u)
-            .row.g-3.mb-4
-              .col-md-12
-                .form-check
-                  input.form-check-input(type="checkbox" id="ofreceTelemedicina" name="ofreceTelemedicina")
-                  label.form-check-label.fw-bold(for="ofreceTelemedicina") Ofrece Videoconsultas / Telemedicina
-              
-              //- Días específicos para telemedicina
-              .col-md-12
-                label.form-label.fw-bold Días habilitados para Telemedicina
-                .d-flex.flex-wrap.gap-3.p-3.border.rounded-3.bg-light
-                  each dia in ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
-                    .form-check
-                      //- Eliminado el atributo checked
-                      input.form-check-input(type="checkbox" id=`diaTel${dia}` name="diasTelemedicina" value=dia)
-                      label.form-check-label(for=`diaTel${dia}`)= dia
 
               .col-md-6
-                label.form-label.fw-bold(for="horaInicioTelemedicina") Hora inicio telemedicina
-                input.form-control.rounded-3(type="time" id="horaInicioTelemedicina" name="horaInicioTelemedicina" value="16:00")
-              .col-md-6
-                label.form-label.fw-bold(for="horaFinTelemedicina") Hora fin telemedicina
-                input.form-control.rounded-3(type="time" id="horaFinTelemedicina" name="horaFinTelemedicina" value="18:00")
 
-            //- Botones
-            .d-flex.justify-content-end.gap-2.pt-3
-              a.btn.btn-outline-secondary.px-4.rounded-3(href="/profesionales") Cancelar
-              button.btn.btn-primary.px-4.rounded-3(type="submit") Guardar Profesional
+                label.prof-field-label(
+                  for="horaFinTelemedicina"
+                )
+                  | Hora de finalización
+
+                input.form-control.prof-control(
+                  type="time"
+                  id="horaFinTelemedicina"
+                  name="horaFinTelemedicina"
+                  value="18:00"
+                )
+
+
+            .configuration-info
+              | 💻 Los días y horarios de telemedicina se almacenan
+              | independientemente de la agenda presencial regular.
+
+
+      //- ========================================================
+      //- ACCIONES
+      //- ========================================================
+
+      .prof-form-actions
+
+        a.prof-cancel-btn(
+          href="/profesionales"
+        )
+          | Cancelar
+
+        button.prof-save-btn(
+          type="submit"
+          id="btnGuardarProfesional"
+        )
+
+          span#iconGuardarProfesional
+            | ✓
+
+          span#textoGuardarProfesional
+            | Registrar profesional
+
+
+  //- ============================================================
+  //- JAVASCRIPT
+  //- ============================================================
+
+  script.
+    document.addEventListener(
+      'DOMContentLoaded',
+      function () {
+
+        const formulario =
+          document.getElementById(
+            'formNuevoProfesional'
+          );
+
+        const permiteSobreturnos =
+          document.getElementById(
+            'permiteSobreturnos'
+          );
+
+        const configSobreturnos =
+          document.getElementById(
+            'configSobreturnos'
+          );
+
+        const ofreceTelemedicina =
+          document.getElementById(
+            'ofreceTelemedicina'
+          );
+
+        const configTelemedicina =
+          document.getElementById(
+            'configTelemedicina'
+          );
+
+        const horaInicio =
+          document.getElementById(
+            'horaInicio'
+          );
+
+        const horaFin =
+          document.getElementById(
+            'horaFin'
+          );
+
+        const botonGuardar =
+          document.getElementById(
+            'btnGuardarProfesional'
+          );
+
+        const textoGuardar =
+          document.getElementById(
+            'textoGuardarProfesional'
+          );
+
+        const iconoGuardar =
+          document.getElementById(
+            'iconGuardarProfesional'
+          );
+
+
+        // ======================================================
+        // MOSTRAR CONFIGURACIÓN SOBRETURNOS
+        // ======================================================
+
+        function actualizarSobreturnos() {
+
+          if (
+            !permiteSobreturnos ||
+            !configSobreturnos
+          ) {
+            return;
+          }
+
+
+          if (
+            permiteSobreturnos.checked
+          ) {
+
+            configSobreturnos
+              .classList
+              .add('active');
+
+          } else {
+
+            configSobreturnos
+              .classList
+              .remove('active');
+
+          }
+
+        }
+
+
+        // ======================================================
+        // MOSTRAR CONFIGURACIÓN TELEMEDICINA
+        // ======================================================
+
+        function actualizarTelemedicina() {
+
+          if (
+            !ofreceTelemedicina ||
+            !configTelemedicina
+          ) {
+            return;
+          }
+
+
+          if (
+            ofreceTelemedicina.checked
+          ) {
+
+            configTelemedicina
+              .classList
+              .add('active');
+
+          } else {
+
+            configTelemedicina
+              .classList
+              .remove('active');
+
+          }
+
+        }
+
+
+        if (permiteSobreturnos) {
+
+          permiteSobreturnos
+            .addEventListener(
+              'change',
+              actualizarSobreturnos
+            );
+
+        }
+
+
+        if (ofreceTelemedicina) {
+
+          ofreceTelemedicina
+            .addEventListener(
+              'change',
+              actualizarTelemedicina
+            );
+
+        }
+
+
+        actualizarSobreturnos();
+        actualizarTelemedicina();
+
+
+        // ======================================================
+        // VALIDAR FORMULARIO
+        // ======================================================
+
+        if (formulario) {
+
+          formulario.addEventListener(
+            'submit',
+            function (event) {
+
+              const diasRegulares =
+                document.querySelectorAll(
+                  '.dia-regular:checked'
+                );
+
+
+              if (
+                diasRegulares.length === 0
+              ) {
+
+                event.preventDefault();
+
+                window.alert(
+                  'Seleccioná al menos un día de atención regular.'
+                );
+
+                return;
+
+              }
+
+
+              if (
+                horaInicio &&
+                horaFin &&
+                horaInicio.value &&
+                horaFin.value &&
+                horaInicio.value >= horaFin.value
+              ) {
+
+                event.preventDefault();
+
+                window.alert(
+                  'La hora de finalización debe ser posterior a la hora de inicio.'
+                );
+
+                return;
+
+              }
+
+
+              if (
+                permiteSobreturnos &&
+                permiteSobreturnos.checked
+              ) {
+
+                const diasSob =
+                  document.querySelectorAll(
+                    'input[name="diasSobreturnos"]:checked'
+                  );
+
+
+                if (
+                  diasSob.length === 0
+                ) {
+
+                  event.preventDefault();
+
+                  window.alert(
+                    'Seleccioná al menos un día para los sobreturnos.'
+                  );
+
+                  return;
+
+                }
+
+              }
+
+
+              if (
+                ofreceTelemedicina &&
+                ofreceTelemedicina.checked
+              ) {
+
+                const diasTele =
+                  document.querySelectorAll(
+                    'input[name="diasTelemedicina"]:checked'
+                  );
+
+
+                if (
+                  diasTele.length === 0
+                ) {
+
+                  event.preventDefault();
+
+                  window.alert(
+                    'Seleccioná al menos un día para telemedicina.'
+                  );
+
+                  return;
+
+                }
+
+              }
+
+
+              if (
+                !formulario.checkValidity()
+              ) {
+
+                return;
+
+              }
+
+
+              if (botonGuardar) {
+
+                botonGuardar.disabled =
+                  true;
+
+              }
+
+
+              if (iconoGuardar) {
+
+                iconoGuardar.textContent =
+                  '◷';
+
+              }
+
+
+              if (textoGuardar) {
+
+                textoGuardar.textContent =
+                  'Registrando profesional...';
+
+              }
+
+            }
+          );
+
+        }
+
+      }
+    );

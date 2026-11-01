@@ -1,0 +1,37 @@
+extends layout
+
+block content
+  - const ars = valor => Number.isFinite(Number(valor)) && Number(valor) >= 0 ? new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(Number(valor)) : 'Sin configurar'
+  .container.py-4
+    .d-flex.flex-wrap.justify-content-between.align-items-start.gap-3.mb-4
+      div
+        p.text-uppercase.small.fw-semibold.mb-1(style='color:#8B5CF6') TurnoFlex · Administración y pacientes
+        h1.h2.fw-bold.mb-1 Precios de consultas y copagos
+        p.text-body-secondary.mb-0 Consultá los valores configurados para cada especialidad.
+      a.btn.btn-outline-secondary(href='/turnos/nuevo') Volver a reservar
+    .alert.alert-info(role='note')
+      strong Información orientativa.
+      |  Los copagos dependen de la obra social, el plan y el convenio vigente. La cobertura de cada paciente debe verificarse antes de cobrar. Un arancel aquí no confirma que el paciente esté cubierto.
+    if !especialidades || !especialidades.length
+      .card.border-0.shadow-sm
+        .card-body.py-5.text-center
+          h2.h5 No hay precios cargados
+          p.text-body-secondary.mb-0 Los precios corresponden a las especialidades registradas en el sistema.
+    else
+      .row.row-cols-1.row-cols-lg-2.g-3
+        each esp in especialidades
+          .col
+            article.card.h-100.shadow-sm.border-0
+              .card-body.p-4
+                h2.h5.fw-bold.mb-3= esp.nombre
+                .d-flex.justify-content-between.gap-2.mb-3
+                  span.text-body-secondary Consulta particular
+                  strong.fs-5(style='color:#6D28D9')= ars(esp.precioParticular)
+                .d-flex.justify-content-between.gap-2
+                  span.text-body-secondary Copago de referencia
+                  strong= ars(esp.copagoObraSocial)
+                p.small.text-body-secondary.mt-3.mb-0 Precio final sujeto a la cobertura confirmada y al medio de pago.
+    .mt-4.p-3.rounded(style='background:rgba(139,92,246,.07)')
+      p.mb-1.fw-semibold ¿Dónde se cargan las historias clínicas?
+      p.text-body-secondary.mb-1 En la agenda del profesional, cada turno habilitado tiene los botones «Historia clínica» y «+ Evolución». Solo el profesional asignado puede crear evoluciones; el paciente consulta su propia historia desde su portal.
+      p.small.text-body-secondary.mb-0 Esta función requiere el módulo /clinica ya instalado. No se incluyen datos clínicos de pacientes reales en los ejemplos.

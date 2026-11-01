@@ -7,7 +7,7 @@ html(lang='es' data-tf-theme='dark')
     meta(name='description' content='TurnoFlex: una forma moderna y organizada de gestionar turnos médicos, profesionales y pacientes.')
     title TurnoFlex | Tu salud, más cerca que nunca
     //- Unico JS (tema + interacciones) y unico CSS (marca + temas).
-    script(src='/js/turnoflex.js?v=2')
+    script(src='/js/turnoflex.js?v=1')
     link(rel='stylesheet' href='/css/turnoflex.css?v=header1')
     link(rel='icon' type='image/svg+xml' href='/favicon.svg')
     link(rel='preconnect' href='https://cdn.jsdelivr.net' crossorigin)
@@ -47,7 +47,7 @@ html(lang='es' data-tf-theme='dark')
                 i.bi.bi-check-circle-fill(aria-hidden='true')
                 |  Recordatorios integrados
 
-          Panel ilustrativo de la plataforma
+          Panel ilustrativo retirado
             .tfp-orb.tfp-orb-top(aria-hidden='true')
             .tfp-orb.tfp-orb-bottom(aria-hidden='true')
             .tfp-product
@@ -142,6 +142,28 @@ html(lang='es' data-tf-theme='dark')
                 strong Gestión simple
                 small Más claridad cada día
             p.tfp-demo-caption Demostración visual. Los nombres y turnos no corresponden a pacientes reales.
+
+        .tfp-shell.tfp-advantages
+          .tfp-advantage
+            i.bi.bi-calendar2-week(aria-hidden='true')
+            div
+              strong Todo en una agenda
+              small Turnos organizados
+          .tfp-advantage
+            i.bi.bi-people(aria-hidden='true')
+            div
+              strong Perfiles personalizados
+              small Cada persona en su espacio
+          .tfp-advantage
+            i.bi.bi-bell(aria-hidden='true')
+            div
+              strong Avisos integrados
+              small Recordatorios útiles
+          .tfp-advantage
+            i.bi.bi-shield-lock(aria-hidden='true')
+            div
+              strong Acceso protegido
+              small Sesiones por usuario
 
       section#beneficios.tfp-section(aria-labelledby='beneficios-titulo')
         .tfp-shell

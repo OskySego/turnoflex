@@ -1,71 +1,672 @@
 extends layout
 
 block content
-  .d-flex.justify-content-between.align-items-center.mb-4.flex-wrap.gap-3
-    div
-      h2.mb-1 Turnos
-      p.text-muted.mb-0 Turnos registrados en TurnoFlex
 
-    .d-flex.align-items-center.gap-2
-      span.badge.bg-primary.fs-6
-        | #{turnos.length} turnos
-      
-      // Botón para volver al inicio
-      a.btn.btn-outline-secondary.rounded-3(href="/")
-        | Volver al inicio
+  style.
+    .tf-turnos-header {
+      background: linear-gradient(135deg, #0D1B3E 0%, #172554 65%, #312E81 100%);
+      border-radius: 22px;
+      padding: 24px;
+      color: white;
+      margin-bottom: 24px;
+    }
 
-      // Botón para solicitar nuevo turno
-      a.btn.btn-primary.rounded-3(href="/turnos/nuevo")
-        | + Solicitar nuevo turno
+    .tf-turnos-header p {
+      color: rgba(255,255,255,.65);
+    }
+
+    .tf-filter-btn {
+      border-radius: 999px;
+      font-size: .75rem;
+      font-weight: 700;
+      padding: 7px 13px;
+    }
+
+    .tf-turno-card {
+      transition: transform .2s ease, box-shadow .2s ease;
+      border: 1px solid var(--tf-border, #e5e7eb) !important;
+    }
+
+    .tf-turno-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(13,27,62,.10) !important;
+    }
+
+    .tf-info-box {
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: rgba(139,92,246,.06);
+    }
+
+    .tf-mini-label {
+      display: block;
+      color: #6b7280;
+      font-size: .65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      margin-bottom: 2px;
+    }
+
+    .tf-person-row {
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(128,128,128,.12);
+    }
+
+    .tf-person-row:last-child {
+      border-bottom: none;
+    }
+
+    .tf-payment-box {
+      border-radius: 12px;
+      padding: 12px;
+      background: rgba(13,27,62,.035);
+    }
+
+    [data-bs-theme="dark"] .tf-payment-box,
+    [data-bs-theme="dark"] .tf-info-box {
+      background: rgba(255,255,255,.04);
+    }
+
+    .tf-audit-badge {
+      background: rgba(139,92,246,.10);
+      color: #7c3aed;
+      border: 1px solid rgba(139,92,246,.18);
+    }
+
+    [data-bs-theme="dark"] .tf-audit-badge {
+      color: #c4b5fd;
+    }
+
+  //- ============================================================
+  //- CABECERA
+  //- ============================================================
+
+  .tf-turnos-header.tfu-hero
+
+    .d-flex.justify-content-between.align-items-center.flex-wrap.gap-3
+
+      div
+        small.text-uppercase.fw-bold(style="color:#c4b5fd;")
+          | Centro Operativo
+
+        h2.mb-1.fw-bold
+          | Gestión de Turnos
+
+        p.mb-0
+          | Seguimiento de citas, cobros y estados en tiempo real
+
+
+      .d-flex.flex-wrap.align-items-center.gap-2
+
+        span.badge.rounded-pill.px-3.py-2(
+          style="background:rgba(255,255,255,.12);"
+        )
+          | #{turnos ? turnos.length : 0} turnos
+
+        a.btn.btn-light.rounded-3(
+          href="/"
+        )
+          | Inicio
+
+        a.btn.rounded-3.text-white(
+          href="/turnos/nuevo"
+          style="background:#8B5CF6;"
+        )
+          | + Nuevo turno
+
+
+  //- ============================================================
+  //- FILTROS RÁPIDOS
+  //- ============================================================
+
+  if turnos && turnos.length > 0
+
+    .card.border-0.shadow-sm.rounded-4.mb-4.tfu-card
+
+      .card-body.p-3
+
+        .d-flex.flex-wrap.align-items-center.gap-2
+
+          span.small.fw-bold.text-muted.me-1
+            | Mostrar:
+
+          button.btn.btn-primary.tf-filter-btn(
+            type="button"
+            data-filter="todos"
+          )
+            | Todos
+
+          button.btn.btn-outline-primary.tf-filter-btn(
+            type="button"
+            data-filter="reservado"
+          )
+            | Reservados
+
+          button.btn.btn-outline-warning.tf-filter-btn(
+            type="button"
+            data-filter="pendiente_pago"
+          )
+            | Pendiente pago
+
+          button.btn.btn-outline-info.tf-filter-btn(
+            type="button"
+            data-filter="En Espera"
+          )
+            | En espera
+
+          button.btn.btn-outline-success.tf-filter-btn(
+            type="button"
+            data-filter="atendido"
+          )
+            | Atendidos
+
+          button.btn.btn-outline-danger.tf-filter-btn(
+            type="button"
+            data-filter="cancelado"
+          )
+            | Cancelados
+
+
+  //- ============================================================
+  //- SIN TURNOS
+  //- ============================================================
 
   if !turnos || turnos.length === 0
-    .alert.alert-info.shadow-sm.rounded-3
-      | No hay turnos registrados actualmente.
+
+    .card.border-0.shadow-sm.rounded-4.tfu-card
+
+      .card-body.text-center.p-5
+
+        .display-6.mb-3
+          | ◇
+
+        h5.fw-bold
+          | No hay turnos registrados
+
+        p.text-muted.mb-4
+          | Cuando se registre una nueva cita aparecerá en este panel.
+
+        a.btn.btn-primary.rounded-3.px-4(
+          href="/turnos/nuevo"
+        )
+          | Crear primer turno
+
+
+  //- ============================================================
+  //- GRILLA DE TURNOS
+  //- ============================================================
+
   else
-    .row.g-4
+
+    #turnosGrid.row.g-4
+
       each turno in turnos
+
         - const turnoId = turno._id || turno.id
-        .col-md-6
-          .card.border-0.rounded-4.shadow-sm.h-100.overflow-hidden
-            .card-header.bg-white.py-3.border-bottom
-              .d-flex.justify-content-between.align-items-center
-                - 
-                  let prefijo = 'TRN';
-                  if (turno.profesional_id && turno.profesional_id.especialidad) {
-                    prefijo = turno.profesional_id.especialidad.substring(0, 3).toUpperCase();
-                  }
-                  const idCorto = turnoId ? turnoId.toString().slice(-4).toUpperCase() : '0000';
-                  const codigoReserva = `${prefijo}-${idCorto}`;
+        - const clienteNombre = turno.cliente_id && turno.cliente_id.nombre ? turno.cliente_id.nombre : (turno.cliente && turno.cliente.nombre ? turno.cliente.nombre : 'Sin asignar')
+        - const profesionalNombre = turno.profesional_id && turno.profesional_id.nombre ? turno.profesional_id.nombre : (turno.profesional && turno.profesional.nombre ? turno.profesional.nombre : 'Sin asignar')
+        - const especialidad = turno.profesional_id && turno.profesional_id.especialidad ? turno.profesional_id.especialidad : 'General'
+        - const eventosAuditoria = turno.auditoria && Array.isArray(turno.auditoria) ? turno.auditoria.length : 0
+        - const prefijo = especialidad && especialidad !== 'General' ? especialidad.substring(0, 3).toUpperCase() : 'TRN'
+        - const idCorto = turnoId ? turnoId.toString().slice(-4).toUpperCase() : '0000'
+        - const codigoReserva = prefijo + '-' + idCorto
 
-                h3.h5.mb-0.fw-bold= codigoReserva
+        .col-xl-4.col-lg-6.turno-card-wrapper(
+          data-estado=turno.estado || 'reservado'
+        )
 
-                if turno.estado === 'cancelado'
-                  span.badge.bg-danger CANCELADO
-                else if turno.estado === 'atendido'
-                  span.badge.bg-success ATENDIDO
-                else
-                  span.badge.bg-primary RESERVADO
+          .card.tf-turno-card.border-0.rounded-4.shadow-sm.h-100.overflow-hidden.tfu-card
 
-            .card-body.p-4.d-flex.flex-column.justify-content-between
-              div
-                .row.g-2.mb-3
-                  .col-6
-                    .p-2.rounded-3.bg-light
-                      small.text-muted.d-block.fw-bold Fecha
-                      span.fw-bold.small= turno.fecha || 'N/D'
+            //- ==================================================
+            //- CABECERA DE TARJETA
+            //- ==================================================
 
-                  .col-6
-                    .p-2.rounded-3.bg-light
-                      small.text-muted.d-block.fw-bold Hora
-                      span.fw-bold.small= turno.hora ? `${turno.hora} hs` : 'N/D'
+            .card-header.bg-transparent.py-3.px-4.border-bottom
 
-                p.mb-1.small
-                  strong.text-muted Paciente: 
-                  span.fw-medium #{turno.cliente_id && turno.cliente_id.nombre ? turno.cliente_id.nombre : (turno.cliente ? turno.cliente.nombre : 'Sin asignar')}
+              .d-flex.justify-content-between.align-items-center.gap-2
 
-                p.mb-0.small
-                  strong.text-muted Profesional: 
-                  span.fw-medium #{turno.profesional_id && turno.profesional_id.nombre ? turno.profesional_id.nombre : (turno.profesional ? turno.profesional.nombre : 'Sin asignar')}
+                div
 
-              div.pt-3
-                a.btn.btn-outline-primary.w-100.rounded-3(href=`/turnos/${turnoId}`) Ver detalle
+                  small.text-muted.d-block
+                    | Reserva
+
+                  h5.mb-0.fw-bold
+                    = codigoReserva
+
+
+                div
+
+                  if turno.estado === 'cancelado'
+
+                    span.badge.bg-danger(
+                      id=`estado-turno-${turnoId}`
+                    )
+                      | CANCELADO
+
+                  else if turno.estado === 'atendido'
+
+                    span.badge.bg-success(
+                      id=`estado-turno-${turnoId}`
+                    )
+                      | ATENDIDO
+
+                  else if turno.estado === 'pendiente_pago'
+
+                    span.badge.bg-warning.text-dark(
+                      id=`estado-turno-${turnoId}`
+                    )
+                      | PENDIENTE PAGO
+
+                  else if turno.estado === 'En Espera'
+
+                    span.badge.bg-info.text-dark(
+                      id=`estado-turno-${turnoId}`
+                    )
+                      | EN ESPERA
+
+                  else
+
+                    span.badge.bg-primary(
+                      id=`estado-turno-${turnoId}`
+                    )
+                      | RESERVADO
+
+
+            //- ==================================================
+            //- CUERPO
+            //- ==================================================
+
+            .card-body.p-4.d-flex.flex-column
+
+              //- FECHA Y HORA
+
+              .row.g-2.mb-3
+
+                .col-7
+
+                  .tf-info-box.h-100
+
+                    span.tf-mini-label
+                      | Fecha
+
+                    strong
+                      = turno.fecha || 'N/D'
+
+
+                .col-5
+
+                  .tf-info-box.h-100
+
+                    span.tf-mini-label
+                      | Hora
+
+                    strong
+                      = turno.hora ? turno.hora + ' hs' : 'N/D'
+
+
+              //- PACIENTE
+
+              .tf-person-row
+
+                span.tf-mini-label
+                  | Paciente
+
+                strong.small
+                  = clienteNombre
+
+
+              //- PROFESIONAL
+
+              .tf-person-row.mb-3
+
+                span.tf-mini-label
+                  | Profesional
+
+                strong.small
+                  = profesionalNombre
+
+                small.text-muted.d-block.mt-1
+                  = especialidad
+
+
+              //- ==================================================
+              //- PAGO
+              //- ==================================================
+
+              .tf-payment-box.mb-3
+
+                .d-flex.justify-content-between.align-items-center.flex-wrap.gap-2
+
+                  div
+
+                    span.tf-mini-label
+                      | Método
+
+                    if turno.metodoPago === 'mercadopago'
+
+                      span.badge.bg-primary
+                        | 💳 Mercado Pago
+
+                    else if turno.metodoPago === 'efectivo'
+
+                      span.badge.bg-success
+                        | 💵 Efectivo
+
+                    else
+
+                      span.badge.bg-secondary
+                        | Sin definir
+
+
+                  div.text-end
+
+                    span.tf-mini-label
+                      | Pago
+
+                    if turno.estadoPago === 'total_pagado'
+
+                      span.badge.bg-success(
+                        id=`pago-turno-${turnoId}`
+                      )
+                        | TOTAL PAGADO
+
+                    else if turno.estadoPago === 'sena_pagada'
+
+                      span.badge.bg-info.text-dark(
+                        id=`pago-turno-${turnoId}`
+                      )
+                        | SEÑA PAGADA
+
+                    else
+
+                      span.badge.bg-warning.text-dark(
+                        id=`pago-turno-${turnoId}`
+                      )
+                        | PENDIENTE
+
+
+              //- ==================================================
+              //- AUDITORÍA
+              //- ==================================================
+
+              if user && (user.rol === 'admin' || user.rol === 'personal')
+
+                .mb-3
+
+                  span.badge.tf-audit-badge.rounded-pill.px-3.py-2
+                    | ◉ #{eventosAuditoria} eventos de auditoría
+
+
+              //- ==================================================
+              //- BOTÓN DETALLE
+              //- ==================================================
+
+              .mt-auto.pt-2
+
+                a.btn.btn-outline-primary.w-100.rounded-3.fw-bold(
+                  href=`/turnos/${turnoId}`
+                )
+                  | Ver detalle y gestión
+
+
+    //- ==========================================================
+    //- PAGINACIÓN
+    //- ==========================================================
+
+    if paginacion && paginacion.totalPaginas > 1
+
+      nav.mt-4(
+        aria-label="Paginación de turnos"
+      )
+
+        ul.pagination.justify-content-center
+
+          li.page-item(
+            class=!paginacion.tieneAnterior ? 'disabled' : ''
+          )
+
+            a.page-link(
+              href=`/turnos?page=${paginacion.paginaActual - 1}`
+            )
+              | Anterior
+
+
+          li.page-item.disabled
+
+            span.page-link
+              | Página #{paginacion.paginaActual} de #{paginacion.totalPaginas}
+
+
+          li.page-item(
+            class=!paginacion.tieneSiguiente ? 'disabled' : ''
+          )
+
+            a.page-link(
+              href=`/turnos?page=${paginacion.paginaActual + 1}`
+            )
+              | Siguiente
+
+
+  //- ============================================================
+  //- SOCKET.IO + FILTROS
+  //- ============================================================
+
+  script(src="/socket.io/socket.io.js")
+
+  script.
+    document.addEventListener('DOMContentLoaded', function () {
+
+      // ========================================================
+      // FILTROS VISUALES
+      // ========================================================
+
+      const botonesFiltro =
+        document.querySelectorAll('[data-filter]');
+
+      const tarjetas =
+        document.querySelectorAll('.turno-card-wrapper');
+
+
+      botonesFiltro.forEach(function (boton) {
+
+        boton.addEventListener('click', function () {
+
+          const filtro =
+            boton.dataset.filter;
+
+
+          botonesFiltro.forEach(function (btn) {
+
+            btn.classList.remove('btn-primary');
+
+            btn.classList.add(
+              btn.dataset.filter === 'cancelado'
+                ? 'btn-outline-danger'
+                : btn.dataset.filter === 'atendido'
+                  ? 'btn-outline-success'
+                  : btn.dataset.filter === 'pendiente_pago'
+                    ? 'btn-outline-warning'
+                    : btn.dataset.filter === 'En Espera'
+                      ? 'btn-outline-info'
+                      : 'btn-outline-primary'
+            );
+
+          });
+
+
+          boton.className =
+            'btn btn-primary tf-filter-btn';
+
+
+          tarjetas.forEach(function (tarjeta) {
+
+            const estado =
+              tarjeta.dataset.estado;
+
+
+            if (
+              filtro === 'todos' ||
+              estado === filtro
+            ) {
+
+              tarjeta.style.display = '';
+
+            } else {
+
+              tarjeta.style.display = 'none';
+
+            }
+
+          });
+
+        });
+
+      });
+
+
+      // ========================================================
+      // SOCKET.IO
+      // ========================================================
+
+      const socket =
+        io();
+
+
+      socket.on(
+        'actualizacion_agenda',
+        function (data) {
+
+          // ----------------------------------------------------
+          // CAMBIO DE ESTADO
+          // ----------------------------------------------------
+
+          if (
+            data.tipo === 'ESTADO' &&
+            data.id
+          ) {
+
+            const badge =
+              document.getElementById(
+                'estado-turno-' + data.id
+              );
+
+
+            if (badge) {
+
+              const estado =
+                data.nuevoEstado;
+
+
+              if (
+                estado === 'atendido'
+              ) {
+
+                badge.textContent =
+                  'ATENDIDO';
+
+                badge.className =
+                  'badge bg-success';
+
+              } else if (
+                estado === 'cancelado'
+              ) {
+
+                badge.textContent =
+                  'CANCELADO';
+
+                badge.className =
+                  'badge bg-danger';
+
+              } else if (
+                estado === 'pendiente_pago'
+              ) {
+
+                badge.textContent =
+                  'PENDIENTE PAGO';
+
+                badge.className =
+                  'badge bg-warning text-dark';
+
+              } else if (
+                estado === 'En Espera'
+              ) {
+
+                badge.textContent =
+                  'EN ESPERA';
+
+                badge.className =
+                  'badge bg-info text-dark';
+
+              } else {
+
+                badge.textContent =
+                  'RESERVADO';
+
+                badge.className =
+                  'badge bg-primary';
+
+              }
+
+
+              const tarjeta =
+                badge.closest(
+                  '.turno-card-wrapper'
+                );
+
+
+              if (tarjeta) {
+
+                tarjeta.dataset.estado =
+                  estado;
+
+              }
+
+
+              badge.style.transition =
+                'transform .2s ease';
+
+
+              badge.style.transform =
+                'scale(1.15)';
+
+
+              setTimeout(
+                function () {
+
+                  badge.style.transform =
+                    'scale(1)';
+
+                },
+                300
+              );
+
+            }
+
+          }
+
+
+          // ----------------------------------------------------
+          // NUEVO TURNO / PAGOS
+          //
+          // Recargamos para reflejar:
+          // - estadoPago
+          // - método de pago
+          // - auditoría
+          // - nueva reserva
+          // ----------------------------------------------------
+
+          if (
+            data.tipo === 'NUEVO' ||
+            data.tipo === 'PAGO' ||
+            data.tipo === 'PAGO_MP_CONFIRMADO'
+          ) {
+
+            window.location.reload();
+
+          }
+
+        }
+      );
+
+    });

@@ -1,0 +1,52 @@
+
+extends layout
+
+block content
+  .container.py-4(style="max-width: 660px")
+    a.btn.btn-outline-secondary.mb-3(href="/") Volver al panel
+
+    h1.mb-3 Prueba de WhatsApp
+
+    p.text-body-secondary
+      | Exclusivo para administradores.
+      |  Envía un recordatorio ficticio a un número
+      |  propio o autorizado, sin modificar turnos.
+
+    if error
+      .alert.alert-danger(role="alert")= error
+
+    if exito
+      .alert.alert-success(role="status")= exito
+
+    .card.shadow-sm
+      .card-body.p-4
+        form(action="/admin/prueba-whatsapp" method="POST")
+          input(type="hidden" name="_csrf" value=csrfToken)
+
+          .mb-3
+            label.form-label(for="telefono") Número de prueba
+
+            input#telefono.form-control(
+              type="tel"
+              name="telefono"
+              placeholder="549XXXXXXXXXX"
+              inputmode="numeric"
+              autocomplete="off"
+              pattern="549[0-9]{10}"
+              maxlength="13"
+              required
+            )
+
+            .form-text
+              | Usá un número propio o autorizado.
+              |  No ingreses el de un paciente.
+
+          .alert.alert-info
+            strong Contenido de la prueba
+            p.mb-0
+              | Paciente: Paciente de Prueba.
+              |  Profesional: Profesional de Prueba.
+              |  Fecha: mañana. Hora: 10:00.
+
+          button.btn.btn-primary(type="submit")
+            | Enviar recordatorio de prueba
