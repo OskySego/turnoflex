@@ -1,0 +1,915 @@
+extends layout
+
+block content
+
+  //- ============================================================
+  //- DATOS
+  //- ============================================================
+
+  - const paciente = (typeof cliente !== 'undefined' && cliente) ? cliente : {}
+  - const cobertura = paciente.obraSocial ? paciente.obraSocial : {}
+  - const familiares = Array.isArray(paciente.grupoFamiliar) ? paciente.grupoFamiliar : []
+  - const nombrePaciente = paciente.nombre || 'Paciente'
+  - const iniciales = nombrePaciente.split(' ').filter(function(parte) { return parte; }).slice(0, 2).map(function(parte) { return parte.charAt(0).toUpperCase(); }).join('') || 'PA'
+  - const formatearFecha = function(valor) { if (!valor) return 'N/D'; const fecha = new Date(valor); return isNaN(fecha.getTime()) ? 'N/D' : fecha.toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' }); }
+
+
+  //- ============================================================
+  //- ESTILOS
+  //- ============================================================
+
+  style.
+    .my-profile {
+      --mp-navy: #0d1b3e;
+      --mp-blue: #2563eb;
+      --mp-violet: #8b5cf6;
+      --mp-green: #10b981;
+      --mp-yellow: #f59e0b;
+      --mp-red: #ef4444;
+
+      --mp-surface: #ffffff;
+      --mp-soft: #f8fafc;
+      --mp-text: #0f172a;
+      --mp-muted: #64748b;
+      --mp-border: rgba(15,23,42,.08);
+
+      color: var(--mp-text);
+    }
+
+    [data-bs-theme="dark"] .my-profile {
+      --mp-surface: #171d27;
+      --mp-soft: #111827;
+      --mp-text: #f8fafc;
+      --mp-muted: #94a3b8;
+      --mp-border: rgba(255,255,255,.08);
+    }
+
+    .profile-hero {
+      position: relative;
+      overflow: hidden;
+
+      padding: 32px;
+
+      border-radius: 28px;
+
+      color: white;
+
+      background:
+        radial-gradient(
+          circle at 90% 0%,
+          rgba(139,92,246,.50),
+          transparent 33%
+        ),
+        radial-gradient(
+          circle at 8% 100%,
+          rgba(37,99,235,.28),
+          transparent 36%
+        ),
+        linear-gradient(
+          135deg,
+          #08132e,
+          #10245d 52%,
+          #312e81
+        );
+
+      box-shadow:
+        0 23px 54px rgba(15,23,42,.21);
+    }
+
+    .profile-hero::after {
+      content: "";
+
+      position: absolute;
+
+      width: 320px;
+      height: 320px;
+
+      right: -160px;
+      bottom: -195px;
+
+      border-radius: 50%;
+
+      background:
+        rgba(255,255,255,.07);
+    }
+
+    .profile-hero-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .profile-avatar {
+      width: 74px;
+      height: 74px;
+
+      flex-shrink: 0;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 22px;
+
+      background:
+        linear-gradient(
+          135deg,
+          #2563eb,
+          #8b5cf6
+        );
+
+      border:
+        1px solid rgba(255,255,255,.22);
+
+      box-shadow:
+        0 13px 30px rgba(0,0,0,.17);
+
+      font-size: 1.4rem;
+      font-weight: 900;
+    }
+
+    .profile-eyebrow {
+      color:
+        rgba(255,255,255,.63);
+
+      font-size: .68rem;
+      font-weight: 850;
+
+      text-transform: uppercase;
+
+      letter-spacing: .14em;
+
+      margin-bottom: 5px;
+    }
+
+    .profile-name {
+      font-size:
+        clamp(1.8rem,4vw,2.5rem);
+
+      font-weight: 900;
+
+      letter-spacing: -.04em;
+
+      margin-bottom: 5px;
+    }
+
+    .profile-subtitle {
+      color:
+        rgba(255,255,255,.73);
+
+      font-size: .82rem;
+
+      margin-bottom: 0;
+    }
+
+    .profile-status {
+      display: inline-flex;
+
+      align-items: center;
+
+      gap: 8px;
+
+      padding: 9px 14px;
+
+      border-radius: 999px;
+
+      background:
+        rgba(255,255,255,.10);
+
+      border:
+        1px solid rgba(255,255,255,.16);
+
+      font-size: .75rem;
+      font-weight: 800;
+    }
+
+    .profile-status-dot {
+      width: 8px;
+      height: 8px;
+
+      border-radius: 50%;
+
+      background: #34d399;
+
+      box-shadow:
+        0 0 0 5px rgba(52,211,153,.12);
+    }
+
+    .profile-hero-btn {
+      display: inline-flex;
+
+      align-items: center;
+      justify-content: center;
+
+      min-height: 42px;
+
+      padding: 0 15px;
+
+      border-radius: 12px;
+
+      text-decoration: none;
+
+      color: #312e81;
+
+      background:
+        linear-gradient(
+          135deg,
+          #ffffff,
+          #ede9fe
+        );
+
+      font-size: .75rem;
+      font-weight: 850;
+    }
+
+    .profile-section {
+      margin-top: 31px;
+      margin-bottom: 14px;
+    }
+
+    .profile-label {
+      color:
+        var(--mp-violet);
+
+      font-size: .68rem;
+      font-weight: 850;
+
+      text-transform: uppercase;
+
+      letter-spacing: .13em;
+
+      margin-bottom: 4px;
+    }
+
+    .profile-title {
+      color:
+        var(--mp-text);
+
+      font-weight: 900;
+
+      letter-spacing: -.025em;
+
+      margin-bottom: 4px;
+    }
+
+    .profile-text {
+      color:
+        var(--mp-muted);
+
+      font-size: .8rem;
+
+      margin-bottom: 0;
+    }
+
+    .profile-panel {
+      padding: 24px;
+
+      border-radius: 22px;
+
+      background:
+        var(--mp-surface);
+
+      border:
+        1px solid var(--mp-border);
+
+      box-shadow:
+        0 11px 31px rgba(15,23,42,.06);
+    }
+
+    .profile-field {
+      min-height: 48px;
+
+      border-radius: 12px;
+
+      color:
+        var(--mp-text);
+
+      background:
+        var(--mp-soft);
+
+      border:
+        1px solid var(--mp-border);
+    }
+
+    .profile-field:focus {
+      border-color:
+        var(--mp-violet);
+
+      box-shadow:
+        0 0 0 4px rgba(139,92,246,.10);
+    }
+
+    .profile-field[readonly] {
+      opacity: .75;
+
+      cursor: not-allowed;
+    }
+
+    .profile-form-label {
+      color:
+        var(--mp-text);
+
+      font-size: .72rem;
+
+      font-weight: 800;
+    }
+
+    .profile-readonly-note {
+      padding: 12px 14px;
+
+      border-radius: 12px;
+
+      color:
+        var(--mp-muted);
+
+      background:
+        rgba(139,92,246,.07);
+
+      border:
+        1px solid rgba(139,92,246,.11);
+
+      font-size: .72rem;
+    }
+
+    .profile-save-btn {
+      min-height: 44px;
+
+      padding: 0 18px;
+
+      border: 0;
+
+      border-radius: 12px;
+
+      color: white;
+
+      background:
+        linear-gradient(
+          135deg,
+          #2563eb,
+          #8b5cf6
+        );
+
+      font-size: .76rem;
+
+      font-weight: 850;
+    }
+
+    .profile-success {
+      margin-bottom: 20px;
+
+      padding: 14px 16px;
+
+      border-radius: 14px;
+
+      color: #047857;
+
+      background:
+        rgba(16,185,129,.10);
+
+      border:
+        1px solid rgba(16,185,129,.17);
+
+      font-size: .78rem;
+
+      font-weight: 750;
+    }
+
+    .family-panel {
+      padding: 24px;
+
+      border-radius: 22px;
+
+      background:
+        var(--mp-surface);
+
+      border:
+        1px solid var(--mp-border);
+
+      box-shadow:
+        0 11px 31px rgba(15,23,42,.06);
+    }
+
+    .family-card {
+      height: 100%;
+
+      padding: 16px;
+
+      border-radius: 15px;
+
+      background:
+        var(--mp-soft);
+
+      border:
+        1px solid var(--mp-border);
+    }
+
+    .family-icon {
+      width: 38px;
+      height: 38px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      margin-bottom: 11px;
+
+      border-radius: 11px;
+
+      background:
+        rgba(139,92,246,.12);
+    }
+
+    .family-name {
+      color:
+        var(--mp-text);
+
+      font-size: .84rem;
+
+      font-weight: 850;
+
+      margin-bottom: 3px;
+    }
+
+    .family-text {
+      color:
+        var(--mp-muted);
+
+      font-size: .7rem;
+
+      margin-bottom: 2px;
+    }
+
+    .family-form {
+      margin-top: 22px;
+
+      padding: 20px;
+
+      border-radius: 17px;
+
+      background:
+        linear-gradient(
+          135deg,
+          rgba(37,99,235,.06),
+          rgba(139,92,246,.09)
+        );
+
+      border:
+        1px solid rgba(139,92,246,.12);
+    }
+
+    .family-add-btn {
+      min-height: 42px;
+
+      border-radius: 11px;
+
+      font-size: .74rem;
+
+      font-weight: 850;
+    }
+
+    .profile-footer {
+      display: flex;
+
+      justify-content: space-between;
+
+      gap: 12px;
+
+      flex-wrap: wrap;
+
+      margin-top: 24px;
+
+      padding: 17px 19px;
+
+      border-radius: 17px;
+
+      color:
+        var(--mp-muted);
+
+      background:
+        var(--mp-surface);
+
+      border:
+        1px solid var(--mp-border);
+
+      font-size: .72rem;
+    }
+
+    @media (max-width: 767px) {
+
+      .profile-hero {
+        padding: 24px;
+      }
+
+      .profile-avatar {
+        width: 60px;
+        height: 60px;
+      }
+    }
+
+
+  //- ============================================================
+  //- CONTENIDO
+  //- ============================================================
+
+  .my-profile.tfu-page
+
+
+    if mensajeExito
+
+      .profile-success
+        | ✓ #{mensajeExito}
+
+
+    //- ==========================================================
+    //- HERO
+    //- ==========================================================
+
+    .profile-hero.tfu-hero
+
+      .profile-hero-content
+
+        .row.align-items-center.g-4
+
+
+          .col-lg-8
+
+            .d-flex.align-items-center.gap-3
+
+              .profile-avatar
+                = iniciales
+
+              div
+
+                .profile-eyebrow
+                  | ◆ Mi Perfil TurnoFlex
+
+                h1.profile-name
+                  = nombrePaciente
+
+                p.profile-subtitle
+                  | DNI #{paciente.dni || 'N/D'} · #{paciente.email || 'Sin correo'}
+
+
+          .col-lg-4
+
+            .d-flex.flex-column.align-items-lg-end.gap-3
+
+              .profile-status
+
+                span.profile-status-dot
+
+                span
+                  | Perfil activo
+
+
+              a.profile-hero-btn(
+                href="/turnos/nuevo"
+              )
+                | ＋ Solicitar turno
+
+
+    //- ==========================================================
+    //- DATOS PERSONALES
+    //- ==========================================================
+
+    .profile-section
+
+      .profile-label
+        | Información personal
+
+      h3.profile-title
+        | Mis datos
+
+      p.profile-text
+        | Consultá tus datos identificatorios y actualizá tu información de contacto.
+
+
+    .profile-panel.tfu-card
+
+
+      .profile-readonly-note.mb-4
+        | 🔒 El nombre, DNI y correo electrónico son datos identificatorios.
+        | Para modificarlos, comunicate con recepción.
+
+
+      form(
+        action="/clientes/mi-perfil/editar"
+        method="POST"
+      )
+        if typeof csrfToken !== "undefined" && csrfToken
+          input(type="hidden" name="_csrf" value=csrfToken)
+
+        .row.g-4
+
+
+          .col-md-6
+
+            label.form-label.profile-form-label
+              | Nombre completo
+
+            input.form-control.profile-field(
+              type="text"
+              value=nombrePaciente
+              readonly
+            )
+
+
+          .col-md-6
+
+            label.form-label.profile-form-label
+              | DNI
+
+            input.form-control.profile-field(
+              type="text"
+              value=paciente.dni || ''
+              readonly
+            )
+
+
+          .col-md-6
+
+            label.form-label.profile-form-label
+              | Correo electrónico
+
+            input.form-control.profile-field(
+              type="email"
+              value=paciente.email || ''
+              readonly
+            )
+
+
+          .col-md-6
+
+            label.form-label.profile-form-label
+              | Teléfono de contacto
+
+            input.form-control.profile-field(
+              type="text"
+              name="telefono"
+              value=paciente.telefono || ''
+              required
+              placeholder="Ej: 1155443322"
+            )
+
+
+          .col-12.mt-4
+
+            .profile-label
+              | Cobertura médica
+
+            h5.profile-title.mb-1
+              | Obra social o prepaga
+
+            p.profile-text
+              | Si sos paciente particular, podés dejar estos campos vacíos.
+
+
+          .col-md-4
+
+            label.form-label.profile-form-label
+              | Obra social / Prepaga
+
+            input.form-control.profile-field(
+              type="text"
+              name="obraSocial"
+              value=cobertura.empresa || ''
+              placeholder="Ej: OSDE"
+            )
+
+
+          .col-md-4
+
+            label.form-label.profile-form-label
+              | Número de afiliado
+
+            input.form-control.profile-field(
+              type="text"
+              name="numeroAfiliado"
+              value=cobertura.numeroAfiliado || ''
+              placeholder="Número de afiliado"
+            )
+
+
+          .col-md-4
+
+            label.form-label.profile-form-label
+              | Plan
+
+            input.form-control.profile-field(
+              type="text"
+              name="plan"
+              value=cobertura.plan || ''
+              placeholder="Ej: 210"
+            )
+
+
+          .col-12
+
+            .d-flex.justify-content-end.gap-2.flex-wrap.mt-2
+
+              a.btn.btn-outline-secondary.rounded-3.px-4(
+                href="/"
+              )
+                | Volver
+
+              button.profile-save-btn(
+                type="submit"
+              )
+                | Guardar cambios
+
+
+    //- ==========================================================
+    //- GRUPO FAMILIAR
+    //- ==========================================================
+
+    .profile-section
+
+      .d-flex.justify-content-between.align-items-end.flex-wrap.gap-2
+
+        div
+
+          .profile-label
+            | Familia
+
+          h3.profile-title
+            | Mi grupo familiar
+
+          p.profile-text
+            | Registrá familiares asociados a tu perfil.
+
+        span.badge.bg-secondary.rounded-pill.px-3.py-2
+          | #{familiares.length} registrado(s)
+
+
+    .family-panel
+
+
+      if familiares.length > 0
+
+        .row.g-3
+
+          each familiar in familiares
+
+            .col-md-6.col-xl-4
+
+              .family-card.tfu-card
+
+                .family-icon
+                  | 👤
+
+                h6.family-name
+
+                  if familiar && familiar.nombre
+                    = familiar.nombre
+                  else
+                    | Familiar
+
+
+                p.family-text
+
+                  if familiar && familiar.dni
+                    | DNI: #{familiar.dni}
+                  else
+                    | DNI: N/D
+
+
+                p.family-text
+
+                  if familiar && familiar.parentesco
+                    | Parentesco: #{familiar.parentesco}
+                  else
+                    | Parentesco: N/D
+
+
+      else
+
+        .text-center.py-4
+
+          .fs-2.mb-2
+            | 👨‍👩‍👧‍👦
+
+          h6.fw-bold.mb-1
+            | Todavía no tenés familiares asociados
+
+          p.text-muted.small.mb-0
+            | Podés agregar uno utilizando el formulario de abajo.
+
+
+      //- ========================================================
+      //- AGREGAR FAMILIAR
+      //- ========================================================
+
+      form.family-form(
+        action="/clientes/mi-perfil/familiar"
+        method="POST"
+      )
+        if typeof csrfToken !== "undefined" && csrfToken
+          input(type="hidden" name="_csrf" value=csrfToken)
+
+        .d-flex.align-items-center.gap-2.mb-3
+
+          span.fs-5
+            | ＋
+
+          div
+
+            h6.fw-bold.mb-0
+              | Agregar familiar
+
+            small.text-muted
+              | Completá los datos para asociarlo a tu perfil.
+
+
+        .row.g-3
+
+
+          .col-md-5
+
+            label.form-label.profile-form-label
+              | Nombre completo
+
+            input.form-control.profile-field(
+              type="text"
+              name="nombreFamiliar"
+              placeholder="Nombre y apellido"
+              required
+            )
+
+
+          .col-md-3
+
+            label.form-label.profile-form-label
+              | DNI
+
+            input.form-control.profile-field(
+              type="text"
+              name="dniFamiliar"
+              placeholder="Documento"
+              required
+            )
+
+
+          .col-md-4
+
+            label.form-label.profile-form-label
+              | Parentesco
+
+            select.form-select.profile-field(
+              name="parentesco"
+              required
+            )
+
+              option(
+                value=""
+                disabled
+                selected
+              )
+                | Seleccionar...
+
+              option(value="Hijo/a")
+                | Hijo/a
+
+              option(value="Pareja")
+                | Pareja
+
+              option(value="Padre/Madre")
+                | Padre/Madre
+
+              option(value="Otro")
+                | Otro
+
+
+          .col-12
+
+            .d-flex.justify-content-end
+
+              button.btn.btn-success.family-add-btn.px-4(
+                type="submit"
+              )
+                | ＋ Asociar familiar
+
+
+    //- ==========================================================
+    //- PIE
+    //- ==========================================================
+
+    .profile-footer
+
+      div
+
+        strong.d-block(
+          style="color:var(--mp-text);"
+        )
+          | Perfil de paciente
+
+        span
+          | Información protegida dentro de TurnoFlex
+
+
+      div.text-md-end
+
+        if paciente.updatedAt
+          | Última actualización: #{formatearFecha(paciente.updatedAt)}
+        else if paciente.createdAt
+          | Registrado: #{formatearFecha(paciente.createdAt)}
+        else
+          | Información de registro no disponible
