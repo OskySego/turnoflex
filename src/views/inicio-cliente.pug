@@ -1,0 +1,252 @@
+extends layout
+
+block content
+  //- TurnoFlex · Portal del paciente. Solo presentación; sin endpoints ni escrituras nuevos.
+  //- El controlador ya entrega turnosAsignados filtrados por la identidad del paciente.
+  - const paciente = (typeof user !== 'undefined' && user) ? user : {}
+  - const nombre = String(paciente.nombre || 'Paciente').trim()
+  - const nombreCorto = nombre.split(/\s+/)[0] || 'Paciente'
+  - const iniciales = nombre.split(/\s+/).filter(Boolean).slice(0,2).map(p => p.charAt(0).toUpperCase()).join('') || 'P'
+  - const turnos = (typeof turnosAsignados !== 'undefined' && Array.isArray(turnosAsignados)) ? turnosAsignados : []
+  - const partesAhora = new Intl.DateTimeFormat('en-US', {timeZone:'America/Argentina/Buenos_Aires', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23'}).formatToParts(new Date())
+  - const valor = campo => partesAhora.find(p => p.type === campo)?.value || ''
+  - const hoy = valor('year')+'-'+valor('month')+'-'+valor('day')
+  - const ahoraHHMM = valor('hour')+':'+valor('minute')
+  - const activos = turnos.filter(t => t && ['reservado','pendiente_pago','En Espera'].includes(t.estado))
+  - const proximos = activos.filter(t => t.fecha > hoy || (t.fecha === hoy && String(t.hora || '') >= ahoraHHMM)).sort((a,b) => (String(a.fecha)+' '+String(a.hora)).localeCompare(String(b.fecha)+' '+String(b.hora)))
+  - const proximo = proximos[0] || null
+  - const atendidos = turnos.filter(t => t && t.estado === 'atendido').length
+  - const cancelados = turnos.filter(t => t && t.estado === 'cancelado').length
+  - const pagosPendientes = activos.filter(t => t.estadoPago === 'pendiente' || t.estado === 'pendiente_pago').length
+  - const listaOrdenada = [...turnos].sort((a,b) => (String(b.fecha)+' '+String(b.hora)).localeCompare(String(a.fecha)+' '+String(a.hora)))
+  - const fechaLegible = cadena => { if(!/^\d{4}-\d{2}-\d{2}$/.test(String(cadena||''))) return String(cadena||'Fecha sin confirmar'); const [y,m,d] = String(cadena).split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'}); }
+  - const claseEstado = estado => estado === 'atendido' ? 'done' : estado === 'cancelado' ? 'cancel' : estado === 'pendiente_pago' ? 'pay' : estado === 'En Espera' ? 'wait' : 'reserved'
+  - const nombreEstado = estado => estado === 'atendido' ? 'Atendido' : estado === 'cancelado' ? 'Cancelado' : estado === 'pendiente_pago' ? 'Pendiente de pago' : estado === 'En Espera' ? 'En espera' : 'Reservado'
+  - const clasePago = estado => estado === 'total_pagado' ? 'paid' : estado === 'sena_pagada' ? 'partial' : 'due'
+  - const nombrePago = estado => estado === 'total_pagado' ? 'Pago registrado' : estado === 'sena_pagada' ? 'Seña abonada' : 'Pago pendiente'
+
+  .pc-shell.tfu-page
+    header.pc-hero.tfu-hero
+      .pc-hero-inner
+        div
+          .pc-overline ◆ TurnoFlex · Mi espacio de salud
+          h1 Hola, #{nombreCorto}
+          p Consultá tus turnos, seguí el estado de tus reservas y administrá tu perfil desde un único lugar.
+          .pc-identity
+            span.pc-avatar(aria-hidden="true")= iniciales
+            div
+              b= nombre
+              small Portal personal del paciente
+        .pc-hero-actions
+          .pc-clock(aria-label="Hora actual de Buenos Aires")
+            span.pc-clock-label Buenos Aires · Argentina
+            strong#pcHora --:--
+            small#pcFecha Cargando fecha...
+          a.pc-btn-white(href="/turnos/nuevo")
+            span(aria-hidden="true") ＋
+            | Solicitar nuevo turno
+
+    section(aria-labelledby="pcIndicadores")
+      .pc-section
+        div
+          .pc-kicker Mis cifras
+          h2.pc-title#pcIndicadores Un vistazo a mi salud
+          p.pc-sub Resumen de los turnos registrados en tu cuenta.
+      .row.g-3
+        .col-6.col-xl-3
+          .pc-summary.tfu-card(style="--tone:#4d70ea;--tint:rgba(77,112,234,.12)")
+            .pc-summary-icon(aria-hidden="true") ▦
+            .pc-summary-number= turnos.length
+            .pc-summary-label Turnos totales
+        .col-6.col-xl-3
+          .pc-summary.tfu-card(style="--tone:#8b5cf6;--tint:rgba(139,92,246,.12)")
+            .pc-summary-icon(aria-hidden="true") ◷
+            .pc-summary-number= proximos.length
+            .pc-summary-label Próximos
+        .col-6.col-xl-3
+          .pc-summary.tfu-card(style="--tone:#059e80;--tint:rgba(16,185,129,.12)")
+            .pc-summary-icon(aria-hidden="true") ✓
+            .pc-summary-number= atendidos
+            .pc-summary-label Atendidos
+        .col-6.col-xl-3
+          .pc-summary.tfu-card(style="--tone:#d48a20;--tint:rgba(245,158,11,.12)")
+            .pc-summary-icon(aria-hidden="true") $
+            .pc-summary-number= pagosPendientes
+            .pc-summary-label Con pago pendiente
+
+    section(aria-labelledby="pcProximaAtencion")
+      .pc-section
+        div
+          .pc-kicker Mi agenda
+          h2.pc-title#pcProximaAtencion Próxima atención
+          p.pc-sub La información más importante de tu siguiente turno.
+      .row.g-3
+        .col-lg-8
+          if proximo
+            - const profesional = proximo.profesional_id || {}
+            - const id = proximo._id || proximo.id
+            .pc-next.tfu-card
+              .pc-next-head
+                span.pc-next-mark Próximo turno
+                span.pc-tag(class=claseEstado(proximo.estado))= nombreEstado(proximo.estado)
+              .pc-doctor-row
+                .pc-med-icon(aria-hidden="true") ✚
+                div
+                  h3.pc-doctor-name= profesional.nombre || 'Profesional asignado'
+                  p.pc-doctor-spec= profesional.especialidad || 'Especialidad a confirmar'
+              .pc-next-info
+                .pc-info
+                  span Fecha
+                  b= fechaLegible(proximo.fecha)
+                .pc-info
+                  span Horario
+                  b #{proximo.hora || 'A confirmar'} hs
+              .pc-next-bottom
+                span.pc-tag(class=clasePago(proximo.estadoPago))= nombrePago(proximo.estadoPago)
+                if id
+                  a.pc-primary(href=`/turnos/${id}`) Ver detalle del turno →
+          else
+            .pc-empty
+              .pc-empty-icon(aria-hidden="true") ▦
+              h3 No tenés turnos próximos
+              p Cuando necesites una consulta, podés solicitar una nueva cita desde este portal.
+              a.pc-primary(href="/turnos/nuevo") Solicitar turno →
+        .col-lg-4
+          aside.pc-side.tfu-card(aria-label="Información útil")
+            h3 Todo a mano
+            p Usá estos accesos para tener control sobre tus próximas consultas.
+            .pc-side-row
+              span.symbol(aria-hidden="true") ◷
+              div
+                b= proximos.length + ' próximos turnos'
+                small Consultá fecha y horario
+            .pc-side-row
+              span.symbol(aria-hidden="true") ✓
+              div
+                b= atendidos + ' atenciones realizadas'
+                small Historial disponible en este portal
+            .pc-side-row
+              span.symbol(aria-hidden="true") ↗
+              div
+                b Pagos y reservas
+                small Revisá el estado dentro del detalle del turno
+
+    section(aria-labelledby="pcAccesos")
+      .pc-section
+        div
+          .pc-kicker Accesos rápidos
+          h2.pc-title#pcAccesos Gestioná tus consultas
+          p.pc-sub Accedé a las funciones habituales de TurnoFlex.
+      .row.g-3
+        .col-md-6.col-xl-3
+          a.pc-action(href="/turnos/nuevo" style="--accent:#5874e8;--accent-soft:rgba(88,116,232,.12)")
+            .pc-action-icon(aria-hidden="true") ＋
+            div
+              h3 Solicitar un turno →
+              p Elegí una fecha y el profesional disponible.
+        .col-md-6.col-xl-3
+          a.pc-action(href="/clientes/mi-perfil" style="--accent:#8b5cf6;--accent-soft:rgba(139,92,246,.12)")
+            .pc-action-icon(aria-hidden="true") ♙
+            div
+              h3 Mi perfil →
+              p Consultá y actualizá tus datos personales.
+        .col-md-6.col-xl-3
+          a.pc-action(href="/turnos" style="--accent:#079e89;--accent-soft:rgba(16,185,129,.12)")
+            .pc-action-icon(aria-hidden="true") ≡
+            div
+              h3 Historial de turnos →
+              p Revisá tus turnos y su información detallada.
+        .col-md-6.col-xl-3
+          //- La ruta obtiene el paciente desde la sesión verificada, jamás desde el navegador.
+          a.pc-action(href="/clinica/mi-historia" style="--accent:#8b5cf6;--accent-soft:rgba(139,92,246,.12)")
+            .pc-action-icon(aria-hidden="true") ♧
+            div
+              h3 Mi historia clínica →
+              p Consultá tus evoluciones y estudios con acceso privado.
+
+    section(aria-labelledby="pcListado")
+      .pc-section
+        div
+          .pc-kicker Agenda e historial
+          h2.pc-title#pcListado Todos mis turnos
+          p.pc-sub Buscá por profesional o filtrá según el estado de cada cita.
+        span.pc-tag.wait= turnos.length + ' turnos registrados'
+
+      if listaOrdenada.length
+        .pc-toolbar
+          input.pc-search#pcBuscar(type="search" placeholder="Buscar profesional, fecha o especialidad..." aria-label="Buscar mis turnos" autocomplete="off")
+          .pc-filterbar(role="group" aria-label="Filtrar turnos")
+            button.pc-filter(type="button" data-filter="todos" aria-pressed="true") Todos
+            button.pc-filter(type="button" data-filter="proximos" aria-pressed="false") Próximos
+            button.pc-filter(type="button" data-filter="atendidos" aria-pressed="false") Atendidos
+            button.pc-filter(type="button" data-filter="cancelados" aria-pressed="false") Cancelados
+        .row.g-3#pcListaTurnos
+          each turno in listaOrdenada
+            - const prof = turno.profesional_id || {}
+            - const id = turno._id || turno.id
+            - const esFuturo = ['reservado','pendiente_pago','En Espera'].includes(turno.estado) && (turno.fecha > hoy || (turno.fecha === hoy && String(turno.hora || '') >= ahoraHHMM))
+            - const grupo = turno.estado === 'atendido' ? 'atendidos' : turno.estado === 'cancelado' ? 'cancelados' : esFuturo ? 'proximos' : 'otros'
+            - const busqueda = [prof.nombre || '',prof.especialidad || '',turno.fecha || '',turno.hora || '',turno.estado || ''].join(' ').toLowerCase()
+            .col-md-6.col-xl-4.pc-item(data-grupo=grupo data-busqueda=busqueda)
+              article.pc-appointment.tfu-card
+                .pc-appt-top
+                  span.pc-appt-date= fechaLegible(turno.fecha)
+                  span.pc-tag(class=claseEstado(turno.estado))= nombreEstado(turno.estado)
+                h3.pc-appt-med= prof.nombre || 'Profesional asignado'
+                p.pc-appt-spec= prof.especialidad || 'Especialidad a confirmar'
+                .d-flex.justify-content-between.align-items-center.gap-2.flex-wrap.mb-3
+                  b.pc-appt-time #{turno.hora || 'Sin horario'} hs
+                  span.pc-tag(class=clasePago(turno.estadoPago))= nombrePago(turno.estadoPago)
+                .pc-appt-footer
+                  small.text-body-secondary= turno.modalidad === 'telemedicina' ? 'Telemedicina' : turno.modalidad === 'sobreturno' ? 'Sobreturno' : 'Consulta programada'
+                  if id
+                    a.pc-appt-link(href=`/turnos/${id}` aria-label=`Ver detalle del turno del ${turno.fecha}`) Ver detalle →
+        .pc-no-results#pcSinResultados(role="status") No encontramos turnos con esos filtros. Probá con otra búsqueda.
+      else
+        .pc-empty
+          .pc-empty-icon(aria-hidden="true") ▦
+          h3 Todavía no hay turnos registrados
+          p Tu agenda aparecerá aquí cuando solicites tu primera consulta.
+          a.pc-primary(href="/turnos/nuevo") Reservar mi primer turno →
+
+    footer.pc-footer TurnoFlex · Tus turnos en un solo lugar · Los pagos y cambios se confirman desde el detalle correspondiente.
+
+  script.
+    (function () {
+      'use strict';
+      function actualizarHora() {
+        var ahora = new Date();
+        var hora = document.getElementById('pcHora');
+        var fecha = document.getElementById('pcFecha');
+        if (hora) hora.textContent = ahora.toLocaleTimeString('es-AR',{timeZone:'America/Argentina/Buenos_Aires',hour:'2-digit',minute:'2-digit',hour12:false});
+        if (fecha) fecha.textContent = ahora.toLocaleDateString('es-AR',{timeZone:'America/Argentina/Buenos_Aires',weekday:'long',day:'numeric',month:'long',year:'numeric'});
+      }
+      actualizarHora();
+      setInterval(actualizarHora,60000);
+      var buscar = document.getElementById('pcBuscar');
+      var filtros = Array.prototype.slice.call(document.querySelectorAll('.pc-filter'));
+      var items = Array.prototype.slice.call(document.querySelectorAll('.pc-item'));
+      var vacio = document.getElementById('pcSinResultados');
+      var activo = 'todos';
+      function filtrar() {
+        var q = buscar ? buscar.value.trim().toLocaleLowerCase('es-AR') : '';
+        var visibles = 0;
+        items.forEach(function (item) {
+          var grupo = item.getAttribute('data-grupo') || '';
+          var texto = item.getAttribute('data-busqueda') || '';
+          var coincide = (activo === 'todos' || grupo === activo) && (!q || texto.includes(q));
+          item.hidden = !coincide;
+          item.style.display = coincide ? '' : 'none';
+          if (coincide) visibles++;
+        });
+        if (vacio) vacio.style.display = items.length && !visibles ? 'block' : 'none';
+      }
+      filtros.forEach(function (boton) {
+        boton.addEventListener('click',function () {
+          activo = boton.getAttribute('data-filter') || 'todos';
+          filtros.forEach(function (b) { b.setAttribute('aria-pressed', String(b === boton)); });
+          filtrar();
+        });
+      });
+      if (buscar) buscar.addEventListener('input',filtrar);
+    })();
