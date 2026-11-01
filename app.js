@@ -7,8 +7,7 @@ import turnoRoutes from './src/routes/turnoRoutes.js';
 import profesionalRoutes from './src/routes/profesionalRoutes.js';
 import clienteRoutes from './src/routes/clienteRoutes.js';
 import authRoutes from './src/routes/authRoutes.js'; // Importar rutas de autenticación
-import { autenticador } from './src/controllers/authController.js'; // Importar el middleware de autenticación
-import { Usuario } from './src/models/Usuarios.js'; // Importar el modelo de Usuario
+import { Usuario } from './src/models/Usuario.js'; // Importar el modelo de Usuario
 
 await connectDB(); // Conectar a la base de datos
 
