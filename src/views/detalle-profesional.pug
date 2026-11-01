@@ -1,115 +1,558 @@
 extends layout
 
 block content
-  //- Funciones de ayuda y Traductor de Días a prueba de fallos
-  - const iniciales = (nombre) => nombre ? nombre.split(' ').filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join('') : 'DR'
-  - const mapaDias = { '0': 'Domingo', '1': 'Lunes', '2': 'Martes', '3': 'Miércoles', '4': 'Jueves', '5': 'Viernes', '6': 'Sábado' }
-  - 
-    const formatDias = (dias) => {
-      if (!dias || dias.length === 0) return 'No especificado';
-      const arr = Array.isArray(dias) ? dias : dias.toString().split(',');
-      return arr.map(d => {
-        const val = String(d).trim();
-        return mapaDias[val] || val;
-      }).join(', ');
+
+  style.
+    .tf-prof-header {
+      background:
+        radial-gradient(circle at 90% 10%, rgba(139,92,246,.42), transparent 30%),
+        linear-gradient(135deg, #08132e 0%, #0D1B3E 65%, #312e81 100%);
+      color: white;
+      padding: 28px;
     }
 
+    .tf-avatar-prof {
+      width: 70px;
+      height: 70px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #2563eb, #8B5CF6);
+      color: white;
+      font-weight: 900;
+      font-size: 1.3rem;
+      box-shadow: 0 10px 25px rgba(139,92,246,.30);
+    }
+
+    .tf-section-card {
+      border: 1px solid rgba(128,128,128,.15);
+      border-radius: 18px;
+      overflow: hidden;
+      margin-bottom: 26px;
+      background: var(--bs-body-bg);
+    }
+
+    .tf-section-header {
+      padding: 14px 18px;
+      font-size: .76rem;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      background: rgba(139,92,246,.07);
+      border-bottom: 1px solid rgba(128,128,128,.12);
+    }
+
+    .tf-section-body {
+      padding: 22px;
+    }
+
+    .tf-data-box {
+      height: 100%;
+      padding: 16px;
+      border-radius: 14px;
+      background: rgba(13,27,62,.035);
+    }
+
+    [data-bs-theme="dark"] .tf-data-box {
+      background: rgba(255,255,255,.04);
+    }
+
+    .tf-label {
+      display: block;
+      color: #6b7280;
+      font-size: .63rem;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 5px;
+    }
+
+    .tf-day {
+      display: inline-block;
+      margin: 3px 4px 3px 0;
+      padding: 7px 11px;
+      border-radius: 10px;
+      background: rgba(139,92,246,.10);
+      color: #6d28d9;
+      font-size: .7rem;
+      font-weight: 800;
+    }
+
+    [data-bs-theme="dark"] .tf-day {
+      color: #c4b5fd;
+    }
+
+    .tf-left-purple {
+      border-left: 4px solid #8B5CF6;
+    }
+
+    .tf-left-warning {
+      border-left: 4px solid #f59e0b;
+    }
+
+    .tf-left-info {
+      border-left: 4px solid #0ea5e9;
+    }
+
+
+  //- ============================================================
+  //- FUNCIONES AUXILIARES
+  //- ============================================================
+
+  - const iniciales = (nombre) => nombre ? nombre.split(' ').filter(Boolean).slice(0, 2).map(function(n) { return n[0].toUpperCase(); }).join('') : 'DR'
+  - const diasRegulares = profesional && Array.isArray(profesional.diasAtencion) ? profesional.diasAtencion : []
+  - const diasSobreturnos = profesional && Array.isArray(profesional.diasSobreturnos) ? profesional.diasSobreturnos : []
+  - const diasTelemedicina = profesional && Array.isArray(profesional.diasTelemedicina) ? profesional.diasTelemedicina : []
+
+
+  //- ============================================================
+  //- ERROR
+  //- ============================================================
+
   if error
-    .alert.alert-danger.shadow-sm.rounded-3(role="alert")
-      h4.alert-heading.fw-bold ¡Ocurrió un error!
-      p.mb-2= error
-      hr
-      a.btn.btn-outline-danger.btn-sm(href="/profesionales") Volver al listado
+
+    .alert.alert-danger.shadow-sm.rounded-4
+
+      h4.alert-heading.fw-bold
+        | Ocurrió un error
+
+      p.mb-3
+        = error
+
+      a.btn.btn-outline-danger(
+        href="/profesionales"
+      )
+        | Volver al listado
+
+
   else if !profesional
-    .alert.alert-warning.shadow-sm.rounded-3(role="alert")
-      h4.alert-heading.fw-bold Profesional no encontrado
-      p.mb-2 No se pudo obtener la información del profesional solicitado.
-      hr
-      a.btn.btn-outline-warning.btn-sm(href="/profesionales") Volver al listado
+
+    .alert.alert-warning.shadow-sm.rounded-4
+
+      h4.alert-heading.fw-bold
+        | Profesional no encontrado
+
+      p.mb-3
+        | No se pudo obtener la información del profesional solicitado.
+
+      a.btn.btn-outline-warning(
+        href="/profesionales"
+      )
+        | Volver al listado
+
+
   else
+
     .row.justify-content-center
-      .col-lg-9
-        .card.border-0.rounded-4.shadow-sm.overflow-hidden
-          
-          //- Cabecera Principal
-          .p-4.text-white(style="background-color: #0D1B3E;")
-            .d-flex.justify-content-between.align-items-center.flex-wrap.gap-3
+
+      .col-xl-10
+
+        .card.border-0.rounded-4.shadow-sm.overflow-hidden.tfu-card
+
+
+          //- ====================================================
+          //- CABECERA
+          //- ====================================================
+
+          .tf-prof-header.tfu-hero
+
+            .d-flex.justify-content-between.align-items-center.flex-wrap.gap-4
+
               .d-flex.align-items-center.gap-3
-                .rounded-circle.d-flex.align-items-center.justify-content-center.fw-bold.fs-4(
-                  style="width:60px; height:60px; background:#10B981; color:white;"
-                )= iniciales(profesional.nombre)
+
+                .tf-avatar-prof
+                  = iniciales(profesional.nombre)
+
                 div
-                  h3.mb-1.fw-bold= profesional.nombre
-                  p.mb-1.text-white-50= profesional.especialidad || 'Especialidad N/D'
+
+                  small.text-uppercase.fw-bold(
+                    style="color:#c4b5fd;"
+                  )
+                    | Profesional de la Salud
+
+                  h3.mb-1.fw-bold
+                    = profesional.nombre
+
+                  p.mb-2.text-white-50
+                    = profesional.especialidad || 'Especialidad no especificada'
+
                   if profesional.subespecialidades
-                    span.badge.bg-info.text-dark Sub: #{profesional.subespecialidades}
-              
-              div.text-end
-                span.badge.bg-success.fs-6.px-3.py-2
-                  if profesional.tipoCobertura === 'particular'
+
+                    span.badge.rounded-pill(
+                      style="background:rgba(255,255,255,.12);"
+                    )
+                      | #{profesional.subespecialidades}
+
+
+              div
+
+                if profesional.tipoCobertura === 'particular'
+
+                  span.badge.bg-info.text-dark.fs-6.px-3.py-2
                     | Solo Particular
-                  else if profesional.tipoCobertura === 'obra_social'
-                    | Solo Obra Social
+
+                else if profesional.tipoCobertura === 'obra_social'
+
+                  span.badge.bg-primary.fs-6.px-3.py-2
+                    | Obra Social / Prepaga
+
+                else
+
+                  span.badge.fs-6.px-3.py-2(
+                    style="background:#8B5CF6;"
+                  )
+                    | Particular + Obra Social
+
+
+          //- ====================================================
+          //- CUERPO
+          //- ====================================================
+
+          .card-body.p-4.p-md-5
+
+
+            //- ==================================================
+            //- 1. DATOS PROFESIONALES
+            //- ==================================================
+
+            .tf-section-card.tf-left-purple.tfu-card
+
+              .tf-section-header
+                | 1. Información Profesional y Regulatoria
+
+              .tf-section-body
+
+                .row.g-4
+
+                  .col-md-4
+
+                    .tf-data-box
+
+                      span.tf-label
+                        | Matrícula
+
+                      strong.fs-6
+                        = profesional.matricula || 'N/D'
+
+
+                  .col-md-4
+
+                    .tf-data-box
+
+                      span.tf-label
+                        | DNI
+
+                      strong.fs-6
+                        = profesional.dni || 'N/D'
+
+
+                  .col-md-4
+
+                    .tf-data-box
+
+                      span.tf-label
+                        | Cobertura
+
+                      if profesional.tipoCobertura === 'particular'
+
+                        strong
+                          | Particular
+
+                      else if profesional.tipoCobertura === 'obra_social'
+
+                        strong
+                          | Obra Social / Prepaga
+
+                      else
+
+                        strong
+                          | Particular y Obra Social
+
+
+            //- ==================================================
+            //- 2. CONTACTO Y SEDE
+            //- ==================================================
+
+            .tf-section-card.tfu-card
+
+              .tf-section-header
+                | 2. Contacto y Sede
+
+              .tf-section-body
+
+                .row.g-4
+
+                  .col-md-4
+
+                    .tf-data-box
+
+                      span.tf-label
+                        | Teléfono / WhatsApp
+
+                      strong
+                        = profesional.telefono || 'N/D'
+
+
+                  .col-md-4
+
+                    .tf-data-box
+
+                      span.tf-label
+                        | Correo electrónico
+
+                      strong
+                        = profesional.email || 'N/D'
+
+
+                  .col-md-4
+
+                    .tf-data-box
+
+                      span.tf-label
+                        | Consultorio / Sede
+
+                      strong
+                        = profesional.sede || 'Sede Central'
+
+
+            //- ==================================================
+            //- 3. AGENDA REGULAR
+            //- ==================================================
+
+            .tf-section-card.tf-left-purple.tfu-card
+
+              .tf-section-header
+                | 3. Agenda Regular
+
+              .tf-section-body
+
+                .row.g-4.mb-4
+
+                  .col-md-4
+
+                    .tf-data-box
+
+                      span.tf-label
+                        | Modalidad
+
+                      if profesional.modalidad === 'telemedicina'
+
+                        span.badge.bg-info.text-dark.px-3.py-2
+                          | Telemedicina
+
+                      else if profesional.modalidad === 'ambas'
+
+                        span.badge.bg-primary.px-3.py-2
+                          | Presencial + Telemedicina
+
+                      else
+
+                        span.badge.bg-success.px-3.py-2
+                          | Presencial
+
+
+                  .col-md-4
+
+                    .tf-data-box
+
+                      span.tf-label
+                        | Horario de atención
+
+                      strong
+                        | #{profesional.horaInicio || '08:00'} a #{profesional.horaFin || '18:00'} hs
+
+
+                  .col-md-4
+
+                    .tf-data-box
+
+                      span.tf-label
+                        | Duración del turno
+
+                      strong
+                        | #{profesional.duracionTurnoMinutos || 30} minutos
+
+
+                .mt-2
+
+                  span.tf-label.mb-2
+                    | Días de atención regular
+
+                  if diasRegulares.length > 0
+
+                    each dia in diasRegulares
+
+                      span.tf-day
+                        = dia
+
                   else
-                    | Particular & Obra Social
 
-          //- Cuerpo
-          .card-body.p-4.bg-white
-            
-            //- Contacto y Sede
-            h6.text-uppercase.text-muted.small.fw-bold.mb-3 Contacto y Sede
-            .row.g-3.mb-4.bg-light.p-3.rounded-3
-              .col-md-4
-                strong.d-block.small.text-muted Teléfono:
-                span= profesional.telefono || 'N/D'
-              .col-md-4
-                strong.d-block.small.text-muted Correo Electrónico:
-                span= profesional.email || 'N/D'
-              .col-md-4
-                strong.d-block.small.text-muted Consultorio / Sede:
-                span= profesional.sede || 'Sede Central'
+                    p.text-muted.mb-0
+                      | No hay días configurados.
 
-            //- 1. Información Regulatoria y Agenda Regular
-            h6.text-uppercase.text-muted.small.fw-bold.mb-3 Información Regulatoria y Agenda Regular
-            .row.g-3.mb-4.bg-light.p-3.rounded-3.border-start.border-primary.border-4
-              .col-md-4
-                strong.d-block.small.text-muted Matrícula:
-                span.fw-bold= profesional.matricula || 'N/D'
-              .col-md-4
-                strong.d-block.small.text-muted Modalidad:
-                span.text-capitalize= profesional.modalidad || 'Presencial'
-              .col-md-4
-                strong.d-block.small.text-muted Duración de Consulta:
-                span= `${profesional.duracionTurnoMinutos || 30} minutos`
-              
-              .col-md-12.mt-3
-                strong.d-block.small.text-muted Días y Horarios de Atención Regular:
-                span.text-primary.fw-bold= formatDias(profesional.diasAtencion)
-                span.ms-2= `(De ${profesional.horaInicio || '08:00'} a ${profesional.horaFin || '16:00'} hs)`
 
-            //- 2. Agenda de Sobreturnos (Solo se muestra si están habilitados)
-            if profesional.permiteSobreturnos
-              h6.text-uppercase.text-muted.small.fw-bold.mb-3 Agenda de Sobreturnos
-              .row.g-3.mb-4.bg-light.p-3.rounded-3.border-start.border-warning.border-4
-                .col-md-6
-                  strong.d-block.small.text-muted Días habilitados para Sobreturnos:
-                  span.text-warning.fw-bold= formatDias(profesional.diasSobreturnos)
-                .col-md-6
-                  strong.d-block.small.text-muted Horario de Sobreturnos:
-                  span= `De ${profesional.horaInicioSobreturnos || '12:00'} a ${profesional.horaFinSobreturnos || '13:00'} hs `
-                  span.badge.bg-secondary.ms-2 Máx: #{profesional.cantidadMaximaSobreturnos || 4}
+            //- ==================================================
+            //- 4. SOBRETURNOS
+            //- ==================================================
 
-            //- 3. Agenda de Telemedicina (Solo se muestra si está habilitada)
-            if profesional.ofreceTelemedicina
-              h6.text-uppercase.text-muted.small.fw-bold.mb-3 Agenda de Telemedicina
-              .row.g-3.mb-4.bg-light.p-3.rounded-3.border-start.border-info.border-4
-                .col-md-6
-                  strong.d-block.small.text-muted Días habilitados para Telemedicina:
-                  span.text-info.fw-bold= formatDias(profesional.diasTelemedicina)
-                .col-md-6
-                  strong.d-block.small.text-muted Horario de Videoconsulta:
-                  span= `De ${profesional.horaInicioTelemedicina || '16:00'} a ${profesional.horaFinTelemedicina || '18:00'} hs`
+            .tf-section-card.tf-left-warning.tfu-card
 
-            //- Botón de retorno
-            .d-flex.justify-content-end.mt-4
-              a.btn.btn-outline-secondary.px-4.rounded-3(href="/profesionales") Volver al listado
+              .tf-section-header
+
+                .d-flex.justify-content-between.align-items-center.flex-wrap.gap-2
+
+                  span
+                    | 4. Agenda de Sobreturnos
+
+                  if profesional.permiteSobreturnos
+
+                    span.badge.bg-warning.text-dark
+                      | Habilitados
+
+                  else
+
+                    span.badge.bg-secondary
+                      | No habilitados
+
+
+              .tf-section-body
+
+                if profesional.permiteSobreturnos
+
+                  .row.g-4.mb-4
+
+                    .col-md-6
+
+                      .tf-data-box
+
+                        span.tf-label
+                          | Horario
+
+                        strong
+                          | #{profesional.horaInicioSobreturnos || 'N/D'} a #{profesional.horaFinSobreturnos || 'N/D'} hs
+
+
+                    .col-md-6
+
+                      .tf-data-box
+
+                        span.tf-label
+                          | Máximo permitido
+
+                        strong
+                          | #{profesional.cantidadMaximaSobreturnos || 4} pacientes
+
+
+                  div
+
+                    span.tf-label.mb-2
+                      | Días habilitados
+
+                    if diasSobreturnos.length > 0
+
+                      each dia in diasSobreturnos
+
+                        span.tf-day
+                          = dia
+
+                    else
+
+                      span.text-muted
+                        | No se especificaron días.
+
+
+                else
+
+                  .alert.alert-light.border.mb-0
+
+                    p.text-muted.mb-0
+                      | Este profesional no recibe sobreturnos actualmente.
+
+
+            //- ==================================================
+            //- 5. TELEMEDICINA
+            //- ==================================================
+
+            .tf-section-card.tf-left-info.tfu-card
+
+              .tf-section-header
+
+                .d-flex.justify-content-between.align-items-center.flex-wrap.gap-2
+
+                  span
+                    | 5. Agenda de Telemedicina
+
+                  if profesional.ofreceTelemedicina
+
+                    span.badge.bg-info.text-dark
+                      | Disponible
+
+                  else
+
+                    span.badge.bg-secondary
+                      | No disponible
+
+
+              .tf-section-body
+
+                if profesional.ofreceTelemedicina
+
+                  .row.g-4.mb-4
+
+                    .col-md-12
+
+                      .tf-data-box
+
+                        span.tf-label
+                          | Horario de videoconsulta
+
+                        strong
+                          | #{profesional.horaInicioTelemedicina || 'N/D'} a #{profesional.horaFinTelemedicina || 'N/D'} hs
+
+
+                  div
+
+                    span.tf-label.mb-2
+                      | Días habilitados
+
+                    if diasTelemedicina.length > 0
+
+                      each dia in diasTelemedicina
+
+                        span.tf-day
+                          = dia
+
+                    else
+
+                      span.text-muted
+                        | No se especificaron días.
+
+
+                else
+
+                  .alert.alert-light.border.mb-0
+
+                    p.text-muted.mb-0
+                      | Este profesional no ofrece telemedicina actualmente.
+
+
+            //- ==================================================
+            //- BOTONES
+            //- ==================================================
+
+            .d-flex.justify-content-between.align-items-center.flex-wrap.gap-3.mt-4
+
+              a.btn.btn-outline-secondary.px-4.py-2.rounded-3(
+                href="/profesionales"
+              )
+                | ← Volver al listado
+
+              if user && (user.rol === 'admin' || user.rol === 'personal')
+
+                a.btn.text-white.px-4.py-2.rounded-3(
+                  href="/turnos/nuevo"
+                  style="background:#8B5CF6;"
+                )
+                  | + Gestionar nuevo turno
