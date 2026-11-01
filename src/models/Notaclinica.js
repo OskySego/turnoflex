@@ -27,4 +27,4 @@ notaSchema.pre('save', function() {
 for (const op of ['updateOne', 'updateMany', 'findOneAndUpdate', 'replaceOne', 'findOneAndReplace', 'deleteOne', 'deleteMany', 'findOneAndDelete', 'findOneAndRemove']) {
   notaSchema.pre(op, function() { throw new Error('Operación prohibida sobre notas clínicas.'); });
 }
-export default mongoose.models.TFNotaClinica || mongoose.model('TFNotaClinica', notaSchema);
+export default mongoose.models.TFNotaClinica || mongoose.model('NotaClinica', notaSchema);
