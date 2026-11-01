@@ -47,31 +47,101 @@ html(lang='es' data-tf-theme='dark')
                 i.bi.bi-check-circle-fill(aria-hidden='true')
                 |  Recordatorios integrados
 
-      Panel ilustrativo retirado
-        .tfp-orb.tfp-orb-top(aria-hidden='true')
-        .tfp-orb.tfp-orb-bottom(aria-hidden='true')
-
-        .tfp-shell.tfp-advantages
-          .tfp-advantage
-            i.bi.bi-calendar2-week(aria-hidden='true')
-            div
-              strong Todo en una agenda
-              small Turnos organizados
-          .tfp-advantage
-            i.bi.bi-people(aria-hidden='true')
-            div
-              strong Perfiles personalizados
-              small Cada persona en su espacio
-          .tfp-advantage
-            i.bi.bi-bell(aria-hidden='true')
-            div
-              strong Avisos integrados
-              small Recordatorios útiles
-          .tfp-advantage
-            i.bi.bi-shield-lock(aria-hidden='true')
-            div
-              strong Acceso protegido
-              small Sesiones por usuario
+          Panel ilustrativo de la plataforma
+            .tfp-orb.tfp-orb-top(aria-hidden='true')
+            .tfp-orb.tfp-orb-bottom(aria-hidden='true')
+            .tfp-product
+              .tfp-product-topbar
+                span.tfp-mini-brand
+                  span.tfp-mini-mark T
+                  |  TurnoFlex
+                span.tfp-demo-chip
+                  span.tfp-online-dot
+                  |  Vista de ejemplo
+              .tfp-product-layout
+                aside.tfp-product-sidebar(aria-label='Secciones ilustrativas')
+                  span.tfp-demo-side-active
+                    i.bi.bi-grid-1x2(aria-hidden='true')
+                    |  Inicio
+                  span
+                    i.bi.bi-calendar3(aria-hidden='true')
+                    |  Turnos
+                  span
+                    i.bi.bi-people(aria-hidden='true')
+                    |  Pacientes
+                  span
+                    i.bi.bi-stethoscope(aria-hidden='true')
+                    |  Profesionales
+                  span
+                    i.bi.bi-graph-up(aria-hidden='true')
+                    |  Reportes
+                .tfp-product-main
+                  .tfp-demo-head
+                    div
+                      span.tfp-label-small CENTRO DE OPERACIONES
+                      h2 Un día más organizado.
+                    i.bi.bi-calendar-week(aria-hidden='true')
+                  .tfp-demo-stats
+                    .tfp-demo-stat
+                      i.bi.bi-calendar-check(aria-hidden='true')
+                      strong Turnos
+                      small Agenda del día
+                    .tfp-demo-stat
+                      i.bi.bi-person-heart(aria-hidden='true')
+                      strong Pacientes
+                      small Seguimiento claro
+                    .tfp-demo-stat
+                      i.bi.bi-bell(aria-hidden='true')
+                      strong Avisos
+                      small Recordatorios
+                  .tfp-demo-columns
+                    .tfp-demo-appointments
+                      .tfp-demo-section-title
+                        strong Agenda de ejemplo
+                        i.bi.bi-three-dots(aria-hidden='true')
+                      .tfp-demo-appointment
+                        span.tfp-demo-time 09:00
+                        span.tfp-demo-avatar AM
+                        span.tfp-demo-person
+                          strong Paciente de ejemplo A
+                          small Control médico
+                        span.tfp-demo-status Reservado
+                      .tfp-demo-appointment
+                        span.tfp-demo-time 10:30
+                        span.tfp-demo-avatar.tfp-demo-avatar-alt BL
+                        span.tfp-demo-person
+                          strong Paciente de ejemplo B
+                          small Consulta general
+                        span.tfp-demo-status.tfp-demo-status-done Atendido
+                      .tfp-demo-appointment
+                        span.tfp-demo-time 12:00
+                        span.tfp-demo-avatar.tfp-demo-avatar-third CR
+                        span.tfp-demo-person
+                          strong Paciente de ejemplo C
+                          small Consulta clínica
+                        span.tfp-demo-status Reservado
+                    .tfp-demo-next
+                      i.bi.bi-calendar-heart(aria-hidden='true')
+                      span Próxima consulta
+                      strong Tu agenda, a mano.
+                      p Consultá tus próximos turnos desde un solo lugar.
+                      span.tfp-demo-pill Ver mi agenda
+            .tfp-float.tfp-float-top(aria-hidden='true')
+              i.bi.bi-bell-fill
+              span
+                strong Recordatorios
+                small WhatsApp conectado
+            .tfp-float.tfp-float-right(aria-hidden='true')
+              i.bi.bi-shield-check
+              span
+                strong Accesos por rol
+                small Cada perfil, su espacio
+            .tfp-float.tfp-float-bottom(aria-hidden='true')
+              i.bi.bi-stars
+              span
+                strong Gestión simple
+                small Más claridad cada día
+            p.tfp-demo-caption Demostración visual. Los nombres y turnos no corresponden a pacientes reales.
 
       section#beneficios.tfp-section(aria-labelledby='beneficios-titulo')
         .tfp-shell
