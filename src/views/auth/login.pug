@@ -1,0 +1,98 @@
+doctype html
+html(lang='es' data-tf-theme='dark')
+  head
+    smeta(charset='UTF-8')
+    meta(name='viewport' content='width=device-width, initial-scale=1.0')
+    meta(name='theme-color' content='#0B1535')
+    meta(name='description' content='TurnoFlex: una forma moderna y organizada de gestionar turnos médicos, profesionales y pacientes.')
+    title TurnoFlex | Tu salud, más cerca que nunca
+    //- Unico JS (tema + interacciones) y unico CSS (marca + temas).
+    script(src='/js/turnoflex.js?v=1')
+    link(rel='stylesheet' href='/css/turnoflex.css?v=header1')
+    link(rel='icon' type='image/svg+xml' href='/favicon.svg')
+    link(rel='preconnect' href='https://cdn.jsdelivr.net' crossorigin)
+    link(rel='stylesheet' href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css')
+  body.tfp-page.tfp-login
+    a.tfp-skip(href='#contenido') Saltar al formulario
+    - const tfHeaderContext = 'login'
+    include ../partials/header-public
+    main#contenido.tfp-auth-main
+      .tfp-glow.tfp-glow-one(aria-hidden='true')
+      .tfp-glow.tfp-glow-two(aria-hidden='true')
+      .tfp-shell.tfp-auth-grid
+        section.tfp-auth-intro(aria-labelledby='titulo-acceso')
+          span.tfp-eyebrow
+            i.bi.bi-stars(aria-hidden='true')
+            |  GESTIÓN MÉDICA INTELIGENTE
+          h1#titulo-acceso La gestión de salud, #[span.tfp-gradient-text más simple e inteligente.]
+          p TurnoFlex reúne profesionales, pacientes y turnos en una misma plataforma, con herramientas adaptadas a cada perfil.
+          .tfp-auth-features
+            .tfp-auth-feature
+              span.tfp-auth-feature-icon
+                i.bi.bi-calendar2-week(aria-hidden='true')
+              span
+                strong Gestión centralizada de turnos
+                small Organizá horarios y reservas en un solo lugar.
+            .tfp-auth-feature
+              span.tfp-auth-feature-icon.tfp-auth-feature-blue
+                i.bi.bi-people(aria-hidden='true')
+              span
+                strong Control profesional y operativo
+                small Herramientas pensadas para cada equipo.
+            .tfp-auth-feature
+              span.tfp-auth-feature-icon.tfp-auth-feature-teal
+                i.bi.bi-graph-up-arrow(aria-hidden='true')
+              span
+                strong Información para organizarte mejor
+                small Una visión más clara de la actividad diaria.
+
+        section.tfp-auth-card(aria-labelledby='titulo-formulario')
+          .tfp-auth-card-top
+            div
+              span.tfp-kicker ACCESO SEGURO
+              h2#titulo-formulario Bienvenido a TurnoFlex
+              p Ingresá tus credenciales para acceder al espacio correspondiente a tu perfil.
+            span.tfp-auth-card-logo(aria-hidden='true') T
+          if typeof error !== 'undefined' && error
+            .tfp-alert(role='alert')
+              i.bi.bi-exclamation-circle-fill(aria-hidden='true')
+              span= error
+          form#tfp-login-form.tfp-login-form(action='/auth/login' method='POST')
+            .tfp-form-field
+              label(for='email') Correo electrónico
+              .tfp-input-wrap
+                i.bi.bi-envelope(aria-hidden='true')
+                input#email(type='email' name='email' placeholder='nombre@correo.com' autocomplete='username' inputmode='email' maxlength='254' required autofocus)
+            .tfp-form-field
+              label(for='password') Contraseña
+              .tfp-input-wrap
+                i.bi.bi-lock(aria-hidden='true')
+                input#password(type='password' name='password' placeholder='Ingresá tu contraseña' autocomplete='current-password' required)
+                button.tfp-password-toggle(type='button' data-password-toggle aria-controls='password' aria-label='Mostrar contraseña' aria-pressed='false')
+                  i.bi.bi-eye(aria-hidden='true')
+            button.tfp-btn.tfp-btn-gradient.tfp-submit(type='submit')
+              span Ingresar a TurnoFlex
+              i.bi.bi-arrow-right(aria-hidden='true')
+          .tfp-access-note
+            i.bi.bi-shield-lock(aria-hidden='true')
+            |  Acceso protegido mediante sesión de usuario
+          .tfp-auth-bottom
+            | ¿Todavía no tenés una cuenta?
+            a(href='/auth/register') Crear cuenta
+              i.bi.bi-arrow-right(aria-hidden='true')
+          a.tfp-back-link(href='/bienvenida')
+            i.bi.bi-arrow-left(aria-hidden='true')
+            |  Volver a la bienvenida
+
+      .tfp-auth-decoration.tfp-auth-decoration-top(aria-hidden='true')
+        i.bi.bi-bell-fill
+        span
+          strong Recordatorios integrados
+          small Información de tus consultas
+      .tfp-auth-decoration.tfp-auth-decoration-bottom(aria-hidden='true')
+        i.bi.bi-shield-check
+        span
+          strong Acceso personalizado
+          small Tu perfil, tu espacio
+
+    include ../partials/footer

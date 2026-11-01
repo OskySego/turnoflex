@@ -1,0 +1,17 @@
+//- PIE DE PAGINA INSTITUCIONAL UNICO: Bienvenida, Login, Registro y paneles.
+//- El diseno esta en /css/turnoflex.css. No necesita JavaScript propio.
+footer.tf-footer-shared(aria-label='Pie de pagina de TurnoFlex')
+  .tf-footer-shared__inner
+    a.tf-footer-shared__brand(href='/bienvenida' aria-label='TurnoFlex - Ir a bienvenida')
+      span.tf-footer-shared__mark(aria-hidden='true') T
+      span.tf-footer-shared__brand-copy
+        strong TurnoFlex
+        small GESTIÓN MÉDICA INTELIGENTE
+    .tf-footer-shared__center
+      span Plataforma inteligente para la gestión de salud
+      small © #{new Date().getFullYear()} TurnoFlex · Todos los derechos reservados
+    .tf-footer-shared__credit
+      small TurnoFlex — una solución desarrollada por
+      span.tf-footer-shared__badge
+        span.tf-footer-shared__dot(aria-hidden='true')
+        strong Los Claudestinos®

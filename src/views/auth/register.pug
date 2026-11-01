@@ -1,0 +1,128 @@
+doctype html
+html(lang='es' data-tf-theme='dark')
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport' content='width=device-width, initial-scale=1.0')
+    meta(name='theme-color' content='#0B1535')
+    meta(name='description' content='TurnoFlex: una forma moderna y organizada de gestionar turnos médicos, profesionales y pacientes.')
+    title TurnoFlex | Tu salud, más cerca que nunca
+    //- Unico JS (tema + interacciones) y unico CSS (marca + temas).
+    script(src='/js/turnoflex.js?v=1')
+    link(rel='stylesheet' href='/css/turnoflex.css?v=header1')
+    link(rel='icon' type='image/svg+xml' href='/favicon.svg')
+    link(rel='preconnect' href='https://cdn.jsdelivr.net' crossorigin)
+    link(rel='stylesheet' href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css')
+
+  body.tfp-page.tfp-login.tfr-page
+    a.tfp-skip(href='#contenido') Saltar al formulario
+
+    - const tfHeaderContext = 'register'
+    include ../partials/header-public
+    main#contenido.tfp-auth-main.tfr-main
+      .tfp-glow.tfp-glow-one(aria-hidden='true')
+      .tfp-glow.tfp-glow-two(aria-hidden='true')
+      .tfp-shell.tfp-auth-grid.tfr-grid
+        section.tfp-auth-intro.tfr-intro(aria-labelledby='titulo-registro')
+          span.tfp-eyebrow
+            i.bi.bi-stars(aria-hidden='true')
+            |  TU SALUD, MÁS CERCA
+          h1#titulo-registro Empezá a cuidar tu salud #[span.tfp-gradient-text con TurnoFlex.]
+          p Creá tu espacio personal para organizar tus consultas y encontrar la información de tus turnos en un solo lugar.
+          .tfp-auth-features
+            .tfp-auth-feature
+              span.tfp-auth-feature-icon
+                i.bi.bi-calendar2-check(aria-hidden='true')
+              span
+                strong Turnos en un solo lugar
+                small Consultá tus próximas reservas y su estado.
+            .tfp-auth-feature
+              span.tfp-auth-feature-icon.tfp-auth-feature-blue
+                i.bi.bi-bell(aria-hidden='true')
+              span
+                strong Recordatorios integrados
+                small Recibí información de tus consultas cuando corresponda.
+            .tfp-auth-feature
+              span.tfp-auth-feature-icon.tfp-auth-feature-teal
+                i.bi.bi-person-check(aria-hidden='true')
+              span
+                strong Tu espacio personal
+                small Una experiencia pensada para pacientes.
+          .tfr-trust
+            i.bi.bi-shield-check(aria-hidden='true')
+            span El registro público crea una cuenta de paciente.
+
+        section.tfp-auth-card.tfr-card(aria-labelledby='titulo-formulario')
+          .tfp-auth-card-top
+            div
+              span.tfp-kicker REGISTRO DE PACIENTES
+              h2#titulo-formulario Creá tu cuenta
+              p Completá tus datos para comenzar. Solo te pedimos la información necesaria para el acceso.
+            span.tfp-auth-card-logo(aria-hidden='true') T
+
+          if typeof error !== 'undefined' && error
+            .tfp-alert(role='alert')
+              i.bi.bi-exclamation-circle-fill(aria-hidden='true')
+              span= error
+
+          form#tfr-form.tfp-login-form(action='/auth/register' method='POST')
+            .tfp-form-field
+              label(for='nombre') Nombre completo
+              .tfp-input-wrap
+                i.bi.bi-person(aria-hidden='true')
+                input#nombre(type='text' name='nombre' placeholder='Tu nombre y apellido' autocomplete='name' maxlength='120' required autofocus)
+
+            .tfp-form-field
+              label(for='email') Correo electrónico
+              .tfp-input-wrap
+                i.bi.bi-envelope(aria-hidden='true')
+                input#email(type='email' name='email' placeholder='tu@correo.com' autocomplete='email' inputmode='email' maxlength='254' required)
+
+            .tfp-form-field
+              label(for='password') Contraseña
+              .tfp-input-wrap
+                i.bi.bi-lock(aria-hidden='true')
+                input#password(type='password' name='password' placeholder='Mínimo 8 caracteres' autocomplete='new-password' minlength='8' maxlength='128' aria-describedby='tfr-password-help tfr-strength-text' required)
+                button.tfp-password-toggle(type='button' data-register-toggle aria-controls='password' aria-label='Mostrar contraseña' aria-pressed='false')
+                  i.bi.bi-eye(aria-hidden='true')
+              .tfr-password-meta
+                span#tfr-password-help Al menos 8 caracteres
+                span#tfr-strength-text(aria-live='polite') Seguridad de contraseña
+              .tfr-strength(role='progressbar' aria-label='Seguridad de contraseña' aria-valuemin='0' aria-valuemax='3' aria-valuenow='0')
+                span#tfr-strength-fill
+
+            .tfp-form-field
+              label(for='tfr-confirmar') Confirmar contraseña
+              .tfp-input-wrap
+                i.bi.bi-shield-lock(aria-hidden='true')
+                input#tfr-confirmar(type='password' placeholder='Repetí tu contraseña' autocomplete='new-password' minlength='8' maxlength='128' required)
+                button.tfp-password-toggle(type='button' data-register-toggle aria-controls='tfr-confirmar' aria-label='Mostrar confirmación' aria-pressed='false')
+                  i.bi.bi-eye(aria-hidden='true')
+              p#tfr-match-message.tfr-match-message(aria-live='polite')
+
+            button.tfp-btn.tfp-btn-gradient.tfp-submit(type='submit')
+              span Crear mi cuenta
+              i.bi.bi-arrow-right(aria-hidden='true')
+
+          .tfp-access-note
+            i.bi.bi-shield-lock(aria-hidden='true')
+            |  Tu contraseña se envía por el formulario de registro y es procesada por el servidor.
+          .tfp-auth-bottom
+            | ¿Ya tenés una cuenta?
+            a(href='/auth/login') Iniciar sesión
+              i.bi.bi-arrow-right(aria-hidden='true')
+          a.tfp-back-link(href='/bienvenida')
+            i.bi.bi-arrow-left(aria-hidden='true')
+            |  Volver a la bienvenida
+
+      .tfp-auth-decoration.tfp-auth-decoration-top(aria-hidden='true')
+        i.bi.bi-calendar2-heart
+        span
+          strong Tu salud organizada
+          small Un solo espacio para tus turnos
+      .tfp-auth-decoration.tfp-auth-decoration-bottom(aria-hidden='true')
+        i.bi.bi-stars
+        span
+          strong Experiencia TurnoFlex
+          small Fácil, rápida y moderna
+
+    include ../partials/footer

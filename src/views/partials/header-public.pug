@@ -1,0 +1,31 @@
+//- Encabezado publico UNICO. tfHeaderContext: bienvenida | login | register.
+//- Conservar ids y atributos usados por /js/turnoflex.js.
+header.tfp-header.tf-shared-public-header
+  .tfp-shell.tfp-nav-shell
+    - const tfBrandHref = '/bienvenida'
+    include brand
+    nav#tfp-menu.tfp-nav(aria-label='Navegación principal')
+      a(href=tfHeaderContext === 'bienvenida' ? '#beneficios' : '/bienvenida#beneficios') Beneficios
+      a(href=tfHeaderContext === 'bienvenida' ? '#como-funciona' : '/bienvenida#como-funciona') Cómo funciona
+      a(href=tfHeaderContext === 'bienvenida' ? '#perfiles' : '/bienvenida#perfiles') Para quiénes
+      a(href=tfHeaderContext === 'bienvenida' ? '#preguntas' : '/bienvenida#preguntas') Preguntas
+      a.tfp-mobile-nav-link(href='/auth/login') Iniciar sesión
+      a.tfp-mobile-nav-link(href='/auth/register') Crear cuenta
+    .tfp-nav-actions
+      if tfHeaderContext !== 'bienvenida'
+        a.tfp-btn.tfp-btn-outline.tfp-header-back(href='/bienvenida')
+          i.bi.bi-arrow-left(aria-hidden='true')
+          |  Volver al inicio
+      button.tfp-theme-switch(type='button' data-theme-switch aria-label='Cambiar modo de color' title='Cambiar modo de color')
+        i.bi.bi-moon-stars(aria-hidden='true')
+      if tfHeaderContext === 'bienvenida'
+        a.tfp-btn.tfp-btn-outline.tfp-nav-signin(href='/auth/login') Iniciar sesión
+        a.tfp-btn.tfp-btn-gradient.tfp-nav-create(href='/auth/register')
+          | Crear cuenta
+          i.bi.bi-arrow-up-right(aria-hidden='true')
+      else if tfHeaderContext === 'login'
+        a.tfp-btn.tfp-btn-gradient.tfp-create-header(href='/auth/register') Crear cuenta
+      else
+        a.tfp-btn.tfp-btn-gradient.tfp-create-header(href='/auth/login') Iniciar sesión
+    button.tfp-mobile-toggle(type='button' data-menu-toggle aria-controls='tfp-menu' aria-expanded='false' aria-label='Abrir menú')
+      i.bi.bi-list(aria-hidden='true')
