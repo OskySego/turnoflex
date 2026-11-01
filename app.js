@@ -16,6 +16,10 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ✨ SOLUCIÓN AL ERROR 404 DE CSS Y JS ✨
+// Habilita la lectura de archivos estáticos en la carpeta "public"
+app.use(express.static(path.join(process.cwd(), 'public')));
+
 // Configuración del motor de plantillas Pug
 app.set('view engine', 'pug');
 app.set('views', path.join(process.cwd(), 'src/views'));
@@ -27,12 +31,18 @@ app.get('/', (req, res) => {
   });
 });
 
+// ✨ SOLUCIÓN AL ERROR 404 DE BIENVENIDA ✨
+// Agregamos la ruta para que responda cuando el navegador la pida
+app.get('/bienvenida', (req, res) => {
+  res.render('bienvenida'); 
+});
+
 // Rutas de la aplicación
 app.use('/turnos', turnoRoutes);
 app.use('/profesionales', profesionalRoutes);
 app.use('/clientes', clienteRoutes);
 
-//manejo de errores 404
+// Manejo de errores 404
 app.use((req, res) => {
   console.log(`❌ 404 - Ruta solicitada: ${req.originalUrl}`);
   res.status(404).send('Página o Endpoint no encontrado');
