@@ -1,0 +1,2035 @@
+extends layout
+
+block content
+
+  //- ============================================================
+  //- DATOS DEL DASHBOARD
+  //- ============================================================
+
+  - const m = (typeof metricas !== 'undefined' && metricas) ? metricas : {}
+
+  - const total = Number(m.total || 0)
+  - const atendidos = Number(m.atendidos || 0)
+  - const cancelados = Number(m.cancelados || 0)
+  - const reservados = Number(m.reservados || 0)
+  - const pendientesPago = Number(m.pendientesPago || 0)
+
+  - const efectividad = Number(m.tasaEfectividad || 0)
+  - const ausentismo = Number(m.tasaAusentismo || 0)
+
+  - const turnosHoy = Number(m.turnosHoy || 0)
+
+  - const mercadoPagoOps = Number(m.mercadoPago || 0)
+  - const efectivoOps = Number(m.efectivo || 0)
+
+  - const pagosPendientes = Number(m.pagosPendientes || 0)
+  - const pagosConfirmados = Number(m.pagosConfirmados || 0)
+  - const tasaCobro = Number(m.tasaCobro || 0)
+
+  - const profesionalesLista = (typeof topProfesionales !== 'undefined' && topProfesionales) ? topProfesionales : []
+  - const especialidadesLista = (typeof topEspecialidades !== 'undefined' && topEspecialidades) ? topEspecialidades : []
+  - const evolucionSemana = (typeof evolucion7Dias !== 'undefined' && evolucion7Dias) ? evolucion7Dias : []
+
+  - const profesionalTop = profesionalesLista.length > 0 ? profesionalesLista[0] : null
+
+  - const maxTurnosProfesional = profesionalesLista.length > 0 ? Math.max(...profesionalesLista.map(p => Number(p.cantidadTurnos || 0))) : 1
+
+  - const metricasJSON = JSON.stringify(m).replace(/</g, '\\u003c')
+  - const profesionalesJSON = JSON.stringify(profesionalesLista).replace(/</g, '\\u003c')
+  - const especialidadesJSON = JSON.stringify(especialidadesLista).replace(/</g, '\\u003c')
+  - const evolucionJSON = JSON.stringify(evolucionSemana).replace(/</g, '\\u003c')
+
+
+  //- ============================================================
+  //- CHART.JS
+  //- ============================================================
+
+  script(src="https://cdn.jsdelivr.net/npm/chart.js")
+
+
+  //- ============================================================
+  //- ESTILOS
+  //- ============================================================
+
+  style.
+    .tf-dashboard {
+      --tf-blue: #2563eb;
+      --tf-violet: #8b5cf6;
+      --tf-green: #10b981;
+      --tf-yellow: #f59e0b;
+      --tf-red: #ef4444;
+      --tf-cyan: #06b6d4;
+      --tf-pink: #ec4899;
+
+      --tf-bg-card: #ffffff;
+      --tf-bg-soft: #f8fafc;
+      --tf-text: #0f172a;
+      --tf-muted: #64748b;
+      --tf-border: rgba(15, 23, 42, .08);
+
+      color: var(--tf-text);
+    }
+
+    [data-bs-theme="dark"] .tf-dashboard {
+      --tf-bg-card: #171d27;
+      --tf-bg-soft: #111827;
+      --tf-text: #f8fafc;
+      --tf-muted: #94a3b8;
+      --tf-border: rgba(255,255,255,.08);
+    }
+
+
+    /* ==========================================================
+       HERO
+       ========================================================== */
+
+    .tf-hero {
+      position: relative;
+      overflow: hidden;
+      border-radius: 28px;
+      padding: 34px;
+      background:
+        radial-gradient(circle at 88% 0%, rgba(139,92,246,.48), transparent 34%),
+        radial-gradient(circle at 10% 100%, rgba(37,99,235,.34), transparent 36%),
+        linear-gradient(135deg, #09132f 0%, #10245d 50%, #312e81 100%);
+      color: white;
+      box-shadow: 0 24px 55px rgba(15,23,42,.22);
+    }
+
+    .tf-hero::after {
+      content: "";
+      position: absolute;
+      width: 330px;
+      height: 330px;
+      border-radius: 50%;
+      right: -150px;
+      bottom: -190px;
+      background: rgba(255,255,255,.08);
+    }
+
+    .tf-eyebrow {
+      font-size: .74rem;
+      text-transform: uppercase;
+      letter-spacing: .15em;
+      font-weight: 800;
+      color: rgba(255,255,255,.70);
+      margin-bottom: 10px;
+    }
+
+    .tf-hero-title {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 850;
+      letter-spacing: -.04em;
+      margin-bottom: 12px;
+    }
+
+    .tf-hero-text {
+      max-width: 720px;
+      color: rgba(255,255,255,.76);
+      line-height: 1.65;
+      margin-bottom: 0;
+    }
+
+    .tf-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 14px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.10);
+      border-radius: 999px;
+      font-size: .8rem;
+      font-weight: 700;
+      backdrop-filter: blur(10px);
+    }
+
+    .tf-live-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #34d399;
+      animation: tfPulse 1.8s infinite;
+    }
+
+    @keyframes tfPulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(52,211,153,.4);
+      }
+
+      70% {
+        box-shadow: 0 0 0 9px rgba(52,211,153,0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(52,211,153,0);
+      }
+    }
+
+    .tf-hero-button {
+      border: 1px solid rgba(255,255,255,.22);
+      background: rgba(255,255,255,.10);
+      color: white;
+      border-radius: 12px;
+      padding: 10px 16px;
+      text-decoration: none;
+      font-weight: 700;
+      transition: .25s ease;
+    }
+
+    .tf-hero-button:hover {
+      background: white;
+      color: #172554;
+      transform: translateY(-2px);
+    }
+
+
+    /* ==========================================================
+       SECCIONES
+       ========================================================== */
+
+    .tf-section-header {
+      margin-top: 34px;
+      margin-bottom: 16px;
+    }
+
+    .tf-section-label {
+      font-size: .71rem;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      font-weight: 800;
+      color: var(--tf-violet);
+      margin-bottom: 4px;
+    }
+
+    .tf-section-title {
+      color: var(--tf-text);
+      font-weight: 850;
+      letter-spacing: -.025em;
+      margin-bottom: 3px;
+    }
+
+    .tf-section-subtitle {
+      color: var(--tf-muted);
+      margin-bottom: 0;
+      font-size: .87rem;
+    }
+
+
+    /* ==========================================================
+       KPI
+       ========================================================== */
+
+    .tf-kpi {
+      position: relative;
+      height: 100%;
+      min-height: 175px;
+      overflow: hidden;
+      background: var(--tf-bg-card);
+      border: 1px solid var(--tf-border);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 12px 30px rgba(15,23,42,.06);
+      transition: transform .25s ease, box-shadow .25s ease;
+    }
+
+    .tf-kpi:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 18px 40px rgba(15,23,42,.12);
+    }
+
+    .tf-kpi::after {
+      content: "";
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      position: absolute;
+      top: -42px;
+      right: -32px;
+      background: var(--glow);
+    }
+
+    .tf-kpi-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 18px;
+    }
+
+    .tf-kpi-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      background: var(--soft);
+      color: var(--accent);
+    }
+
+    .tf-kpi-badge {
+      color: var(--tf-muted);
+      font-size: .65rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .tf-kpi-title {
+      color: var(--tf-muted);
+      font-size: .75rem;
+      text-transform: uppercase;
+      font-weight: 750;
+      letter-spacing: .05em;
+      margin-bottom: 6px;
+    }
+
+    .tf-kpi-value {
+      color: var(--tf-text);
+      font-size: 2rem;
+      line-height: 1;
+      font-weight: 850;
+      letter-spacing: -.05em;
+      margin-bottom: 8px;
+    }
+
+    .tf-kpi-footer {
+      font-size: .75rem;
+      color: var(--tf-muted);
+      margin-bottom: 0;
+    }
+
+
+    /* ==========================================================
+       PANELES
+       ========================================================== */
+
+    .tf-panel {
+      background: var(--tf-bg-card);
+      border: 1px solid var(--tf-border);
+      border-radius: 22px;
+      height: 100%;
+      overflow: hidden;
+      box-shadow: 0 12px 32px rgba(15,23,42,.06);
+    }
+
+    .tf-panel-header {
+      padding: 22px 24px 0;
+    }
+
+    .tf-panel-body {
+      padding: 22px 24px 24px;
+    }
+
+    .tf-panel-title {
+      font-weight: 850;
+      color: var(--tf-text);
+      margin-bottom: 3px;
+    }
+
+    .tf-panel-subtitle {
+      color: var(--tf-muted);
+      font-size: .82rem;
+      margin-bottom: 0;
+    }
+
+    .tf-chart-box {
+      position: relative;
+      height: 320px;
+      width: 100%;
+    }
+
+    .tf-chart-box-small {
+      position: relative;
+      height: 320px;
+      width: 100%;
+    }
+
+
+    /* ==========================================================
+       RANKING
+       ========================================================== */
+
+    .tf-ranking-table {
+      --bs-table-bg: transparent;
+      --bs-table-color: var(--tf-text);
+      margin-bottom: 0;
+    }
+
+    .tf-ranking-table > :not(caption) > * > * {
+      border-bottom-color: var(--tf-border);
+      padding: 14px 8px;
+    }
+
+    .tf-ranking-table thead th {
+      font-size: .68rem;
+      color: var(--tf-muted);
+      text-transform: uppercase;
+      font-weight: 800;
+      letter-spacing: .06em;
+      border-bottom-width: 1px;
+    }
+
+    .tf-rank-number {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 850;
+      background: rgba(139,92,246,.12);
+      color: var(--tf-violet);
+    }
+
+    .tf-prof-name {
+      font-weight: 800;
+      color: var(--tf-text);
+    }
+
+    .tf-prof-specialty {
+      font-size: .76rem;
+      color: var(--tf-muted);
+    }
+
+    .tf-count {
+      display: inline-flex;
+      min-width: 42px;
+      justify-content: center;
+      padding: 5px 9px;
+      border-radius: 9px;
+      background: rgba(37,99,235,.10);
+      color: #3b82f6;
+      font-weight: 800;
+    }
+
+    .tf-bar {
+      width: 100%;
+      min-width: 90px;
+      height: 7px;
+      background: rgba(148,163,184,.15);
+      overflow: hidden;
+      border-radius: 20px;
+    }
+
+    .tf-bar-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #2563eb, #8b5cf6);
+    }
+
+
+    /* ==========================================================
+       INSIGHTS
+       ========================================================== */
+
+    .tf-insight {
+      display: flex;
+      gap: 12px;
+      padding: 14px;
+      border-radius: 15px;
+      border: 1px solid var(--tf-border);
+      background: var(--tf-bg-soft);
+      margin-bottom: 11px;
+    }
+
+    .tf-insight:last-child {
+      margin-bottom: 0;
+    }
+
+    .tf-insight-icon {
+      width: 38px;
+      height: 38px;
+      flex-shrink: 0;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .tf-insight-title {
+      font-size: .85rem;
+      font-weight: 800;
+      color: var(--tf-text);
+      margin-bottom: 2px;
+    }
+
+    .tf-insight-text {
+      color: var(--tf-muted);
+      font-size: .76rem;
+      line-height: 1.5;
+      margin-bottom: 0;
+    }
+
+
+    /* ==========================================================
+       DIAGNÓSTICO
+       ========================================================== */
+
+    .tf-diagnosis {
+      border-radius: 20px;
+      background:
+        linear-gradient(
+          135deg,
+          rgba(37,99,235,.08),
+          rgba(139,92,246,.10)
+        );
+      border: 1px solid rgba(139,92,246,.13);
+      padding: 23px;
+    }
+
+    .tf-payment-highlight {
+      border-radius: 17px;
+      border: 1px solid var(--tf-border);
+      background: var(--tf-bg-card);
+      padding: 18px;
+      height: 100%;
+    }
+
+
+    /* ==========================================================
+       ACCIONES
+       ========================================================== */
+
+    .tf-action {
+      text-decoration: none;
+      display: block;
+      height: 100%;
+      min-height: 150px;
+      padding: 20px;
+      border-radius: 18px;
+      border: 1px solid var(--tf-border);
+      background: var(--tf-bg-card);
+      transition: .25s ease;
+    }
+
+    .tf-action:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 38px rgba(15,23,42,.10);
+      border-color: rgba(139,92,246,.28);
+    }
+
+    .tf-action-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      margin-bottom: 13px;
+      background: linear-gradient(
+        135deg,
+        rgba(37,99,235,.12),
+        rgba(139,92,246,.14)
+      );
+    }
+
+    .tf-action-title {
+      color: var(--tf-text);
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .tf-action-text {
+      font-size: .78rem;
+      color: var(--tf-muted);
+      margin-bottom: 0;
+    }
+
+
+    @media (max-width: 767px) {
+
+      .tf-hero {
+        padding: 24px;
+      }
+
+      .tf-chart-box,
+      .tf-chart-box-small {
+        height: 280px;
+      }
+
+      .tf-kpi {
+        min-height: 160px;
+      }
+    }
+
+
+  //- ============================================================
+  //- CONTENIDO
+  //- ============================================================
+
+  .tf-dashboard.tfu-page
+
+
+    //- ==========================================================
+    //- HERO
+    //- ==========================================================
+
+    .tf-hero.mb-4.tfu-hero
+      .row.align-items-center.g-4
+
+        .col-lg-8
+          .tf-eyebrow ◆ TurnoFlex Intelligence
+
+          h1.tf-hero-title Centro de Inteligencia Gerencial
+
+          p.tf-hero-text
+            | Supervisión estratégica de turnos, rendimiento profesional,
+            |  cobranzas y comportamiento operativo para tomar decisiones
+            |  con información clara y actualizada.
+
+        .col-lg-4
+          .d-flex.flex-column.align-items-lg-end.gap-3
+
+            .tf-live
+              span.tf-live-dot
+              span Sistema operativo
+
+            .d-flex.flex-wrap.justify-content-lg-end.gap-2
+              button.tf-hero-button#btnActualizar(type="button")
+                | ↻ Actualizar
+
+              a.tf-hero-button(href="/turnos")
+                | Ver operación
+
+
+    //- ==========================================================
+    //- PULSO OPERATIVO
+    //- ==========================================================
+
+    .tf-section-header
+      .d-flex.justify-content-between.align-items-end.flex-wrap.gap-2
+
+        div
+          .tf-section-label Indicadores estratégicos
+          h3.tf-section-title Pulso operativo
+          p.tf-section-subtitle
+            | Estado general de la operación y rendimiento de los turnos.
+
+        small.text-muted
+          | Última lectura:
+          strong.ms-1#horaPanel --:--
+
+
+    .row.g-3.mb-4
+
+      .col-md-6.col-xl-4.col-xxl-2
+        .tf-kpi.tfu-card(
+          style="--accent:#2563eb;--soft:rgba(37,99,235,.12);--glow:rgba(37,99,235,.12);"
+        )
+          .tf-kpi-top
+            .tf-kpi-icon 📊
+            span.tf-kpi-badge Total
+
+          .tf-kpi-title Turnos registrados
+
+          .tf-kpi-value
+            span.js-counter(data-target=total) 0
+
+          p.tf-kpi-footer Volumen total procesado
+
+
+      .col-md-6.col-xl-4.col-xxl-2
+        .tf-kpi.tfu-card(
+          style="--accent:#10b981;--soft:rgba(16,185,129,.12);--glow:rgba(16,185,129,.12);"
+        )
+          .tf-kpi-top
+            .tf-kpi-icon ✓
+            span.tf-kpi-badge Atendidos
+
+          .tf-kpi-title Atención realizada
+
+          .tf-kpi-value
+            span.js-counter(data-target=atendidos) 0
+
+          p.tf-kpi-footer Turnos completados
+
+
+      .col-md-6.col-xl-4.col-xxl-2
+        .tf-kpi.tfu-card(
+          style="--accent:#f59e0b;--soft:rgba(245,158,11,.12);--glow:rgba(245,158,11,.12);"
+        )
+          .tf-kpi-top
+            .tf-kpi-icon ◷
+            span.tf-kpi-badge Agenda
+
+          .tf-kpi-title Reservados
+
+          .tf-kpi-value
+            span.js-counter(data-target=reservados) 0
+
+          p.tf-kpi-footer Próximos a atender
+
+
+      .col-md-6.col-xl-4.col-xxl-2
+        .tf-kpi.tfu-card(
+          style="--accent:#ef4444;--soft:rgba(239,68,68,.12);--glow:rgba(239,68,68,.12);"
+        )
+          .tf-kpi-top
+            .tf-kpi-icon ×
+            span.tf-kpi-badge Cancelados
+
+          .tf-kpi-title Cancelaciones
+
+          .tf-kpi-value
+            span.js-counter(data-target=cancelados) 0
+
+          p.tf-kpi-footer Turnos no concretados
+
+
+      .col-md-6.col-xl-4.col-xxl-2
+        .tf-kpi.tfu-card(
+          style="--accent:#8b5cf6;--soft:rgba(139,92,246,.12);--glow:rgba(139,92,246,.12);"
+        )
+          .tf-kpi-top
+            .tf-kpi-icon ↗
+            span.tf-kpi-badge Performance
+
+          .tf-kpi-title Efectividad
+
+          .tf-kpi-value
+            span.js-counter(
+              data-target=efectividad
+              data-decimals="1"
+            ) 0
+            | %
+
+          if efectividad >= 90
+            p.tf-kpi-footer Rendimiento excelente
+          else if efectividad >= 75
+            p.tf-kpi-footer Rendimiento estable
+          else
+            p.tf-kpi-footer Requiere seguimiento
+
+
+      .col-md-6.col-xl-4.col-xxl-2
+        .tf-kpi.tfu-card(
+          style="--accent:#06b6d4;--soft:rgba(6,182,212,.12);--glow:rgba(6,182,212,.12);"
+        )
+          .tf-kpi-top
+            .tf-kpi-icon ◎
+            span.tf-kpi-badge Riesgo
+
+          .tf-kpi-title Ausentismo
+
+          .tf-kpi-value
+            span.js-counter(
+              data-target=ausentismo
+              data-decimals="1"
+            ) 0
+            | %
+
+          if ausentismo < 8
+            p.tf-kpi-footer Nivel saludable
+          else if ausentismo < 15
+            p.tf-kpi-footer Seguimiento recomendado
+          else
+            p.tf-kpi-footer Atención prioritaria
+
+
+    //- ==========================================================
+    //- ANÁLISIS OPERATIVO
+    //- ==========================================================
+
+    .tf-section-header
+      .tf-section-label Demanda operativa
+      h3.tf-section-title Análisis de actividad
+      p.tf-section-subtitle
+        | Comparación visual de profesionales y estados de los turnos.
+
+
+    .row.g-4.mb-4
+
+      .col-xl-6
+        .tf-panel.tfu-card
+          .tf-panel-header
+            h4.tf-panel-title Profesionales más solicitados
+            p.tf-panel-subtitle
+              | Distribución de demanda entre los profesionales con más turnos.
+
+          .tf-panel-body
+            if profesionalesLista.length > 0
+              .tf-chart-box
+                canvas#chartProfesionales
+            else
+              .text-center.py-5
+                .fs-1.mb-2 📭
+                h5 Sin información disponible
+                p.text-muted.mb-0
+                  | Aún no existen suficientes turnos.
+
+
+      .col-xl-6
+        .tf-panel.tfu-card
+          .tf-panel-header
+            h4.tf-panel-title Distribución de turnos
+            p.tf-panel-subtitle
+              | Estado actual de la operación registrada.
+
+          .tf-panel-body
+            if total > 0
+              .tf-chart-box-small
+                canvas#chartEstados
+            else
+              .text-center.py-5
+                .fs-1.mb-2 📊
+                h5 Sin actividad registrada
+                p.text-muted.mb-0
+                  | No existen turnos para analizar.
+
+
+    //- ==========================================================
+    //- STAFF + RADAR
+    //- ==========================================================
+
+    .row.g-4.mb-4
+
+      .col-xl-6
+        .tf-panel.tfu-card
+          .tf-panel-header
+            h4.tf-panel-title Ranking profesional
+            p.tf-panel-subtitle
+              | Profesionales con mayor volumen de turnos asignados.
+
+          .tf-panel-body
+
+            if profesionalesLista.length > 0
+
+              .table-responsive
+                table.table.tf-ranking-table.align-middle
+
+                  thead
+                    tr
+                      th #
+                      th Profesional
+                      th.text-center Turnos
+                      th Demanda
+
+                  tbody
+
+                    each prof, index in profesionalesLista
+
+                      - const cantidad = Number(prof.cantidadTurnos || 0)
+                      - const porcentaje = maxTurnosProfesional > 0 ? (cantidad / maxTurnosProfesional) * 100 : 0
+
+                      tr
+                        td
+                          span.tf-rank-number= index + 1
+
+                        td
+                          .tf-prof-name= prof._id
+                          .tf-prof-specialty= prof.especialidad || 'General'
+
+                        td.text-center
+                          span.tf-count= cantidad
+
+                        td(style="min-width:130px;")
+                          .tf-bar
+                            .tf-bar-fill(
+                              style=`width:${porcentaje}%;`
+                            )
+
+            else
+              .text-center.py-5
+                .fs-1.mb-2 🩺
+                h5 Sin ranking
+                p.text-muted.mb-0
+                  | El ranking aparecerá al registrar turnos.
+
+
+      .col-xl-6
+        .tf-panel.tfu-card
+          .tf-panel-header
+            h4.tf-panel-title Radar estratégico
+            p.tf-panel-subtitle
+              | Lectura automática de los principales indicadores.
+
+          .tf-panel-body
+
+            .tf-insight
+              if ausentismo >= 15
+                .tf-insight-icon(
+                  style="color:#ef4444;background:rgba(239,68,68,.12);"
+                ) !
+              else if ausentismo >= 8
+                .tf-insight-icon(
+                  style="color:#f59e0b;background:rgba(245,158,11,.12);"
+                ) !
+              else
+                .tf-insight-icon(
+                  style="color:#10b981;background:rgba(16,185,129,.12);"
+                ) ✓
+
+              div
+                if ausentismo >= 15
+                  .tf-insight-title Ausentismo elevado
+                  p.tf-insight-text
+                    | El nivel actual es #{ausentismo}%. Se recomienda reforzar
+                    |  recordatorios y confirmaciones.
+                else if ausentismo >= 8
+                  .tf-insight-title Ausentismo en seguimiento
+                  p.tf-insight-text
+                    | El nivel actual es #{ausentismo}%. Conviene observar su evolución.
+                else
+                  .tf-insight-title Nivel saludable
+                  p.tf-insight-text
+                    | El ausentismo permanece en #{ausentismo}%.
+
+
+            .tf-insight
+              .tf-insight-icon(
+                style="color:#8b5cf6;background:rgba(139,92,246,.12);"
+              ) ↗
+
+              div
+                if efectividad >= 90
+                  .tf-insight-title Rendimiento destacado
+                  p.tf-insight-text
+                    | La efectividad alcanza #{efectividad}%.
+                else if efectividad >= 75
+                  .tf-insight-title Operación estable
+                  p.tf-insight-text
+                    | La efectividad se encuentra en #{efectividad}%.
+                else
+                  .tf-insight-title Oportunidad de mejora
+                  p.tf-insight-text
+                    | La efectividad es #{efectividad}%. Conviene analizar cancelaciones.
+
+
+            .tf-insight
+              .tf-insight-icon(
+                style="color:#2563eb;background:rgba(37,99,235,.12);"
+              ) ◷
+
+              div
+                .tf-insight-title Agenda activa
+
+                if reservados > 0
+                  p.tf-insight-text
+                    | Hay #{reservados} turno(s) reservado(s) pendientes de atención.
+                else
+                  p.tf-insight-text
+                    | Actualmente no existen turnos reservados pendientes.
+
+
+            if profesionalTop
+              .tf-insight
+                .tf-insight-icon(
+                  style="color:#f59e0b;background:rgba(245,158,11,.12);"
+                ) ★
+
+                div
+                  .tf-insight-title Mayor demanda
+
+                  p.tf-insight-text
+                    strong= profesionalTop._id
+                    |  lidera con #{profesionalTop.cantidadTurnos} turno(s).
+
+
+    //- ==========================================================
+    //- FINANZAS
+    //- ==========================================================
+
+    .tf-section-header
+      .d-flex.justify-content-between.align-items-end.flex-wrap.gap-2
+
+        div
+          .tf-section-label Inteligencia financiera
+          h3.tf-section-title Pulso financiero
+          p.tf-section-subtitle
+            | Seguimiento de cobranzas y medios de pago registrados.
+
+        if tasaCobro >= 80
+          span.badge.bg-success.rounded-pill.px-3.py-2 Cobranza saludable
+        else if tasaCobro >= 50
+          span.badge.bg-warning.text-dark.rounded-pill.px-3.py-2 En seguimiento
+        else
+          span.badge.bg-danger.rounded-pill.px-3.py-2 Revisión recomendada
+
+
+    .row.g-3.mb-4
+
+      .col-md-6.col-xl-4.col-xxl-2
+        .tf-kpi.tfu-card(
+          style="--accent:#2563eb;--soft:rgba(37,99,235,.12);--glow:rgba(37,99,235,.12);"
+        )
+          .tf-kpi-top
+            .tf-kpi-icon 📅
+            span.tf-kpi-badge Hoy
+
+          .tf-kpi-title Turnos del día
+
+          .tf-kpi-value
+            span.js-counter(data-target=turnosHoy) 0
+
+          p.tf-kpi-footer Agenda correspondiente a hoy
+
+
+      .col-md-6.col-xl-4.col-xxl-2
+        .tf-kpi.tfu-card(
+          style="--accent:#06b6d4;--soft:rgba(6,182,212,.12);--glow:rgba(6,182,212,.12);"
+        )
+          .tf-kpi-top
+            .tf-kpi-icon 💳
+            span.tf-kpi-badge Digital
+
+          .tf-kpi-title Mercado Pago
+
+          .tf-kpi-value
+            span.js-counter(data-target=mercadoPagoOps) 0
+
+          p.tf-kpi-footer Operaciones digitales
+
+
+      .col-md-6.col-xl-4.col-xxl-2
+        .tf-kpi.tfu-card(
+          style="--accent:#10b981;--soft:rgba(16,185,129,.12);--glow:rgba(16,185,129,.12);"
+        )
+          .tf-kpi-top
+            .tf-kpi-icon 💵
+            span.tf-kpi-badge Caja
+
+          .tf-kpi-title Efectivo
+
+          .tf-kpi-value
+            span.js-counter(data-target=efectivoOps) 0
+
+          p.tf-kpi-footer Operaciones presenciales
+
+
+      .col-md-6.col-xl-4.col-xxl-2
+        .tf-kpi.tfu-card(
+          style="--accent:#8b5cf6;--soft:rgba(139,92,246,.12);--glow:rgba(139,92,246,.12);"
+        )
+          .tf-kpi-top
+            .tf-kpi-icon ✓
+            span.tf-kpi-badge Cobrados
+
+          .tf-kpi-title Confirmados
+
+          .tf-kpi-value
+            span.js-counter(data-target=pagosConfirmados) 0
+
+          p.tf-kpi-footer Pagos o señas registrados
+
+
+      .col-md-6.col-xl-4.col-xxl-2
+        .tf-kpi.tfu-card(
+          style="--accent:#f59e0b;--soft:rgba(245,158,11,.12);--glow:rgba(245,158,11,.12);"
+        )
+          .tf-kpi-top
+            .tf-kpi-icon ◷
+            span.tf-kpi-badge Pendientes
+
+          .tf-kpi-title Por cobrar
+
+          .tf-kpi-value
+            span.js-counter(data-target=pagosPendientes) 0
+
+          p.tf-kpi-footer Cobros aún pendientes
+
+
+      .col-md-6.col-xl-4.col-xxl-2
+        .tf-kpi.tfu-card(
+          style="--accent:#ec4899;--soft:rgba(236,72,153,.12);--glow:rgba(236,72,153,.12);"
+        )
+          .tf-kpi-top
+            .tf-kpi-icon ◎
+            span.tf-kpi-badge Conversión
+
+          .tf-kpi-title Tasa de cobro
+
+          .tf-kpi-value
+            span.js-counter(
+              data-target=tasaCobro
+              data-decimals="1"
+            ) 0
+            | %
+
+          p.tf-kpi-footer Efectividad financiera
+
+
+    //- ==========================================================
+    //- TENDENCIAS
+    //- ==========================================================
+
+    .tf-section-header
+      .tf-section-label Tendencias
+      h3.tf-section-title Comportamiento y demanda
+      p.tf-section-subtitle
+        | Evolución semanal y especialidades con mayor actividad.
+
+
+    .row.g-4.mb-4
+
+      .col-xl-6
+        .tf-panel.tfu-card
+          .tf-panel-header
+            h4.tf-panel-title Evolución últimos 7 días
+            p.tf-panel-subtitle
+              | Cantidad de turnos registrados diariamente.
+
+          .tf-panel-body
+
+            if evolucionSemana.length > 0
+              .tf-chart-box
+                canvas#chartEvolucion
+            else
+              .text-center.py-5
+                .fs-1.mb-2 📈
+                h5 Sin información semanal
+                p.text-muted.mb-0
+                  | Todavía no existen datos suficientes.
+
+
+      .col-xl-6
+        .tf-panel.tfu-card
+          .tf-panel-header
+            h4.tf-panel-title Especialidades más solicitadas
+            p.tf-panel-subtitle
+              | Áreas médicas con mayor volumen de turnos.
+
+          .tf-panel-body
+
+            if especialidadesLista.length > 0
+              .tf-chart-box
+                canvas#chartEspecialidades
+            else
+              .text-center.py-5
+                .fs-1.mb-2 🩺
+                h5 Sin información
+                p.text-muted.mb-0
+                  | Aún no existen datos de especialidades.
+
+
+    //- ==========================================================
+    //- DIAGNÓSTICO FINANCIERO
+    //- ==========================================================
+
+    .tf-section-header
+      .tf-section-label Lectura ejecutiva
+      h3.tf-section-title Diagnóstico automático
+      p.tf-section-subtitle
+        | Interpretación de la situación financiera registrada.
+
+
+    .tf-diagnosis.mb-4
+
+      .row.g-4.align-items-stretch
+
+        .col-lg-8
+          .h-100.d-flex.flex-column.justify-content-center
+
+            if pagosPendientes > pagosConfirmados && pagosPendientes > 0
+
+              h4.fw-bold.mb-2 Atención sobre cobranzas
+
+              p.text-muted.mb-0
+                | Actualmente existen 
+                strong.text-warning #{pagosPendientes} operaciones pendientes
+                |  frente a 
+                strong #{pagosConfirmados} confirmadas.
+                |  Se recomienda priorizar el seguimiento de cobranzas.
+
+            else if pagosConfirmados > 0
+
+              h4.fw-bold.mb-2 Comportamiento financiero favorable
+
+              p.text-muted.mb-0
+                | La operación registra 
+                strong.text-success #{pagosConfirmados} cobros confirmados
+                |  y una tasa de cobro del 
+                strong #{tasaCobro}%.
+                |  El comportamiento financiero actual es positivo.
+
+            else
+
+              h4.fw-bold.mb-2 Información financiera inicial
+
+              p.text-muted.mb-0
+                | Todavía no existe suficiente actividad financiera registrada
+                |  para generar una conclusión de cobranzas.
+
+
+        .col-lg-4
+          .tf-payment-highlight
+
+            small.text-muted.text-uppercase.fw-bold.d-block.mb-2
+              | Medio de pago predominante
+
+            if mercadoPagoOps > efectivoOps
+
+              h4.fw-bold.mb-1 💳 Mercado Pago
+
+              p.text-muted.small.mb-0
+                | El canal digital posee mayor utilización.
+
+            else if efectivoOps > mercadoPagoOps
+
+              h4.fw-bold.mb-1 💵 Efectivo
+
+              p.text-muted.small.mb-0
+                | El pago presencial concentra mayor actividad.
+
+            else if mercadoPagoOps > 0
+
+              h4.fw-bold.mb-1 ⚖ Distribución equilibrada
+
+              p.text-muted.small.mb-0
+                | Ambos medios presentan una utilización similar.
+
+            else
+
+              h4.fw-bold.mb-1 Sin información
+
+              p.text-muted.small.mb-0
+                | Aún no existen medios de pago registrados.
+
+
+    //- ==========================================================
+    //- ACCIONES
+    //- ==========================================================
+
+    .tf-section-header
+      .tf-section-label Centro de operaciones
+      h3.tf-section-title Acciones estratégicas
+      p.tf-section-subtitle
+        | Accesos directos para continuar la gestión.
+
+
+    .row.g-3.mb-4
+
+      .col-md-4
+        a.tf-action(href="/turnos")
+          .tf-action-icon 📋
+          h5.tf-action-title Auditoría de turnos
+          p.tf-action-text
+            | Consultá reservas, estados, cancelaciones y actividad general.
+
+
+      .col-md-4
+        a.tf-action(href="/profesionales")
+          .tf-action-icon 🩺
+          h5.tf-action-title Gestión del staff
+          p.tf-action-text
+            | Administrá profesionales, horarios y especialidades.
+
+
+      .col-md-4
+        a.tf-action(href="/clientes")
+          .tf-action-icon 👥
+          h5.tf-action-title Gestión de pacientes
+          p.tf-action-text
+            | Consultá y administrá pacientes registrados.
+
+
+    .border-top.pt-3.mt-4
+      .d-flex.justify-content-between.flex-wrap.gap-2
+        small.text-muted
+          | TurnoFlex · Inteligencia aplicada a la gestión médica
+
+        small.text-muted
+          | Centro de Inteligencia Gerencial
+
+
+  //- ============================================================
+  //- JAVASCRIPT
+  //- ============================================================
+
+  script.
+    document.addEventListener('DOMContentLoaded', function () {
+
+      const metricasDashboard = !{metricasJSON};
+      const profesionalesDashboard = !{profesionalesJSON};
+      const especialidadesDashboard = !{especialidadesJSON};
+      const evolucionDashboard = !{evolucionJSON};
+
+
+      // =========================================================
+      // HORA
+      // =========================================================
+
+      const horaPanel =
+        document.getElementById('horaPanel');
+
+      if (horaPanel) {
+        horaPanel.textContent =
+          new Date().toLocaleTimeString(
+            'es-AR',
+            {
+              hour: '2-digit',
+              minute: '2-digit'
+            }
+          );
+      }
+
+
+      // =========================================================
+      // ACTUALIZAR
+      // =========================================================
+
+      const btnActualizar =
+        document.getElementById('btnActualizar');
+
+      if (btnActualizar) {
+
+        btnActualizar.addEventListener(
+          'click',
+          function () {
+            window.location.reload();
+          }
+        );
+      }
+
+
+      // =========================================================
+      // CONTADORES
+      // =========================================================
+
+      const counters =
+        document.querySelectorAll('.js-counter');
+
+      counters.forEach(function (elemento) {
+
+        const objetivo =
+          Number(elemento.dataset.target || 0);
+
+        const decimales =
+          Number(elemento.dataset.decimals || 0);
+
+        const inicio =
+          performance.now();
+
+        const duracion =
+          850;
+
+        function animar(tiempo) {
+
+          const progreso =
+            Math.min(
+              (tiempo - inicio) / duracion,
+              1
+            );
+
+          const suavizado =
+            1 - Math.pow(1 - progreso, 3);
+
+          const valor =
+            objetivo * suavizado;
+
+          elemento.textContent =
+            valor.toLocaleString(
+              'es-AR',
+              {
+                minimumFractionDigits: decimales,
+                maximumFractionDigits: decimales
+              }
+            );
+
+          if (progreso < 1) {
+            requestAnimationFrame(animar);
+          }
+        }
+
+        requestAnimationFrame(animar);
+      });
+
+
+      // =========================================================
+      // CHART.JS
+      // =========================================================
+
+      if (typeof Chart === 'undefined') {
+        console.warn('Chart.js no pudo cargarse.');
+        return;
+      }
+
+
+      function obtenerTema() {
+
+        const oscuro =
+          document.documentElement
+            .getAttribute('data-bs-theme') === 'dark';
+
+        return {
+          texto:
+            oscuro ? '#cbd5e1' : '#475569',
+
+          grilla:
+            oscuro
+              ? 'rgba(148,163,184,.10)'
+              : 'rgba(15,23,42,.07)'
+        };
+      }
+
+
+      let paleta =
+        obtenerTema();
+
+      let chartProfesionales = null;
+      let chartEstados = null;
+      let chartEvolucion = null;
+      let chartEspecialidades = null;
+
+
+      // =========================================================
+      // PROFESIONALES
+      // =========================================================
+
+      const canvasProfesionales =
+        document.getElementById(
+          'chartProfesionales'
+        );
+
+
+      if (
+        canvasProfesionales &&
+        profesionalesDashboard.length > 0
+      ) {
+
+        const nombres =
+          profesionalesDashboard.map(
+            function (prof) {
+              return prof._id;
+            }
+          );
+
+
+        const cantidades =
+          profesionalesDashboard.map(
+            function (prof) {
+              return Number(
+                prof.cantidadTurnos || 0
+              );
+            }
+          );
+
+
+        chartProfesionales =
+          new Chart(
+            canvasProfesionales,
+            {
+
+              type: 'bar',
+
+              data: {
+                labels: nombres,
+
+                datasets: [
+                  {
+                    label:
+                      'Turnos asignados',
+
+                    data:
+                      cantidades,
+
+                    backgroundColor:
+                      'rgba(139,92,246,.78)',
+
+                    borderColor:
+                      '#8b5cf6',
+
+                    borderWidth: 1,
+
+                    borderRadius: 10,
+
+                    borderSkipped: false
+                  }
+                ]
+              },
+
+              options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                plugins: {
+
+                  legend: {
+                    display: false
+                  },
+
+                  tooltip: {
+
+                    displayColors: false,
+
+                    callbacks: {
+
+                      label: function (context) {
+                        return `${context.raw} turno(s)`;
+                      }
+
+                    }
+                  }
+                },
+
+                scales: {
+
+                  x: {
+
+                    grid: {
+                      display: false
+                    },
+
+                    ticks: {
+                      color: paleta.texto
+                    },
+
+                    border: {
+                      display: false
+                    }
+                  },
+
+                  y: {
+
+                    beginAtZero: true,
+
+                    ticks: {
+                      precision: 0,
+                      color: paleta.texto
+                    },
+
+                    grid: {
+                      color: paleta.grilla
+                    },
+
+                    border: {
+                      display: false
+                    }
+                  }
+                }
+              }
+            }
+          );
+      }
+
+
+      // =========================================================
+      // ESTADOS
+      // =========================================================
+
+      const canvasEstados =
+        document.getElementById(
+          'chartEstados'
+        );
+
+
+      if (canvasEstados) {
+
+        const atendidos =
+          Number(
+            metricasDashboard.atendidos || 0
+          );
+
+        const reservados =
+          Number(
+            metricasDashboard.reservados || 0
+          );
+
+        const cancelados =
+          Number(
+            metricasDashboard.cancelados || 0
+          );
+
+        const pendientes =
+          Number(
+            metricasDashboard.pendientesPago || 0
+          );
+
+
+        chartEstados =
+          new Chart(
+            canvasEstados,
+            {
+
+              type: 'doughnut',
+
+              data: {
+
+                labels: [
+                  'Atendidos',
+                  'Reservados',
+                  'Cancelados',
+                  'Pendientes pago'
+                ],
+
+                datasets: [
+                  {
+                    data: [
+                      atendidos,
+                      reservados,
+                      cancelados,
+                      pendientes
+                    ],
+
+                    backgroundColor: [
+                      '#10b981',
+                      '#f59e0b',
+                      '#ef4444',
+                      '#8b5cf6'
+                    ],
+
+                    borderWidth: 0,
+
+                    hoverOffset: 7
+                  }
+                ]
+              },
+
+              options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                cutout: '70%',
+
+                plugins: {
+
+                  legend: {
+
+                    position: 'bottom',
+
+                    labels: {
+
+                      color:
+                        paleta.texto,
+
+                      usePointStyle: true,
+
+                      pointStyle:
+                        'circle',
+
+                      padding: 18
+                    }
+                  }
+                }
+              }
+            }
+          );
+      }
+
+
+      // =========================================================
+      // EVOLUCIÓN
+      // =========================================================
+
+      const canvasEvolucion =
+        document.getElementById(
+          'chartEvolucion'
+        );
+
+
+      if (
+        canvasEvolucion &&
+        evolucionDashboard.length > 0
+      ) {
+
+        const etiquetas =
+          evolucionDashboard.map(
+            function (registro) {
+
+              const partes =
+                String(
+                  registro.fecha
+                ).split('-');
+
+              if (partes.length === 3) {
+                return `${partes[2]}/${partes[1]}`;
+              }
+
+              return registro.fecha;
+            }
+          );
+
+
+        const cantidades =
+          evolucionDashboard.map(
+            function (registro) {
+
+              return Number(
+                registro.cantidad || 0
+              );
+            }
+          );
+
+
+        chartEvolucion =
+          new Chart(
+            canvasEvolucion,
+            {
+
+              type: 'line',
+
+              data: {
+
+                labels:
+                  etiquetas,
+
+                datasets: [
+                  {
+
+                    label:
+                      'Turnos',
+
+                    data:
+                      cantidades,
+
+                    borderColor:
+                      '#8b5cf6',
+
+                    backgroundColor:
+                      'rgba(139,92,246,.12)',
+
+                    fill: true,
+
+                    tension: .4,
+
+                    pointRadius: 4,
+
+                    pointHoverRadius: 7,
+
+                    pointBackgroundColor:
+                      '#8b5cf6'
+                  }
+                ]
+              },
+
+              options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                interaction: {
+                  intersect: false,
+                  mode: 'index'
+                },
+
+                plugins: {
+
+                  legend: {
+                    display: false
+                  },
+
+                  tooltip: {
+
+                    displayColors: false,
+
+                    callbacks: {
+
+                      label: function (context) {
+                        return `${context.raw} turno(s)`;
+                      }
+
+                    }
+                  }
+                },
+
+                scales: {
+
+                  x: {
+
+                    grid: {
+                      display: false
+                    },
+
+                    ticks: {
+                      color: paleta.texto
+                    },
+
+                    border: {
+                      display: false
+                    }
+                  },
+
+                  y: {
+
+                    beginAtZero: true,
+
+                    ticks: {
+                      precision: 0,
+                      color: paleta.texto
+                    },
+
+                    grid: {
+                      color: paleta.grilla
+                    },
+
+                    border: {
+                      display: false
+                    }
+                  }
+                }
+              }
+            }
+          );
+      }
+
+
+      // =========================================================
+      // ESPECIALIDADES
+      // =========================================================
+
+      const canvasEspecialidades =
+        document.getElementById(
+          'chartEspecialidades'
+        );
+
+
+      if (
+        canvasEspecialidades &&
+        especialidadesDashboard.length > 0
+      ) {
+
+        const nombres =
+          especialidadesDashboard.map(
+            function (registro) {
+              return registro._id || 'General';
+            }
+          );
+
+
+        const cantidades =
+          especialidadesDashboard.map(
+            function (registro) {
+              return Number(
+                registro.cantidad || 0
+              );
+            }
+          );
+
+
+        chartEspecialidades =
+          new Chart(
+            canvasEspecialidades,
+            {
+
+              type: 'bar',
+
+              data: {
+
+                labels:
+                  nombres,
+
+                datasets: [
+                  {
+
+                    data:
+                      cantidades,
+
+                    backgroundColor: [
+                      'rgba(37,99,235,.82)',
+                      'rgba(139,92,246,.82)',
+                      'rgba(6,182,212,.82)',
+                      'rgba(16,185,129,.82)',
+                      'rgba(245,158,11,.82)'
+                    ],
+
+                    borderRadius: 9,
+
+                    borderSkipped: false
+                  }
+                ]
+              },
+
+              options: {
+
+                indexAxis: 'y',
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                plugins: {
+
+                  legend: {
+                    display: false
+                  },
+
+                  tooltip: {
+
+                    displayColors: false,
+
+                    callbacks: {
+
+                      label: function (context) {
+                        return `${context.raw} turno(s)`;
+                      }
+
+                    }
+                  }
+                },
+
+                scales: {
+
+                  x: {
+
+                    beginAtZero: true,
+
+                    ticks: {
+                      precision: 0,
+                      color: paleta.texto
+                    },
+
+                    grid: {
+                      color: paleta.grilla
+                    },
+
+                    border: {
+                      display: false
+                    }
+                  },
+
+                  y: {
+
+                    grid: {
+                      display: false
+                    },
+
+                    ticks: {
+                      color: paleta.texto
+                    },
+
+                    border: {
+                      display: false
+                    }
+                  }
+                }
+              }
+            }
+          );
+      }
+
+
+      // =========================================================
+      // CAMBIO DE TEMA
+      // =========================================================
+
+      const observador =
+        new MutationObserver(
+          function () {
+
+            paleta =
+              obtenerTema();
+
+
+            if (chartProfesionales) {
+
+              chartProfesionales
+                .options
+                .scales
+                .x
+                .ticks
+                .color =
+                  paleta.texto;
+
+              chartProfesionales
+                .options
+                .scales
+                .y
+                .ticks
+                .color =
+                  paleta.texto;
+
+              chartProfesionales
+                .options
+                .scales
+                .y
+                .grid
+                .color =
+                  paleta.grilla;
+
+              chartProfesionales.update();
+            }
+
+
+            if (chartEstados) {
+
+              chartEstados
+                .options
+                .plugins
+                .legend
+                .labels
+                .color =
+                  paleta.texto;
+
+              chartEstados.update();
+            }
+
+
+            if (chartEvolucion) {
+
+              chartEvolucion
+                .options
+                .scales
+                .x
+                .ticks
+                .color =
+                  paleta.texto;
+
+              chartEvolucion
+                .options
+                .scales
+                .y
+                .ticks
+                .color =
+                  paleta.texto;
+
+              chartEvolucion
+                .options
+                .scales
+                .y
+                .grid
+                .color =
+                  paleta.grilla;
+
+              chartEvolucion.update();
+            }
+
+
+            if (chartEspecialidades) {
+
+              chartEspecialidades
+                .options
+                .scales
+                .x
+                .ticks
+                .color =
+                  paleta.texto;
+
+              chartEspecialidades
+                .options
+                .scales
+                .x
+                .grid
+                .color =
+                  paleta.grilla;
+
+              chartEspecialidades
+                .options
+                .scales
+                .y
+                .ticks
+                .color =
+                  paleta.texto;
+
+              chartEspecialidades.update();
+            }
+          }
+        );
+
+
+      observador.observe(
+        document.documentElement,
+        {
+          attributes: true,
+          attributeFilter: [
+            'data-bs-theme'
+          ]
+        }
+      );
+
+    });
