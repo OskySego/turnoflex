@@ -1,75 +1,733 @@
 extends layout
 
 block content
-  if error
-    .alert.alert-danger.shadow-sm.rounded-3(role="alert")
-      h4.alert-heading.fw-bold ¡Ocurrió un error!
-      p.mb-2= error
-      hr
-      a.btn.btn-outline-danger.btn-sm(href="/turnos") Volver al listado
-  else
-    - const turnoId = turno ? (turno._id || turno.id) : null
-    - const clienteObj = (turno && turno.cliente_id && typeof turno.cliente_id === 'object') ? turno.cliente_id : (turno ? turno.cliente : null)
-    - const profesionalObj = (turno && turno.profesional_id && typeof turno.profesional_id === 'object') ? turno.profesional_id : (turno ? turno.profesional : null)
-    - const esFinalizado = turno && (turno.estado === 'atendido' || turno.estado === 'cancelado')
+
+  //- ============================================================
+  //- DATOS AUXILIARES
+  //- ============================================================
+
+  - const turnoId = turno ? (turno._id || turno.id) : null
+  - const clienteObj = turno && turno.cliente_id && typeof turno.cliente_id === 'object' ? turno.cliente_id : null
+  - const profesionalObj = turno && turno.profesional_id && typeof turno.profesional_id === 'object' ? turno.profesional_id : null
+
+  - const esAdmin = user && user.rol === 'admin'
+  - const esPersonal = user && user.rol === 'personal'
+  - const esCliente = user && user.rol === 'cliente'
+  - const puedeGestionar = esAdmin || esPersonal
+
+  - const esFinalizado = turno && (turno.estado === 'atendido' || turno.estado === 'cancelado')
+
+  - const auditoriaLista = turno && Array.isArray(turno.auditoria) ? turno.auditoria.slice().sort(function(a, b) { return new Date(b.fecha || 0) - new Date(a.fecha || 0); }) : []
+
+  - const etiquetasAccion = { creacion: 'Turno creado', cambio_estado: 'Cambio de estado', cobro_efectivo: 'Cobro en efectivo', generacion_pago_mp: 'Mercado Pago', pago_mp_confirmado: 'Pago confirmado', modificacion: 'Modificación', transferencia_iniciada: 'Transferencia iniciada', transferencia_informada: 'Transferencia informada', transferencia_confirmada: 'Transferencia acreditada', transferencia_rechazada: 'Transferencia no acreditada' }
+
+  - const iconosAccion = { creacion: '+', cambio_estado: '↻', cobro_efectivo: '$', generacion_pago_mp: 'MP', pago_mp_confirmado: '✓', modificacion: '✎' }
+
+
+  //- ============================================================
+  //- ESTILOS EXCLUSIVOS DEL DETALLE
+  //- ============================================================
+
+  style.
+    .turno-detail {
+      --td-navy: #0d1b3e;
+      --td-blue: #2563eb;
+      --td-violet: #8b5cf6;
+      --td-green: #10b981;
+      --td-red: #ef4444;
+      --td-warning: #f59e0b;
+    }
+
+    .turno-hero {
+      position: relative;
+      overflow: hidden;
+      padding: 28px;
+      border-radius: 24px 24px 0 0;
+      color: #fff;
+      background:
+        radial-gradient(circle at 90% 0%, rgba(139,92,246,.42), transparent 35%),
+        linear-gradient(135deg, #08132e 0%, #0d1b3e 55%, #172554 100%);
+    }
+
+    .turno-number {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 11px;
+      margin-bottom: 10px;
+      border-radius: 9px;
+      background: rgba(139,92,246,.18);
+      border: 1px solid rgba(196,181,253,.22);
+      color: #ddd6fe;
+      font-size: .68rem;
+      font-weight: 800;
+      letter-spacing: .06em;
+    }
+
+    .turno-title {
+      margin: 0;
+      font-size: 1.55rem;
+      font-weight: 900;
+      letter-spacing: -.03em;
+    }
+
+    .turno-status {
+      padding: 8px 13px;
+      border-radius: 10px;
+      font-size: .7rem;
+      font-weight: 850;
+      letter-spacing: .03em;
+    }
+
+    .info-panel {
+      height: 100%;
+      padding: 18px;
+      border: 1px solid var(--tf-border);
+      border-radius: 16px;
+      background: var(--tf-surface);
+    }
+
+    .info-label {
+      margin-bottom: 8px;
+      color: var(--tf-muted);
+      font-size: .62rem;
+      font-weight: 850;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    .info-value {
+      margin-bottom: 4px;
+      color: var(--tf-text);
+      font-size: 1rem;
+      font-weight: 850;
+    }
+
+    .billing-panel {
+      padding: 20px;
+      border-radius: 18px;
+      border: 1px solid rgba(139,92,246,.16);
+      background:
+        linear-gradient(
+          135deg,
+          rgba(37,99,235,.045),
+          rgba(139,92,246,.07)
+        );
+    }
+
+    .audit-card {
+      overflow: hidden;
+      border: 1px solid var(--tf-border);
+      border-radius: 20px;
+      background: var(--tf-surface);
+    }
+
+    .audit-header {
+      padding: 20px 22px;
+      background:
+        linear-gradient(
+          135deg,
+          #08132e,
+          #0d1b3e 60%,
+          #312e81
+        );
+      color: #fff;
+    }
+
+    .audit-header-title {
+      margin: 0;
+      font-weight: 900;
+      font-size: 1rem;
+    }
+
+    .audit-header-subtitle {
+      margin-top: 4px;
+      margin-bottom: 0;
+      color: rgba(255,255,255,.55);
+      font-size: .68rem;
+    }
+
+    .audit-timeline {
+      position: relative;
+      padding: 24px 22px 8px 22px;
+    }
+
+    .audit-timeline::before {
+      content: "";
+      position: absolute;
+      left: 43px;
+      top: 30px;
+      bottom: 28px;
+      width: 2px;
+      background:
+        linear-gradient(
+          #8b5cf6,
+          rgba(139,92,246,.10)
+        );
+    }
+
+    .audit-item {
+      position: relative;
+      display: grid;
+      grid-template-columns: 44px minmax(0,1fr);
+      gap: 14px;
+      padding-bottom: 24px;
+    }
+
+    .audit-icon {
+      position: relative;
+      z-index: 2;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 13px;
+      background:
+        linear-gradient(
+          135deg,
+          #2563eb,
+          #8b5cf6
+        );
+      color: #fff;
+      box-shadow:
+        0 8px 18px rgba(139,92,246,.22);
+      font-size: .68rem;
+      font-weight: 900;
+    }
+
+    .audit-content {
+      padding: 13px 15px;
+      border: 1px solid var(--tf-border);
+      border-radius: 14px;
+      background: var(--tf-surface);
+    }
+
+    .audit-action {
+      color: var(--tf-text);
+      font-size: .8rem;
+      font-weight: 900;
+    }
+
+    .audit-date {
+      color: var(--tf-muted);
+      font-size: .63rem;
+      white-space: nowrap;
+    }
+
+    .audit-detail {
+      margin: 7px 0 0;
+      color: var(--tf-muted);
+      font-size: .7rem;
+      line-height: 1.55;
+    }
+
+    .audit-user {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 9px;
+      padding: 5px 8px;
+      border-radius: 8px;
+      background: rgba(139,92,246,.08);
+      color: #7c3aed;
+      font-size: .62rem;
+      font-weight: 800;
+    }
+
+    [data-bs-theme="dark"] .audit-user {
+      color: #c4b5fd;
+    }
+
+    .audit-change {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 9px;
+    }
+
+    .audit-change span {
+      padding: 5px 8px;
+      border-radius: 8px;
+      background: rgba(37,99,235,.08);
+      color: #2563eb;
+      font-size: .62rem;
+      font-weight: 750;
+    }
+
+    [data-bs-theme="dark"] .audit-change span {
+      color: #93c5fd;
+    }
+
+    .audit-empty {
+      padding: 28px;
+      text-align: center;
+      color: var(--tf-muted);
+      font-size: .72rem;
+    }
+
+    @media (max-width: 575px) {
+      .turno-hero {
+        padding: 22px;
+      }
+
+      .turno-title {
+        font-size: 1.3rem;
+      }
+
+      .audit-timeline {
+        padding-left: 15px;
+        padding-right: 15px;
+      }
+
+      .audit-timeline::before {
+        left: 36px;
+      }
+
+      .audit-item {
+        grid-template-columns: 42px minmax(0,1fr);
+        gap: 10px;
+      }
+
+      .audit-icon {
+        width: 42px;
+        height: 42px;
+      }
+    }
+
+
+  //- ============================================================
+  //- CONTENIDO
+  //- ============================================================
+
+  .turno-detail.tfu-page
 
     .row.justify-content-center
-      .col-lg-9
-        .card.border-0.rounded-4.shadow-sm.overflow-hidden
-          
-          //- Cabecera Principal
-          .p-4.text-white(style="background-color: #0D1B3E;")
+
+      .col-xl-10
+
+        .card.border-0.rounded-4.shadow-sm.overflow-hidden.tfu-card
+
+
+          //- ======================================================
+          //- CABECERA
+          //- ======================================================
+
+          .turno-hero.tfu-hero
+
             .d-flex.justify-content-between.align-items-center.flex-wrap.gap-3
+
               div
-                span.badge.bg-primary.mb-2.fs-6 Turno N° #{turnoId ? turnoId.toString().slice(-6).toUpperCase() : 'N/A'}
-                h3.mb-0.fw-bold Gestión del Turno Médico
+
+                .turno-number
+                  | TURNO #
+                  = turnoId ? turnoId.toString().slice(-6).toUpperCase() : 'N/A'
+
+                h1.turno-title
+                  | Gestión del Turno Médico
+
+
               div
+
                 if turno && turno.estado === 'atendido'
-                  span.badge.bg-success.fs-6.px-3.py-2 ATENDIDO
+
+                  span.turno-status.bg-success
+                    | ATENDIDO
+
                 else if turno && turno.estado === 'cancelado'
-                  span.badge.bg-danger.fs-6.px-3.py-2 CANCELADO
+
+                  span.turno-status.bg-danger
+                    | CANCELADO
+
+                else if turno && turno.estado === 'pendiente_pago'
+
+                  span.turno-status.bg-warning.text-dark
+                    | PENDIENTE DE PAGO
+
+                else if turno && turno.estado === 'En Espera'
+
+                  span.turno-status.bg-info.text-dark
+                    | EN ESPERA
+
                 else
-                  span.badge.bg-warning.text-dark.fs-6.px-3.py-2 PENDIENTE DE ATENCIÓN
 
-          //- Cuerpo
-          .card-body.p-4.bg-white
+                  span.turno-status.bg-primary
+                    | RESERVADO
 
-            //- Datos del Paciente y Cita
-            h6.text-uppercase.text-muted.small.fw-bold.mb-3 Datos de la Cita y Paciente
+
+          //- ======================================================
+          //- CUERPO
+          //- ======================================================
+
+          .card-body.p-4.p-lg-5
+
+
+            //- ====================================================
+            //- INFORMACIÓN GENERAL
+            //- ====================================================
+
+            .d-flex.justify-content-between.align-items-end.flex-wrap.gap-2.mb-3
+
+              div
+
+                small.text-uppercase.text-muted.fw-bold
+                  | Información de la cita
+
+                h4.fw-bold.mb-0
+                  | Datos principales
+
+
             .row.g-3.mb-4
-              .col-md-6
-                .p-3.rounded-3.bg-light.h-100
-                  strong.d-block.small.text-muted.text-uppercase.mb-2 Paciente / Cliente
-                  h5.fw-bold.mb-1= clienteObj ? clienteObj.nombre : 'Sin asignar'
-                  p.text-muted.small.mb-1 DNI: #{clienteObj && clienteObj.dni ? clienteObj.dni : 'N/D'}
-                  p.text-muted.small.mb-0 Cobertura: #{clienteObj && clienteObj.obraSocial && clienteObj.obraSocial.empresa ? clienteObj.obraSocial.empresa : 'Particular'}
 
               .col-md-6
-                .p-3.rounded-3.bg-light.h-100
-                  strong.d-block.small.text-muted.text-uppercase.mb-2 Horario y Modalidad
-                  h5.fw-bold.mb-1= turno && turno.fecha ? turno.fecha : 'Fecha no definida'
-                  p.text-muted.small.mb-1 Horario: #{turno && turno.hora ? turno.hora + ' hs' : 'N/D'}
-                  p.text-muted.small.mb-0 Modalidad: #{turno && turno.modalidad ? turno.modalidad : 'Presencial'}
 
-            //- Profesional Asignado
-            h6.text-uppercase.text-muted.small.fw-bold.mb-3 Profesional Asignado
-            .row.g-3.mb-4.bg-light.p-3.rounded-3.mx-0
-              .col-md-12
-                h5.fw-bold.mb-1= profesionalObj ? profesionalObj.nombre : 'Sin asignar'
-                p.text-muted.small.mb-0 Especialidad: #{profesionalObj ? profesionalObj.especialidad : 'General'}
+                .info-panel.tfu-card
 
-            //- Botones de acción
-            if turnoId
-              .d-flex.flex-wrap.align-items-center.gap-3.pt-2(class=esFinalizado ? 'justify-content-end' : 'justify-content-between')
-                if !esFinalizado
+                  .info-label
+                    | Paciente
+
+                  .info-value
+                    = clienteObj ? clienteObj.nombre : 'Sin asignar'
+
+                  p.text-muted.small.mb-1
+                    | DNI: #{clienteObj && clienteObj.dni ? clienteObj.dni : 'N/D'}
+
+                  p.text-muted.small.mb-0
+                    | Cobertura: #{clienteObj && clienteObj.obraSocial && clienteObj.obraSocial.empresa ? clienteObj.obraSocial.empresa : 'Particular'}
+
+
+              .col-md-6
+
+                .info-panel.tfu-card
+
+                  .info-label
+                    | Fecha y horario
+
+                  .info-value
+                    = turno && turno.fecha ? turno.fecha : 'Fecha no definida'
+
+                  p.text-muted.small.mb-1
+                    | Horario: #{turno && turno.hora ? turno.hora + ' hs' : 'N/D'}
+
+                  p.text-muted.small.mb-0
+                    | Modalidad: #{turno && turno.modalidad ? turno.modalidad : 'regular'}
+
+
+            //- ====================================================
+            //- PROFESIONAL
+            //- ====================================================
+
+            .info-panel.mb-4.tfu-card
+
+              .info-label
+                | Profesional asignado
+
+              .row.align-items-center.g-3
+
+                .col-md-8
+
+                  .info-value
+                    = profesionalObj ? profesionalObj.nombre : 'Sin asignar'
+
+                  p.text-muted.small.mb-0
+                    | Especialidad: #{profesionalObj && profesionalObj.especialidad ? profesionalObj.especialidad : 'General'}
+
+
+                .col-md-4.text-md-end
+
+                  if profesionalObj && profesionalObj.matricula
+
+                    span.badge.bg-primary.bg-opacity-10.text-primary.px-3.py-2
+                      | Matrícula #{profesionalObj.matricula}
+
+
+            //- ====================================================
+            //- FACTURACIÓN / COPAGO Y CONSULTA PARTICULAR
+            //- ====================================================
+            .billing-panel.mb-4.tfu-card
+              .d-flex.justify-content-between.align-items-center.flex-wrap.gap-2.mb-3
+                div
+                  small.text-uppercase.text-muted.fw-bold Facturación
+                  h5.fw-bold.mb-0 Estado de cobro
+                if turno && turno.tipoCobro && turno.tipoCobro !== 'legacy'
+                  span.badge.rounded-pill.bg-primary.bg-opacity-10.text-primary.px-3.py-2
+                    if turno.tipoCobro === 'particular'
+                      | Consulta particular
+                    else if turno.tipoCobro === 'sin_cargo'
+                      | Cobertura total
+                    else
+                      | Copago de obra social
+                else
+                  span.badge.rounded-pill.bg-secondary Historial de seña (formato anterior)
+
+              if turno && turno.tipoCobro && turno.tipoCobro !== 'legacy'
+                .row.g-2.mb-3
+                  .col-sm-4
+                    small.text-muted Importe base
+                    p.fw-semibold.mb-0 $#{Number(turno.precioBase || 0).toLocaleString('es-AR')}
+                  .col-sm-4
+                    small.text-muted Descuento por transferencia
+                    p.fw-semibold.mb-0 #{Number(turno.descuentoPorcentaje || 0)}% (−$#{Number(turno.descuentoMonto || 0).toLocaleString('es-AR')})
+                  .col-sm-4
+                    small.text-muted Total a abonar
+                    p.fw-bold.fs-5.mb-0 $#{Number(turno.montoTotal || 0).toLocaleString('es-AR')}
+              else if turno && turno.montoSena
+                p.text-muted.mb-3 Seña histórica: $#{Number(turno.montoSena).toLocaleString('es-AR')}
+
+              .row.g-3
+                .col-md-6
+                  .info-panel.tfu-card
+                    .info-label Método de pago
+                    if turno && turno.metodoPago === 'transferencia'
+                      span.badge.bg-primary PagoFlex · Transferencia bancaria
+                    else if turno && turno.metodoPago === 'pagoflex'
+                      span.badge.bg-secondary PagoFlex histórico (simulación)
+                    else if turno && turno.metodoPago === 'mercadopago'
+                      span.badge.bg-primary Mercado Pago
+                    else if turno && turno.metodoPago === 'efectivo'
+                      span.badge.bg-success Efectivo / Sin cargo
+                    else
+                      span.badge.bg-secondary Sin definir
+                .col-md-6
+                  .info-panel.tfu-card
+                    .info-label Estado financiero
+                    if turno && turno.estadoPago === 'total_pagado'
+                      span.badge.bg-success Total abonado
+                    else if turno && turno.estadoPago === 'sin_cargo'
+                      span.badge.bg-success No requiere pago
+                    else if turno && turno.estadoPago === 'sena_pagada'
+                      span.badge.bg-info.text-dark Seña histórica abonada
+                    else if turno && turno.metodoPago === 'transferencia' && turno.transferencia && turno.transferencia.estado === 'informada'
+                      span.badge.bg-warning.text-dark Transferencia en verificación
+                    else
+                      span.badge.bg-warning.text-dark Pendiente de pago
+
+              if turno && turno.estadoPago === 'pendiente' && !esFinalizado
+                .mt-3.pt-3.border-top
+                  if turno.tipoCobro === 'legacy'
+                    p.small.text-muted Los turnos anteriores conservan su lógica de seña. Para probar copagos y descuentos utilizá una nueva reserva.
+                  .d-flex.flex-wrap.align-items-center.gap-2
+                    if puedeGestionar && !(turno.mercadoPago && turno.mercadoPago.preferenceId) && !(turno.pagoFlex && turno.pagoFlex.ordenId) && turno.metodoPago !== 'transferencia'
+                      form(action=`/turnos/${turnoId}/cobrar` method="POST")
+                        button.btn.btn-success.fw-bold.rounded-3(type="submit") Registrar efectivo
+                    if turno.metodoPago !== 'transferencia' && (!turno.pagoFlex || !turno.pagoFlex.ordenId) && !(turno.mercadoPago && turno.mercadoPago.preferenceId)
+                      a.btn.btn-primary.fw-bold.rounded-3(href=`/turnos/${turnoId}/pagar-mp`) Pagar con Mercado Pago
+                    if (puedeGestionar || esCliente) && (turno.tipoCobro === 'particular' || turno.tipoCobro === 'copago') && !(turno.mercadoPago && turno.mercadoPago.preferenceId) && !(turno.pagoFlex && turno.pagoFlex.ordenId) && turno.metodoPago !== 'mercadopago' && (!turno.transferencia || turno.transferencia.estado === 'sin_iniciar')
+                      form(action=`/turnos/${turnoId}/transferencia/iniciar` method="POST")
+                        input(type="hidden" name="_transferenciaCsrf" value=transferenciaCsrf)
+                        button.btn.btn-outline-primary.fw-bold.rounded-3(type="submit") PagoFlex · Transferencia bancaria
+
+              if turno && turno.metodoPago === 'transferencia' && turno.estadoPago === 'pendiente' && turno.transferencia && turno.transferencia.estado !== 'sin_iniciar'
+                .mt-3.pt-3.border-top
+                  h6.fw-bold Datos para realizar la transferencia
+                  if datosBanco && datosBanco.alias && datosBanco.cbu && datosBanco.titular
+                    p.mb-1
+                      strong Titular: 
+                      | #{datosBanco.titular}
+                    p.mb-1
+                      strong Alias: 
+                      | #{datosBanco.alias}
+                    p.mb-1
+                      strong CBU/CVU: 
+                      | #{datosBanco.cbu}
+                    p.mb-2.fw-bold Importe exacto: $#{Number(turno.montoTotal).toLocaleString('es-AR')}
+                    small.d-block.text-muted.mb-2 Concepto/referencia del turno: #{turnoId}
+                  else
+                    p.text-danger No hay cuenta receptora configurada. Avisá a recepción.
+                  if turno.transferencia.estado === 'informada'
+                    p.text-warning.fw-semibold.mb-2 Transferencia informada: falta comprobar la acreditación bancaria.
+                    if turno.transferencia.referencia
+                      p.small Referencia informada: #{turno.transferencia.referencia}
+                  else if datosBanco && datosBanco.alias && datosBanco.cbu && datosBanco.titular
+                    form(action=`/turnos/${turnoId}/transferencia/informar` method="POST")
+                      input(type="hidden" name="_transferenciaCsrf" value=transferenciaCsrf)
+                      label.form-label(for="referenciaTransferencia") Número o referencia de la transferencia
+                      input#referenciaTransferencia.form-control.mb-2(type="text" name="referencia" required minlength="4" maxlength="80" placeholder="Referencia del comprobante" autocomplete="off")
+                      button.btn.btn-primary(type="submit") Ya realicé la transferencia
+                  small.d-block.text-muted.mt-2 Informar una transferencia no acredita el pago. Recepción debe verificarla en el banco.
+                  if puedeGestionar && turno.transferencia.estado === 'informada'
+                    .d-flex.flex-wrap.gap-2.mt-3
+                      form(action=`/turnos/${turnoId}/transferencia/confirmar` method="POST")
+                        input(type="hidden" name="_transferenciaCsrf" value=transferenciaCsrf)
+                        button.btn.btn-success(type="submit") Confirmar acreditación bancaria
+                      form(action=`/turnos/${turnoId}/transferencia/rechazar` method="POST")
+                        input(type="hidden" name="_transferenciaCsrf" value=transferenciaCsrf)
+                        button.btn.btn-outline-danger(type="submit") No se acreditó la transferencia
+
+
+            //- ====================================================
+            //- ACCIONES DEL TURNO
+            //- ====================================================
+
+            .d-flex.flex-wrap.align-items-center.justify-content-between.gap-3.mb-4
+
+              div
+
+                if puedeGestionar && !esFinalizado
+
                   .d-flex.flex-wrap.gap-2
-                    form(action=`/turnos/${turnoId}/atendido` method="POST" style="display:inline;")
-                      button.btn.btn-success.px-3.py-2.rounded-3(type="submit") Marcar como Atendido
-                    
-                    form(action=`/turnos/${turnoId}/cancelar` method="POST" style="display:inline;")
-                      button.btn.btn-danger.px-3.py-2.rounded-3(type="submit") Cancelar Turno
 
-                a.btn.btn-outline-secondary.px-4.py-2.rounded-3(href="/turnos") Volver al listado
-            else
-              .d-flex.justify-content-end
-                a.btn.btn-outline-secondary.px-4.py-2.rounded-3(href="/turnos") Volver al listado
+                    form(
+                      action=`/turnos/${turnoId}/atendido`
+                      method="POST"
+                      style="margin:0;"
+                    )
+
+                      button.btn.btn-success.rounded-3.px-3(
+                        type="submit"
+                      )
+                        | ✓ Marcar atendido
+
+
+                    form(
+                      action=`/turnos/${turnoId}/cancelar`
+                      method="POST"
+                      style="margin:0;"
+                    )
+
+                      button.btn.btn-outline-danger.rounded-3.px-3(
+                        type="submit"
+                      )
+                        | Cancelar turno
+
+
+              a.btn.btn-outline-secondary.rounded-3.px-4(
+                href="/turnos"
+              )
+                | ← Volver
+
+
+            //- ====================================================
+            //- AUDITORÍA
+            //- Solo administración y recepción.
+            //- ====================================================
+
+            if puedeGestionar
+
+              .audit-card.tfu-card
+
+                .audit-header
+
+                  .d-flex.justify-content-between.align-items-center.flex-wrap.gap-2
+
+                    div
+
+                      h5.audit-header-title
+                        | Historial y Auditoría
+
+                      p.audit-header-subtitle
+                        | Registro cronológico de las operaciones realizadas sobre este turno
+
+
+                    span.badge.rounded-pill(
+                      style="background:rgba(139,92,246,.20); color:#ddd6fe;"
+                    )
+                      | #{auditoriaLista.length} eventos
+
+
+                if auditoriaLista.length > 0
+
+                  .audit-timeline
+
+                    each log in auditoriaLista
+
+                      - const accion = log.accion || 'modificacion'
+                      - const etiqueta = etiquetasAccion[accion] || 'Actividad'
+                      - const icono = iconosAccion[accion] || '•'
+                      - const usuarioAudit = log.realizadoPor && typeof log.realizadoPor === 'object' ? log.realizadoPor : null
+                      - const rolAudit = log.rol || (usuarioAudit ? usuarioAudit.rol : '')
+                      - const fechaAudit = log.fecha ? new Date(log.fecha).toLocaleString('es-AR') : 'Fecha no disponible'
+
+                      .audit-item
+
+                        .audit-icon
+                          = icono
+
+
+                        .audit-content
+
+                          .d-flex.justify-content-between.align-items-start.flex-wrap.gap-2
+
+                            span.audit-action
+                              = etiqueta
+
+                            span.audit-date
+                              = fechaAudit
+
+
+                          if log.detalle
+
+                            p.audit-detail
+                              = log.detalle
+
+
+                          if log.estadoAnterior || log.estadoNuevo
+
+                            .audit-change
+
+                              if log.estadoAnterior
+
+                                span
+                                  | Estado: #{log.estadoAnterior}
+
+                              if log.estadoNuevo
+
+                                span
+                                  | → #{log.estadoNuevo}
+
+
+                          if log.estadoPagoAnterior || log.estadoPagoNuevo
+
+                            .audit-change
+
+                              if log.estadoPagoAnterior
+
+                                span
+                                  | Pago: #{log.estadoPagoAnterior}
+
+                              if log.estadoPagoNuevo
+
+                                span
+                                  | → #{log.estadoPagoNuevo}
+
+
+                          if usuarioAudit
+
+                            .audit-user
+                              | 👤 #{usuarioAudit.nombre || 'Usuario'}
+
+                              if rolAudit
+                                |  · #{rolAudit}
+
+                          else if rolAudit
+
+                            .audit-user
+                              | ⚙ #{rolAudit}
+
+
+                else
+
+                  .audit-empty
+
+                    div.fs-4.mb-2
+                      | ◇
+
+                    strong.d-block.mb-1
+                      | Sin eventos de auditoría todavía
+
+                    span
+                      | Los turnos anteriores a la incorporación del nuevo sistema pueden no tener historial detallado.
+
+
+              //- ==================================================
+              //- INFORMACIÓN DE CREACIÓN LEGACY
+              //- Para turnos anteriores al nuevo sistema.
+              //- ==================================================
+
+              if auditoriaLista.length === 0 && turno && turno.createdAt
+
+                .mt-3.text-muted.small
+
+                  | Creado el #{new Date(turno.createdAt).toLocaleString('es-AR')}
+
+                  if turno.creadoPor
+                    |  por #{turno.creadoPor.nombre || 'Usuario'}
