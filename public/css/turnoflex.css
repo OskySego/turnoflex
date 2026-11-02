@@ -5499,3 +5499,15 @@ html[data-tf-theme] body.tfp-page .tf-shared-public-header .tfp-header-back { wh
 @media (prefers-reduced-motion:reduce) {
 .md-shell * { transition:none!important; }
 }
+/* Corrección específica para el "eyebrow" superior de la portada en modo claro */
+html[data-tf-theme='light'] body.tfp-welcome .tfp-eyebrow,
+html[data-tf-theme='light'] body.tfp-page .tfp-eyebrow {
+    color: #4b2ba3 !important; /* Texto oscuro/violeta intenso */
+    background: #e9e3fa !important; /* Fondo suave para mantener contraste */
+    border-color: #d1c4f5 !important;
+}
+
+html[data-tf-theme='light'] body.tfp-welcome .tfp-eyebrow i,
+html[data-tf-theme='light'] body.tfp-page .tfp-eyebrow i {
+    color: #5c35c6 !important; /* Ícono oscuro/violeta intenso */
+}
