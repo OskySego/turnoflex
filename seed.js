@@ -103,14 +103,14 @@ const notasEvolucion = [
 ];
 
 const citasBase = [
-  { paciente: 0, profesional: 0, fecha: '2026-10-05', hora: '09:30', estado: 'atendido', origen: 'migracion v3' },
-  { paciente: 1, profesional: 1, fecha: '2026-10-12', hora: '14:00', estado: 'atendido', origen: 'migracion v3' },
-  { paciente: 2, profesional: 2, fecha: '2026-10-14', hora: '10:20', estado: 'atendido', origen: 'migracion v3' },
-  { paciente: 3, profesional: 3, fecha: '2026-10-15', hora: '09:00', estado: 'atendido', origen: 'migracion v3' },
-  { paciente: 4, profesional: 4, fecha: '2026-10-19', hora: '13:30', estado: 'atendido', origen: 'migracion v3' },
-  { paciente: 5, profesional: 5, fecha: '2026-10-21', hora: '11:00', estado: 'atendido', origen: 'migracion v3' },
-  { paciente: 6, profesional: 6, fecha: '2026-10-22', hora: '08:30', estado: 'atendido', origen: 'migracion v3' },
-  { paciente: 7, profesional: 7, fecha: '2026-10-23', hora: '15:30', estado: 'atendido', origen: 'migracion v3' }
+  { paciente: 0, profesional: 0, fecha: '2026-11-05', hora: '09:30', estado: 'atendido', origen: 'migracion v3' },
+  { paciente: 1, profesional: 1, fecha: '2026-11-12', hora: '14:00', estado: 'atendido', origen: 'migracion v3' },
+  { paciente: 2, profesional: 2, fecha: '2026-11-14', hora: '10:20', estado: 'atendido', origen: 'migracion v3' },
+  { paciente: 3, profesional: 3, fecha: '2026-11-15', hora: '09:00', estado: 'atendido', origen: 'migracion v3' },
+  { paciente: 4, profesional: 4, fecha: '2026-11-19', hora: '13:30', estado: 'atendido', origen: 'migracion v3' },
+  { paciente: 5, profesional: 5, fecha: '2026-11-21', hora: '11:00', estado: 'atendido', origen: 'migracion v3' },
+  { paciente: 6, profesional: 6, fecha: '2026-11-22', hora: '08:30', estado: 'atendido', origen: 'migracion v3' },
+  { paciente: 7, profesional: 7, fecha: '2026-11-23', hora: '15:30', estado: 'atendido', origen: 'migracion v3' }
 ];
 
 function patronExacto(valor) {
