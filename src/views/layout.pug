@@ -433,3 +433,41 @@ html(lang="es" data-bs-theme="dark")
     script(
       src="/vendor/bootstrap/js/bootstrap.bundle.min.js"
     )
+
+    script.
+      document.addEventListener('DOMContentLoaded', () => {
+        if (typeof io !== 'function') return;
+        const socket = io();
+
+        socket.on('actualizacion_agenda', (data) => {
+          // Verificamos si hay un contenedor de alertas, si no, lo creamos dinámicamente
+          let stack = document.querySelector('.tf-toast-stack');
+          if (!stack) {
+            stack = document.createElement('div');
+            stack.className = 'tf-toast-stack';
+            document.body.appendChild(stack);
+          }
+
+          const mensajeTexto = data?.mensaje || 'Se actualizó la agenda en tiempo real.';
+          const tituloTexto = data?.tipo === 'NUEVO' ? 'Nuevo Turno Reservado' : 'Actualización de Turno';
+
+          const toast = document.createElement('div');
+          toast.className = 'tf-toast tf-toast-success';
+          toast.innerHTML = `
+            <div class="tf-toast-icon">✓</div>
+            <div class="tf-toast-content">
+                <span class="tf-toast-title">${tituloTexto}</span>
+                <p class="tf-toast-message">${mensajeTexto}</p>
+            </div>
+            <button class="tf-toast-close" onclick="this.parentElement.remove()">×</button>
+          `;
+
+          stack.appendChild(toast);
+
+          // Desaparece automáticamente a los 5 segundos
+          setTimeout(() => {
+            toast.classList.add('tf-toast-exit');
+            setTimeout(() => toast.remove(), 250);
+          }, 5000);
+        });
+      });
