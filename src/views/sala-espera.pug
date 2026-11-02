@@ -3,29 +3,28 @@ html(lang="es")
   head
     meta(charset="UTF-8")
     title Sala de Espera en Vivo - TurnoFlex
-    //- Cargamos Bootstrap para que mantenga la grilla y el diseño original
     link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css")
     link(rel="stylesheet", href="/css/turnoflex.css")
     style.
       body {
-        background-color: #0d1117;
-        color: #f0f6fc;
+        background-color: #2b3748; /* Tono intermedio plomo/azulado equilibrado */
+        color: #f1f5f9;
         font-family: system-ui, -apple-system, sans-serif;
         min-height: 100vh;
         padding: 2rem 1rem;
       }
       .sala-panel, .sala-hero-inner, .sala-clock-card {
-        background: #161b22;
-        border: 1px solid #30363d;
+        background: #37465d; /* Paneles en un gris intermedio destacado */
+        border: 1px solid #4a5c78;
         border-radius: 1rem;
         padding: 1.5rem;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
       }
       .sala-hero-inner {
         margin-bottom: 1.5rem;
       }
       .sala-kicker {
-        color: #58a6ff;
+        color: #38bdf8;
         font-weight: 600;
         text-transform: uppercase;
         font-size: 0.85rem;
@@ -37,16 +36,16 @@ html(lang="es")
       .sala-clock {
         font-size: 2.5rem;
         font-weight: bold;
-        color: #58a6ff;
+        color: #38bdf8;
         line-height: 1;
       }
       .sala-clock-date {
-        color: #8b949e;
+        color: #94a3b8;
         font-size: 0.9rem;
         margin-top: 0.25rem;
       }
       .sala-badge {
-        background: #238636;
+        background: #059669;
         color: #fff;
         padding: 0.3rem 0.8rem;
         border-radius: 2rem;
@@ -56,15 +55,16 @@ html(lang="es")
       .sala-current-name {
         font-size: 2rem;
         font-weight: bold;
-        color: #58a6ff;
+        color: #38bdf8;
         margin-top: 1rem;
       }
       .sala-current-spec {
-        color: #8b949e;
+        color: #cbd5e1;
         font-size: 1.1rem;
       }
       .sala-item-fila {
-        border-bottom: 1px solid #30363d !important;
+        border-bottom: 1px solid #4a5c78 !important;
+        color: #e2e8f0;
       }
 
   body
@@ -75,10 +75,10 @@ html(lang="es")
           .col-lg-8
             .sala-kicker ◈ TurnoFlex · Sala de Espera en Vivo
             h1.fw-bold.text-white.mb-2 Consultorios en Atención
-            p.text-muted.mb-0 Pantalla dinámica conectada a la agenda médica en tiempo real.
+            p.text-light.opacity-75.mb-0 Pantalla dinámica conectada a la agenda médica en tiempo real.
           .col-lg-4
             .sala-clock-card
-              .sala-clock-label.text-muted Hora actual de Buenos Aires
+              .sala-clock-label.text-light.opacity-75 Hora actual de Buenos Aires
               .sala-clock#salaClock --:--
               .sala-clock-date#salaDate Cargando fecha...
 
@@ -101,7 +101,7 @@ html(lang="es")
               h4.text-white.mb-0 📋 Próximos en espera
               span.badge.bg-secondary#contadorEspera 0 en fila
             .sala-list#listaEspera.mt-3
-              .sala-empty-item.text-muted No hay pacientes en espera en este momento.
+              .sala-empty-item.text-light.opacity-75 No hay pacientes en espera en este momento.
 
     script(src="/socket.io/socket.io.js")
     script.
@@ -131,13 +131,14 @@ html(lang="es")
             if (!Array.isArray(turnos) || turnos.length === 0) {
               pacienteEl.textContent = 'Aguardando próximo llamado...';
               profesionalEl.textContent = 'Sin turnos activos en curso';
-              listaEl.innerHTML = '<div class="sala-empty-item text-muted">No hay pacientes en espera.</div>';
+              listaEl.innerHTML = '<div class="sala-empty-item text-light opacity-75">No hay pacientes en espera.</div>';
               if (contadorEl) contadorEl.textContent = '0 en fila';
               return;
             }
             
             var enEspera = turnos.filter(function(t) {
-              return t.estado === 'En Espera' || t.estado === 'reservado';
+              var est = String(t.estado || '').toLowerCase().trim();
+              return est === 'en espera' || est === 'reservado';
             });
             
             if (enEspera.length > 0) {
@@ -152,10 +153,10 @@ html(lang="es")
               listaEl.innerHTML = '';
               enEspera.slice(1).forEach(function(t) {
                 var div = document.createElement('div');
-                div.className = 'sala-item-fila py-2 text-light';
+                div.className = 'sala-item-fila py-2';
                 var cNombre = (t.cliente_id && t.cliente_id.nombre) ? t.cliente_id.nombre : 'Paciente';
                 var pSpec = (t.profesional_id && t.profesional_id.especialidad) ? t.profesional_id.especialidad : '';
-                div.innerHTML = '<strong>' + t.hora + ' hs</strong> — <span>' + cNombre + '</span> <small class="text-muted">(' + pSpec + ')</small>';
+                div.innerHTML = '<strong>' + t.hora + ' hs</strong> — <span>' + cNombre + '</span> <small class="text-light opacity-75">(' + pSpec + ')</small>';
                 listaEl.appendChild(div);
               });
               if (contadorEl) contadorEl.textContent = enEspera.length + ' en fila';
