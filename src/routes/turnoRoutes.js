@@ -1,6 +1,4 @@
-import { Turno } from '../models/Turno.js';
 import { Router } from 'express';
-import { Especialidad } from '../models/Especialidad.js';
 
 import { TurnoController } from '../controllers/turnoController.js';
 
@@ -23,48 +21,15 @@ import {
 
 const router = Router();
 
-// TF_DISPONIBILIDAD_ANTES_DE_CONFIRMAR: solo informa horarios ocupados.
-router.get('/disponibilidad',
+
+// ============================================================
+// COTIZACIÓN ADMINISTRATIVA - PREVIA A NUEVA RESERVA
+// ============================================================
+router.get('/cotizacion',
   asegurarAutenticacion,
-  verificarRol('admin', 'personal', 'cliente'),
-  catchAsync(async (req, res) => {
-    const profesional_id = String(req.query.profesional_id || '');
-    const fecha = String(req.query.fecha || '');
-
-    if (!/^[a-f\d]{24}$/i.test(profesional_id) ||
-        !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-      return res.status(400).json({ error: 'Profesional o fecha no vÃ¡lidos.' });
-    }
-
-    res.set('Cache-Control', 'no-store');
-    const ocupados = await Turno.distinct('hora', {
-      profesional_id,
-      fecha,
-      estado: { $in: ['reservado', 'pendiente_pago', 'En Espera'] }
-    });
-    return res.json({ ocupados });
-  })
+  verificarRol('admin', 'personal'),
+  catchAsync(TurnoController.cotizarTurnoRecepcion)
 );
-
-
-// ============================================================
-// PRECIOS POR ESPECIALIDAD: consulta de solo lectura
-// Antes de /:id para que Express no interprete 'precios' como ID.
-// ============================================================
-router.get('/precios', asegurarAutenticacion,
-  verificarRol('admin', 'personal', 'cliente'),
-  catchAsync(async (req, res) => {
-    const especialidades = await Especialidad.find({ activa: { $ne: false } })
-      .select('nombre precioParticular copagoObraSocial activa')
-      .sort({ nombre: 1 })
-      .lean();
-    res.render('precios', {
-      tituloPage: 'Aranceles y copagos',
-      especialidades
-    });
-  })
-);
-
 
 // ============================================================
 // NUEVO TURNO

@@ -1267,9 +1267,9 @@ block content
 
 
         #infoAgenda
-        a.turn-help.d-inline-block.mt-2(href='/turnos/precios' target='_blank' rel='noopener') Ver lista completa de precios por especialidad
-        #precioTurno.turn-help(data-descuento=transferenciaDescuentoPct)
-          | Elegí un profesional para ver el importe del copago o la consulta particular.
+        if user && user.rol === 'cliente'
+          #precioTurno.turn-help(data-descuento=transferenciaDescuentoPct)
+            | Elegí un profesional para ver el importe del copago o la consulta particular.
 
 
       //- ========================================================
@@ -1487,24 +1487,43 @@ block content
 
         else
 
-          input(
-            type="hidden"
-            name="metodo_pago"
-            value="efectivo"
-          )
+          //- Los importes solo se eligen entre aranceles configurados.
+          .row.g-3
+            .col-md-6
+              label.turn-field-label(for='recepcionTipoCobro') Tipo de atención *
+              select#recepcionTipoCobro.form-select.turn-control(name='tipoCobro' required)
+                option(value='' selected disabled) Elegí un tipo de atención...
+                option(value='particular') Consulta particular
+                option(value='copago') Consulta con copago
+                option(value='sin_cargo') Cobertura total ($0)
+            .col-md-6
+              label.turn-field-label(for='recepcionMetodoPago') Medio de pago *
+              select#recepcionMetodoPago.form-select.turn-control(name='metodo_pago' required)
+                option(value='efectivo' selected) Efectivo en recepción
+                option(value='mercadopago') Mercado Pago (desde detalle)
+                option(value='transferencia') PagoFlex · Transferencia bancaria
 
-          .patient-fixed
+          .form-check.mt-3#recepcionVerificacion
+            input#coberturaVerificada.form-check-input(type='checkbox' name='coberturaVerificada' value='si')
+            label.form-check-label(for='coberturaVerificada')
+              | Confirmé que la cobertura, el plan y el convenio permiten este copago o cobertura total.
 
+          .patient-fixed.mt-3#recepcionImporte(role='status' aria-live='polite')
             .patient-fixed-icon
               | 🧾
+            div.flex-grow-1
+              h6.patient-fixed-name.mb-2 Cotización para este turno
+              p.patient-fixed-text.mb-2#recepcionEstadoCotizacion Elegí paciente, profesional y tipo de atención.
+              dl.row.mb-0
+                dt.col-7 Importe base
+                dd.col-5.text-end#recepcionBase —
+                dt.col-7 Descuento autorizado
+                dd.col-5.text-end#recepcionDescuento —
+                dt.col-7 Total a abonar
+                dd.col-5.text-end.fw-bold#recepcionTotal —
+              small#recepcionNotaCotizacion.text-muted
+                | El importe final se calcula nuevamente en el servidor al reservar.
 
-            div
-
-              h6.patient-fixed-name
-                | Registro desde recepción
-
-              p.patient-fixed-text
-                | El turno se registrará como atención administrativa con medio de pago en efectivo.
 
 
       //- ========================================================
@@ -2980,106 +2999,6 @@ block content
       }
     );
 
-  //- TF Aviso automatico de horarios ocupados
-  script.
-    // TF_AVISO_OCUPADO: consulta MongoDB antes de permitir confirmar.
-    document.addEventListener('DOMContentLoaded', () => {
-      const formulario = document.getElementById('formTurno');
-      const profesional = document.getElementById('selectProfesional');
-      const fecha = document.getElementById('inputFecha');
-      const hora = document.getElementById('inputHora');
-      const boton = document.getElementById('btnSubmit');
-      if (!formulario || !profesional || !fecha || !hora || !boton) return;
-    
-      const aviso = document.createElement('div');
-      aviso.className = 'small mt-2';
-      aviso.setAttribute('aria-live', 'polite');
-      hora.insertAdjacentElement('afterend', aviso);
-      let version = 0;
-    
-      function mensaje(texto, clase = 'secondary') {
-        aviso.className = `small mt-2 text-${clase}`;
-        aviso.textContent = texto;
-      }
-    
-      async function ocupaciones(id, dia) {
-        const parametros = new URLSearchParams({ profesional_id: id, fecha: dia });
-        const respuesta = await fetch(`/turnos/disponibilidad?${parametros}`, {
-          credentials: 'same-origin', cache: 'no-store',
-          headers: { Accept: 'application/json' }
-        });
-        if (!respuesta.ok) throw new Error('Error al consultar disponibilidad');
-        const datos = await respuesta.json();
-        if (!Array.isArray(datos.ocupados)) throw new Error('Respuesta no vÃ¡lida');
-        return new Set(datos.ocupados.map(String));
-      }
-    
-      function pintarOpciones(ocupados) {
-        let total = 0;
-        for (const opcion of hora.options) {
-          if (!opcion.value) continue;
-          if (!opcion.dataset.tfTextoOriginal) opcion.dataset.tfTextoOriginal = opcion.textContent;
-          const ocupada = ocupados.has(opcion.value);
-          opcion.disabled = ocupada;
-          opcion.textContent = opcion.dataset.tfTextoOriginal + (ocupada ? ' Â· OCUPADO' : '');
-          if (ocupada) total++;
-        }
-        return total;
-      }
-    
-      async function consultar() {
-        const actual = ++version;
-        boton.disabled = true;
-        const id = profesional.value;
-        const dia = fecha.value;
-        if (!id || !dia || hora.disabled) { mensaje(''); return; }
-        mensaje('Comprobando disponibilidad...', 'secondary');
-        try {
-          const ocupados = await ocupaciones(id, dia);
-          if (actual !== version || id !== profesional.value || dia !== fecha.value) return;
-          const seleccion = hora.value;
-          const cantidad = pintarOpciones(ocupados);
-          if (seleccion && ocupados.has(seleccion)) {
-            hora.value = '';
-            mensaje('Ese horario ya estÃ¡ reservado. ElegÃ­ otro.', 'danger');
-          } else {
-            mensaje(cantidad ? `${cantidad} horario(s) ocupado(s), marcados en la lista.` :
-              'Horarios verificados. ElegÃ­ el que prefieras.', cantidad ? 'warning' : 'success');
-          }
-          boton.disabled = !hora.value || ocupados.has(hora.value);
-        } catch {
-          if (actual === version) mensaje('No se pudo verificar el horario. ProbÃ¡ nuevamente.', 'danger');
-        }
-      }
-    
-      formulario.addEventListener('change', () => setTimeout(consultar, 0));
-      fecha.addEventListener('input', () => setTimeout(consultar, 0));
-    
-      formulario.addEventListener('submit', async (evento) => {
-        evento.preventDefault();
-        evento.stopImmediatePropagation();
-        if (!formulario.reportValidity()) return;
-        const id = profesional.value, dia = fecha.value, seleccion = hora.value;
-        if (!id || !dia || !seleccion) return;
-        boton.disabled = true;
-        mensaje('Verificando nuevamente antes de confirmar...', 'secondary');
-        try {
-          const ocupados = await ocupaciones(id, dia);
-          if (id !== profesional.value || dia !== fecha.value || seleccion !== hora.value) {
-            mensaje('La selecciÃ³n cambiÃ³. VerificÃ¡ nuevamente el horario.', 'warning');
-            consultar();
-            return;
-          }
-          pintarOpciones(ocupados);
-          if (ocupados.has(seleccion)) {
-            hora.value = '';
-            mensaje('Turno ocupado. SeleccionÃ¡ otro horario; no se guardÃ³ ninguna reserva.', 'danger');
-            return;
-          }
-          HTMLFormElement.prototype.submit.call(formulario);
-        } catch {
-          mensaje('No se pudo consultar la disponibilidad. No se creÃ³ ningÃºn turno.', 'danger');
-          consultar();
-        }
-      }, true);
-    });
+  //- Vista previa de cotización obtenida del servidor, exclusiva de recepción.
+  if user && (user.rol === 'admin' || user.rol === 'personal')
+    script(src='/js/recepcion-cotizacion.js?v=1' defer)

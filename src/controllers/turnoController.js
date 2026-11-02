@@ -250,25 +250,55 @@ function descuentoTransferencia() {
   return valor;
 }
 
-function calcularPrecio(especialidad, cliente, profesional, metodoPago) {
-  if (!especialidad) throw crearError('La especialidad no tiene precios configurados.', 400);
+function calcularPrecio(especialidad, cliente, profesional, metodoPago, tipoCobroSolicitado = null) {
+  if (!especialidad || especialidad.activa === false) {
+    throw crearError('La especialidad no tiene aranceles activos configurados.', 400);
+  }
   const conCobertura = Boolean(String(cliente?.obraSocial?.empresa || '').trim());
   const aceptaCobertura = profesional?.tipoCobertura !== 'particular';
-  const tipoCobro = conCobertura && aceptaCobertura ? 'copago' : 'particular';
-  const precioBase = tipoCobro === 'copago'
-    ? importeValidado(especialidad.copagoObraSocial, 'El copago', true)
-    : importeValidado(especialidad.precioParticular, 'El precio particular');
-  const sinCargo = tipoCobro === 'copago' && precioBase === 0;
+  const aptoCopago = conCobertura && aceptaCobertura;
+
+  let tipoCobro;
+  if (tipoCobroSolicitado !== null) {
+    if (!['particular', 'copago', 'sin_cargo'].includes(tipoCobroSolicitado)) {
+      throw crearError('Seleccioná el tipo de atención: particular, copago o cobertura total.', 400);
+    }
+    if (tipoCobroSolicitado !== 'particular' && !aptoCopago) {
+      throw crearError('No corresponde aplicar copago o cobertura total a este paciente y profesional.', 409);
+    }
+    tipoCobro = tipoCobroSolicitado;
+  } else {
+    // Se conserva la selección automática existente para pacientes.
+    tipoCobro = aptoCopago
+      ? (Number(especialidad.copagoObraSocial) === 0 ? 'sin_cargo' : 'copago')
+      : 'particular';
+  }
+
+  let precioBase;
+  if (tipoCobro === 'particular') {
+    precioBase = importeValidado(especialidad.precioParticular, 'El precio particular');
+  } else {
+    precioBase = importeValidado(especialidad.copagoObraSocial, 'El copago', true);
+    if (tipoCobro === 'sin_cargo' && precioBase !== 0) {
+      throw crearError('La cobertura total requiere un copago configurado de $0.', 409);
+    }
+    if (tipoCobro === 'copago' && precioBase === 0) {
+      throw crearError('Este arancel es $0. Seleccioná cobertura total, previa verificación.', 409);
+    }
+  }
+
+  // El descuento es configurado por la clínica y únicamente se aplica a
+  // consultas particulares mediante transferencia. Nunca a copagos.
   const porcentaje = tipoCobro === 'particular' && metodoPago === 'transferencia'
     ? descuentoTransferencia() : 0;
-  const totalCentavos = Math.round(precioBase * 100);
-  const descuentoCentavos = Math.round(totalCentavos * porcentaje / 100);
+  const baseCentavos = Math.round(precioBase * 100);
+  const descuentoCentavos = Math.round(baseCentavos * porcentaje / 100);
   return {
-    tipoCobro: sinCargo ? 'sin_cargo' : tipoCobro,
+    tipoCobro,
     precioBase,
     descuentoPorcentaje: porcentaje,
     descuentoMonto: descuentoCentavos / 100,
-    montoTotal: (totalCentavos - descuentoCentavos) / 100
+    montoTotal: (baseCentavos - descuentoCentavos) / 100
   };
 }
 
@@ -708,6 +738,56 @@ export class TurnoController {
 // /turnos/nuevo?cliente=ID_DEL_PACIENTE
 // ============================================================
 
+  // ==========================================================
+  // COTIZACIÓN DE NUEVO TURNO: SOLO RECEPCIÓN / ADMINISTRACIÓN
+  // Consulta de lectura; NO crea pagos ni modifica turnos.
+  // ==========================================================
+  static async cotizarTurnoRecepcion(req, res) {
+    try {
+    const usuario = req.session?.usuario;
+    if (!usuario || !['admin', 'personal'].includes(usuario.rol)) {
+      return res.sendStatus(403);
+    }
+    const clienteId = String(req.query.cliente_id || '');
+    const profesionalId = String(req.query.profesional_id || '');
+    const tipoCobro = String(req.query.tipoCobro || '');
+    const metodoPago = String(req.query.metodoPago || '');
+    if (!mongoose.Types.ObjectId.isValid(clienteId) ||
+        !mongoose.Types.ObjectId.isValid(profesionalId) ||
+        !['particular', 'copago', 'sin_cargo'].includes(tipoCobro) ||
+        !['efectivo', 'mercadopago', 'transferencia'].includes(metodoPago)) {
+      throw crearError('Seleccioná paciente, profesional, atención y medio de pago válidos.', 400);
+    }
+    const [cliente, profesional] = await Promise.all([
+      Cliente.findById(clienteId).lean(),
+      Profesional.findById(profesionalId).lean()
+    ]);
+    if (!cliente || !profesional) {
+      throw crearError('No se encontró el paciente o el profesional.', 404);
+    }
+    const especialidad = await Especialidad.findOne({
+      nombre: profesional.especialidad, activa: { $ne: false }
+    }).lean();
+    const datos = calcularPrecio(especialidad, cliente, profesional, metodoPago, tipoCobro);
+    res.set('Cache-Control', 'private, no-store');
+    return res.json({
+      especialidad: profesional.especialidad,
+      ...datos,
+      metodoPago: datos.tipoCobro === 'sin_cargo' ? 'ninguno' : metodoPago,
+      requiereVerificacionCobertura: tipoCobro !== 'particular',
+      aviso: tipoCobro === 'particular'
+        ? 'El precio particular se toma del arancel de la especialidad.'
+        : 'Recepción debe comprobar el convenio y plan antes de guardar. El arancel actual es general por especialidad.'
+    });
+    } catch (error) {
+      res.set('Cache-Control', 'no-store');
+      const estado = error.statusCode || 500;
+      return res.status(estado).json({
+        error: estado >= 500 ? 'No se pudo cotizar el turno. Revisá los aranceles.' : error.message
+      });
+    }
+  }
+
 static async getFormNuevoTurno(req, res) {
 
   const profesionales =
@@ -891,6 +971,24 @@ static async getFormNuevoTurno(req, res) {
     const metodoPagoElegido =
       req.body.metodo_pago ||
       req.body.metodoPago;
+
+    // La elección administrativa afecta únicamente turnos nuevos.
+    // No se acepta un importe numérico del navegador.
+    const esRecepcion = ['admin', 'personal'].includes(usuario?.rol);
+    const tipoCobroRecepcion = esRecepcion ? String(req.body.tipoCobro || '') : null;
+    if (esRecepcion) {
+      if (!['particular', 'copago', 'sin_cargo'].includes(tipoCobroRecepcion)) {
+        throw crearError('Recepción debe seleccionar el tipo de atención.', 400);
+      }
+      if (tipoCobroRecepcion !== 'sin_cargo' &&
+          !['efectivo', 'mercadopago', 'transferencia'].includes(metodoPagoElegido)) {
+        throw crearError('Seleccioná un medio de pago válido.', 400);
+      }
+      if (tipoCobroRecepcion !== 'particular' &&
+          req.body.coberturaVerificada !== 'si') {
+        throw crearError('Verificá el convenio y plan antes de aplicar copago o cobertura total.', 400);
+      }
+    }
 
 
     // --------------------------------------------------------
@@ -1089,7 +1187,7 @@ static async getFormNuevoTurno(req, res) {
     // PRECIO PARTICULAR O COPAGO (calculado en servidor)
     // --------------------------------------------------------
     const especialidadData = await Especialidad.findOne({ nombre: profesional.especialidad });
-    const datosPrecio = calcularPrecio(especialidadData, cliente, profesional, metodoPagoElegido);
+    const datosPrecio = calcularPrecio(especialidadData, cliente, profesional, metodoPagoElegido, tipoCobroRecepcion);
     const montoSena = datosPrecio.montoTotal; // campo legado de MP: monto completo en turnos nuevos
 
     // --------------------------------------------------------
@@ -1141,6 +1239,17 @@ static async getFormNuevoTurno(req, res) {
 
     }
 
+
+    // Los turnos creados por recepción conservan el medio de pago elegido.
+    // Mercado Pago se habilita desde el detalle; no se genera una preferencia
+    // durante la creación administrativa. La transferencia se verificará
+    // manualmente mediante el flujo existente de PagoFlex.
+    if (esRecepcion) {
+      metodoPago = tipoCobroRecepcion === 'sin_cargo' ? 'efectivo' : metodoPagoElegido;
+      if (metodoPago === 'mercadopago' || metodoPago === 'transferencia') {
+        estadoTurno = 'pendiente_pago';
+      }
+    }
 
     // No corresponde cobrar dinero si el convenio fija copago cero.
     if (datosPrecio.tipoCobro === 'sin_cargo') {
@@ -1216,7 +1325,12 @@ static async getFormNuevoTurno(req, res) {
         usuario,
 
         detalle:
-          `Turno creado para ${fecha} a las ${hora} hs.`,
+          `Turno creado para ${fecha} a las ${hora} hs. ` +
+          `Tipo: ${datosPrecio.tipoCobro}; arancel: $${datosPrecio.precioBase}; ` +
+          `descuento: $${datosPrecio.descuentoMonto}; total: $${datosPrecio.montoTotal}; ` +
+          `medio: ${metodoPago}.` +
+          (esRecepcion && tipoCobroRecepcion !== 'particular'
+            ? ' Cobertura declarada como verificada por recepción.' : ''),
 
         estadoNuevo:
           estadoTurno,
@@ -2332,7 +2446,7 @@ static async getFormNuevoTurno(req, res) {
     if (turno.transferencia?.estado === 'iniciada' || turno.transferencia?.estado === 'informada') {
       return res.redirect(303, `/turnos/${turno.id}?info=Transferencia+ya+iniciada`);
     }
-    if (turno.transferencia?.estado === 'sin_iniciar') {
+    if (turno.metodoPago !== 'transferencia') {
       // El descuento solo corresponde a particulares y se calcula en el servidor.
       const baseCentavos = Math.round(Number(turno.precioBase) * 100);
       const pct = turno.tipoCobro === 'particular' ? descuentoTransferencia() : 0;
