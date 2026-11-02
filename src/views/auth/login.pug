@@ -1,7 +1,7 @@
 doctype html
 html(lang='es' data-tf-theme='dark')
   head
-    smeta(charset='UTF-8')
+    meta(charset='UTF-8')
     meta(name='viewport' content='width=device-width, initial-scale=1.0')
     meta(name='theme-color' content='#0B1535')
     meta(name='description' content='TurnoFlex: una forma moderna y organizada de gestionar turnos médicos, profesionales y pacientes.')
@@ -83,16 +83,5 @@ html(lang='es' data-tf-theme='dark')
           a.tfp-back-link(href='/bienvenida')
             i.bi.bi-arrow-left(aria-hidden='true')
             |  Volver a la bienvenida
-
-      .tfp-auth-decoration.tfp-auth-decoration-top(aria-hidden='true')
-        i.bi.bi-bell-fill
-        span
-          strong Recordatorios integrados
-          small Información de tus consultas
-      .tfp-auth-decoration.tfp-auth-decoration-bottom(aria-hidden='true')
-        i.bi.bi-shield-check
-        span
-          strong Acceso personalizado
-          small Tu perfil, tu espacio
 
     include ../partials/footer
