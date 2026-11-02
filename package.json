@@ -1,32 +1,51 @@
 {
   "name": "turnoflex",
   "version": "1.0.0",
-  "type": "module",
+  "description": "",
   "main": "app.js",
+  "type": "module",
   "scripts": {
     "start": "node app.js",
-    "dev": "node --watch app.js"
+    "dev": "nodemon app.js",
+    "test": "cross-env NODE_ENV=test cross-env NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:clinica": "node --test test/clinica-identidad.test.js test/clinica-integracion.test.js test/clinica-politicas.test.js test/clinica-entorno-etapa5.test.js",
+    "check:clinica": "node scripts/verificarClinica.js",
+    "check:clinica:db": "node scripts/probarMongoClinica.js",
+    "check:clinica:vistas": "node scripts/verificarVistasClinicas.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
     "bcrypt": "^6.0.0",
-    "dotenv": "^18.0.7",
-    "express": "^5.2.1",
-    "express-rate-limit": "^8.7.2",
-    "express-session": "^1.19.0",
-    "express-validator": "^7.3.2",
-    "helmet": "^8.3.0",
+    "bootstrap": "^5.3.3",
+    "connect-mongo": "^6.0.0",
+    "dotenv": "^18.0.8",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "express-session": "^1.18.0",
+    "express-validator": "^7.2.0",
+    "helmet": "^7.1.0",
     "mercadopago": "^3.6.1",
-    "mongoose": "^9.11.1",
+    "mongoose": "^8.6.1",
     "multer": "^2.5.0",
     "node-cron": "^4.6.0",
-    "nodemailer": "^10.3.1",
-    "pug": "^3.0.4",
+    "nodemailer": "^10.2.1",
+    "pug": "^3.0.3",
     "qrcode": "^1.5.4",
     "socket.io": "^4.8.4",
     "whatsapp-web.js": "^1.34.7"
-  }
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {}
+  },
+  "ignore": [
+    ".wwebjs_auth/*",
+    ".wwebjs_cache/*",
+    "public/uploads/*"
+  ],
+  "ext": "js,json,pug"
 }
