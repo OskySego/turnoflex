@@ -270,7 +270,7 @@ export class ProfesionalDashboardController {
 
 
       // ========================================================
-      // SOCKET.IO
+      // SOCKET.IO (UBICACIÓN CORRECTA)
       // ========================================================
 
       const io =

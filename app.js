@@ -16,6 +16,7 @@ import 'dotenv/config';
 
 import session from 'express-session';
 
+import TurnoController from './src/controllers/turnoController.js';
 
 // ============================================================
 // CONFIGURACIÓN
@@ -189,6 +190,11 @@ io.on(
   }
 );
 
+// ============================================================
+// Notificación sala de espera
+// ============================================================
+app.get('/api/sala-espera/activos', TurnoController.getTurnosSalaEspera);
+app.get('/sala-espera', (req, res) => res.render('sala-espera')); // O con renderizado de vistas
 
 // ============================================================
 // INICIO CONTROLADO: primero MongoDB, luego servicios externos.

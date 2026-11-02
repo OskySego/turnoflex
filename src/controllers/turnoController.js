@@ -2572,7 +2572,27 @@ static async getFormNuevoTurno(req, res) {
   }
 
 
-}
+  // Endpoint para la API de la Sala de Espera
+  static async getTurnosSalaEspera(req, res) {
+    try {
+      const hoy = new Date().toISOString().slice(0, 10); // Formato YYYY-MM-DD
+      
+      const turnosActivos = await Turno.find({
+        fecha: hoy,
+        estado: { $in: ['reservado', 'En Espera'] }
+      })
+      .populate('cliente_id', 'nombre')
+      .populate('profesional_id', 'nombre especialidad')
+      .sort({ hora: 1 })
+      .lean();
 
+      return res.status(200).json(turnosActivos);
+    } catch (error) {
+      return res.status(500).json({ error: 'Error al obtener datos de la sala de espera.' });
+    }
+  }
+
+
+}
 
 export default TurnoController;
