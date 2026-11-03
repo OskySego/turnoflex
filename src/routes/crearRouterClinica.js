@@ -120,19 +120,7 @@ function crearRouterClinica(config) {
 
   const router = express.Router();
 
-  // Módulo de demostración: no habilitar en producción
-  // sin una revisión de seguridad y cumplimiento.
-  router.use((req, res, next) => {
-    if (process.env.NODE_ENV === 'production') {
-      return res.status(503).send(
-        'Módulo clínico de demostración no habilitado en producción.'
-      );
-    }
-
-    next();
-  });
-
-
+  
   // =====================================================
   // CONFIGURACIÓN DE ARCHIVOS
   // =====================================================
