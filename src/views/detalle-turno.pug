@@ -509,8 +509,11 @@ block content
                     if puedeGestionar && turno.tipoCobro !== 'legacy' && turno.tipoCobro !== 'sin_cargo' && Number(turno.montoTotal || 0) > 0 && !(turno.mercadoPago && turno.mercadoPago.preferenceId) && !(turno.pagoFlex && turno.pagoFlex.ordenId) && turno.metodoPago !== 'transferencia'
                       form(action=`/turnos/${turnoId}/cobrar` method="POST")
                         button.btn.btn-success.fw-bold.rounded-3(type="submit") Registrar efectivo
-                    if turno.tipoCobro !== 'legacy' && turno.tipoCobro !== 'sin_cargo' && Number(turno.montoTotal || 0) > 0 && turno.metodoPago !== 'transferencia' && (!turno.pagoFlex || !turno.pagoFlex.ordenId) && !(turno.mercadoPago && turno.mercadoPago.preferenceId)
-                      a.btn.btn-primary.fw-bold.rounded-3(href=`/turnos/${turnoId}/pagar-mp`) Pagar con Mercado Pago
+                    //- La preferencia creada NO significa que el pago esté acreditado.
+                    //- Si sigue pendiente, mostrar el botón para continuar el checkout.
+                    if (puedeGestionar || esCliente) && turno.tipoCobro !== 'legacy' && turno.tipoCobro !== 'sin_cargo' && Number(turno.montoTotal || 0) > 0 && turno.metodoPago !== 'transferencia' && !(turno.pagoFlex && turno.pagoFlex.ordenId)
+                      a.btn.btn-primary.fw-bold.rounded-3(href=`/turnos/${turnoId}/pagar-mp` target="_blank" rel="noopener noreferrer")= turno.mercadoPago && turno.mercadoPago.preferenceId ? 'Continuar pago con Mercado Pago' : 'Pagar con Mercado Pago'
+                      small.d-block.text-muted.mt-1 El pago se abre en otra pestaña. Podés regresar sin pagar; el estado seguirá pendiente hasta su verificación.
                     if (puedeGestionar || esCliente) && (turno.tipoCobro === 'particular' || turno.tipoCobro === 'copago') && !(turno.mercadoPago && turno.mercadoPago.preferenceId) && !(turno.pagoFlex && turno.pagoFlex.ordenId) && turno.metodoPago !== 'mercadopago' && (!turno.transferencia || turno.transferencia.estado === 'sin_iniciar')
                       form(action=`/turnos/${turnoId}/transferencia/iniciar` method="POST")
                         input(type="hidden" name="_transferenciaCsrf" value=transferenciaCsrf)

@@ -1,38 +1,27 @@
 import mongoose from 'mongoose';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
-
 import { Turno } from '../models/Turno.js';
 import { Cliente } from '../models/Cliente.js';
 import { Profesional } from '../models/Profesional.js';
 import { Especialidad } from '../models/Especialidad.js';
 import { sincronizarPagoMercadoPago } from './mercadoPagoWebhookController.js';
-
 import {
   MercadoPagoConfig,
   Preference
 } from 'mercadopago';
-
-
 // ============================================================
 // FUNCIONES AUXILIARES
 // ============================================================
-
 function crearError(
   mensaje,
   statusCode = 500
 ) {
-
   const error =
     new Error(mensaje);
-
   error.statusCode =
     statusCode;
-
   return error;
-
 }
-
-
 // ============================================================
 // MERCADO PAGO CHECKOUT PRO: URLS DE RETORNO
 // ============================================================
@@ -41,7 +30,6 @@ function crearError(
 // validar el pago desde el webhook en el servidor.
 function configurarCheckoutPro(body, turnoId) {
   const basePublica = String(process.env.TF_PUBLIC_URL || '').trim();
-
   if (basePublica) {
     let direccion;
     try {
@@ -57,7 +45,6 @@ function configurarCheckoutPro(body, turnoId) {
     ) {
       throw crearError('TF_PUBLIC_URL debe ser una URL pública HTTPS sin parámetros.', 500);
     }
-
     const base = direccion.href.replace(/\/+$/, '');
     const detalle = `${base}/turnos/${encodeURIComponent(String(turnoId))}`;
     body.back_urls = {
@@ -67,7 +54,6 @@ function configurarCheckoutPro(body, turnoId) {
     };
     body.auto_return = 'approved';
   }
-
   // Configurar MP_WEBHOOK_URL solo con la dirección REAL del
   // webhook montado en app.js, cuando exista un despliegue HTTPS.
   const webhookPublico = String(process.env.MP_WEBHOOK_URL || '').trim();
@@ -85,52 +71,48 @@ function configurarCheckoutPro(body, turnoId) {
     body.notification_url = direccion.href;
   }
 }
-
+function esEnlaceCheckoutSeguro(enlace) {
+  try {
+    const u = new URL(enlace);
+    return u.protocol === 'https:' &&
+      (u.hostname === 'mercadopago.com' ||
+       u.hostname.endsWith('.mercadopago.com') ||
+       u.hostname === 'mercadopago.com.ar' ||
+       u.hostname.endsWith('.mercadopago.com.ar'));
+  } catch {
+    return false;
+  }
+}
 // ============================================================
 // USUARIO ACTUAL
 // ============================================================
-
 function obtenerUsuarioId(
   usuario
 ) {
-
   if (!usuario) {
     return null;
   }
-
   const posibleId =
     usuario._id ||
     usuario.id;
-
   if (
     !posibleId ||
     !mongoose.Types.ObjectId.isValid(
       posibleId
     )
   ) {
-
     return null;
-
   }
-
   return posibleId;
-
 }
-
-
 function obtenerRol(
   usuario
 ) {
-
   return usuario?.rol || '';
-
 }
-
-
 // ============================================================
 // AUDITORÍA
 // ============================================================
-
 function registrarAuditoria(
   turno,
   {
@@ -143,73 +125,49 @@ function registrarAuditoria(
     estadoPagoNuevo = ''
   }
 ) {
-
   if (!turno.auditoria) {
     turno.auditoria = [];
   }
-
   turno.auditoria.push({
-
     accion,
-
     realizadoPor:
       obtenerUsuarioId(
         usuario
       ),
-
     rol:
       obtenerRol(
         usuario
       ),
-
     detalle,
-
     estadoAnterior,
-
     estadoNuevo,
-
     estadoPagoAnterior,
-
     estadoPagoNuevo,
-
     fecha:
       new Date()
-
   });
-
 }
-
-
 // ============================================================
 // SOCKET.IO
 // ============================================================
-
 function emitirActualizacion(
   req,
   datos
 ) {
-
   const io =
     req.app.get(
       'socketio'
     );
-
   if (io) {
-
     io.emit(
       'actualizacion_agenda',
       datos
     );
-
   }
-
 }
-
-
 // ============================================================
 // PAGOFLEX: VALIDACIONES COMPARTIDAS Y API LOCAL DE DEMOSTRACION
 // ============================================================
-
 async function obtenerTurnoParaCobro(req) {
   const id = req.params.id;
   const usuario = req.session?.usuario;
@@ -227,7 +185,6 @@ async function obtenerTurnoParaCobro(req) {
   }
   return turno;
 }
-
 // ============================================================
 // PAGO PARTICULAR / COPAGO Y TRANSFERENCIA
 // ============================================================
@@ -240,7 +197,6 @@ function importeValidado(valor, etiqueta, permitirCero = false) {
   }
   return Math.round(numero * 100) / 100;
 }
-
 function descuentoTransferencia() {
   const crudo = String(process.env.TRANSFERENCIA_DESCUENTO_PCT ?? '0');
   const valor = Number(crudo);
@@ -249,7 +205,6 @@ function descuentoTransferencia() {
   }
   return valor;
 }
-
 function calcularPrecio(especialidad, cliente, profesional, metodoPago, tipoCobroSolicitado = null) {
   if (!especialidad || especialidad.activa === false) {
     throw crearError('La especialidad no tiene aranceles activos configurados.', 400);
@@ -257,7 +212,6 @@ function calcularPrecio(especialidad, cliente, profesional, metodoPago, tipoCobr
   const conCobertura = Boolean(String(cliente?.obraSocial?.empresa || '').trim());
   const aceptaCobertura = profesional?.tipoCobertura !== 'particular';
   const aptoCopago = conCobertura && aceptaCobertura;
-
   let tipoCobro;
   if (tipoCobroSolicitado !== null) {
     if (!['particular', 'copago', 'sin_cargo'].includes(tipoCobroSolicitado)) {
@@ -273,7 +227,6 @@ function calcularPrecio(especialidad, cliente, profesional, metodoPago, tipoCobr
       ? (Number(especialidad.copagoObraSocial) === 0 ? 'sin_cargo' : 'copago')
       : 'particular';
   }
-
   let precioBase;
   if (tipoCobro === 'particular') {
     precioBase = importeValidado(especialidad.precioParticular, 'El precio particular');
@@ -286,7 +239,6 @@ function calcularPrecio(especialidad, cliente, profesional, metodoPago, tipoCobr
       throw crearError('Este arancel es $0. Seleccioná cobertura total, previa verificación.', 409);
     }
   }
-
   // El descuento es configurado por la clínica y únicamente se aplica a
   // consultas particulares mediante transferencia. Nunca a copagos.
   const porcentaje = tipoCobro === 'particular' && metodoPago === 'transferencia'
@@ -301,7 +253,6 @@ function calcularPrecio(especialidad, cliente, profesional, metodoPago, tipoCobr
     montoTotal: (baseCentavos - descuentoCentavos) / 100
   };
 }
-
 function datosTransferencia() {
   return {
     alias: String(process.env.TRANSFERENCIA_ALIAS || '').trim(),
@@ -309,7 +260,6 @@ function datosTransferencia() {
     titular: String(process.env.TRANSFERENCIA_TITULAR || '').trim()
   };
 }
-
 function validarCsrfTransferencia(req) {
   const esperado = req.session?.transferenciaCsrf;
   const recibido = req.body?._transferenciaCsrf;
@@ -319,7 +269,6 @@ function validarCsrfTransferencia(req) {
     throw crearError('Formulario vencido. Recargá el detalle del turno.', 403);
   }
 }
-
 function asegurarTransferenciaOperable(turno) {
   if (['cancelado','atendido'].includes(turno.estado) || turno.estadoPago !== 'pendiente') {
     throw crearError('Este turno ya no admite nuevas operaciones de cobro.', 409);
@@ -331,124 +280,76 @@ function asegurarTransferenciaOperable(turno) {
     throw crearError('Este turno es histórico: no se puede convertir automáticamente a copago o particular.', 409);
   }
 }
-
 // ============================================================
 // CONTROLADOR
 // ============================================================
-
 export class TurnoController {
-
-
   // ==========================================================
   // 1. LISTADO DE TURNOS
   // ==========================================================
-
   static async getTurnos(
     req,
     res
   ) {
-
     const usuario =
       req.session.usuario;
-
-
     const {
-
       estado,
-
       fecha,
-
       profesional_id,
-
       page = 1,
-
       limit = 10
-
     } = req.query;
-
-
     const filtro = {};
-
-
     // --------------------------------------------------------
     // SEGURIDAD DEL PACIENTE
     // --------------------------------------------------------
-
     if (
       usuario?.rol ===
       'cliente'
     ) {
-
       const cliente =
         await Cliente.findOne({
-
           email:
             usuario.email
-
         }).lean();
-
-
       if (!cliente) {
-
         throw crearError(
           'No encontramos el perfil del paciente asociado a esta cuenta.',
           404
         );
-
       }
-
-
       filtro.cliente_id =
         cliente._id;
-
     }
-
-
     // --------------------------------------------------------
     // FILTROS
     // --------------------------------------------------------
-
     if (estado) {
-
       filtro.estado =
         estado;
-
     }
-
-
     if (fecha) {
-
       filtro.fecha =
         fecha;
-
     }
-
-
     if (profesional_id) {
-
       if (
         !mongoose.Types.ObjectId.isValid(
           profesional_id
         )
       ) {
-
         throw crearError(
           'El profesional seleccionado no es válido.',
           400
         );
-
       }
-
       filtro.profesional_id =
         profesional_id;
-
     }
-
-
     // --------------------------------------------------------
     // PAGINACIÓN
     // --------------------------------------------------------
-
     const limite =
       Math.min(
         Math.max(
@@ -460,8 +361,6 @@ export class TurnoController {
         ),
         50
       );
-
-
     const paginaActual =
       Math.max(
         parseInt(
@@ -470,24 +369,16 @@ export class TurnoController {
         ) || 1,
         1
       );
-
-
     const salto =
       (
         paginaActual -
         1
       ) *
       limite;
-
-
     const [
-
       turnos,
-
       totalDocumentos
-
     ] = await Promise.all([
-
       Turno.find(
         filtro
       )
@@ -510,14 +401,10 @@ export class TurnoController {
         .lean({
           virtuals: true
         }),
-
       Turno.countDocuments(
         filtro
       )
-
     ]);
-
-
     const totalPaginas =
       Math.max(
         Math.ceil(
@@ -526,103 +413,67 @@ export class TurnoController {
         ),
         1
       );
-
-
     if (
       req.accepts('json') &&
       !req.accepts('html')
     ) {
-
       return res.status(
         200
       ).json({
-
         status:
           'success',
-
         data:
           turnos,
-
         paginacion: {
-
           totalTurnos:
             totalDocumentos,
-
           totalPaginas,
-
           paginaActual,
-
           limite
-
         }
-
       });
-
     }
-
-
     return res.render(
       'turnos',
       {
-
         tituloPage:
           'Listado de Turnos',
-
         turnos,
-
         paginacion: {
-
           totalTurnos:
             totalDocumentos,
-
           totalPaginas,
-
           paginaActual,
-
           tieneSiguiente:
             paginaActual <
             totalPaginas,
-
           tieneAnterior:
             paginaActual >
             1
-
         }
-
       }
     );
-
   }
-
-
   // ==========================================================
   // 2. DETALLE DE TURNO
   // ==========================================================
-
   static async getDetalleTurno(
     req,
     res
   ) {
-
     const {
       id
     } = req.params;
-
-
     if (
       !mongoose.Types.ObjectId.isValid(
         id
       )
     ) {
-
       throw crearError(
         'El identificador del turno no es válido.',
         400
       );
-
     }
-
-
     const turno =
       await Turno.findById(
         id
@@ -648,96 +499,65 @@ export class TurnoController {
         .lean({
           virtuals: true
         });
-
-
     if (!turno) {
-
       throw crearError(
         'El turno solicitado no existe.',
         404
       );
-
     }
-
-
     // --------------------------------------------------------
     // SEGURIDAD PACIENTE
     // --------------------------------------------------------
-
     if (
       req.session.usuario?.rol ===
       'cliente'
     ) {
-
       const emailCliente =
         turno.cliente_id?.email;
-
-
       if (
         !emailCliente ||
         emailCliente !==
         req.session.usuario.email
       ) {
-
         throw crearError(
           'No tenés permisos para consultar este turno.',
           403
         );
-
       }
-
     }
-
-
     if (
       req.accepts('json') &&
       !req.accepts('html')
     ) {
-
       return res.status(
         200
       ).json({
-
         status:
           'success',
-
         data:
           turno
-
       });
-
     }
-
-
     return res.render(
       'detalle-turno',
       {
-
         tituloPage:
           'Detalle del Turno',
-
         turno,
-
         transferenciaCsrf: req.session.transferenciaCsrf ||= randomBytes(32).toString('hex'),
         datosBanco: datosTransferencia(),
-
         mensajeExito:
           req.query.exito ||
           req.query.info ||
           null
-
       }
     );
-
   }
-
-
   // ============================================================
 // 3. FORMULARIO DE NUEVO TURNO
 // Permite abrir:
 // /turnos/nuevo?cliente=ID_DEL_PACIENTE
 // ============================================================
-
   // ==========================================================
   // COTIZACIÓN DE NUEVO TURNO: SOLO RECEPCIÓN / ADMINISTRACIÓN
   // Consulta de lectura; NO crea pagos ni modifica turnos.
@@ -787,41 +607,28 @@ export class TurnoController {
       });
     }
   }
-
 static async getFormNuevoTurno(req, res) {
-
   const profesionales =
     await Profesional
       .find()
       .sort({ nombre: 1 })
       .lean({ virtuals: true });
-
-
   const especialidades =
     await Especialidad
       .find()
       .lean();
-
-
   const usuario =
     req.session?.usuario;
-
-
   let clientes = [];
-
   let clienteSeleccionadoId = '';
-
-
   // ==========================================================
   // PACIENTE
   // Solo puede generar turnos para su propia ficha.
   // ==========================================================
-
   if (
     usuario &&
     usuario.rol === 'cliente'
   ) {
-
     const miPerfil =
       await Cliente
         .findOne({
@@ -830,27 +637,17 @@ static async getFormNuevoTurno(req, res) {
         .lean({
           virtuals: true
         });
-
-
     if (miPerfil) {
-
       clientes = [
         miPerfil
       ];
-
-
       clienteSeleccionadoId =
         miPerfil._id.toString();
-
     }
-
-
   } else {
-
     // ========================================================
     // ADMINISTRACIÓN / RECEPCIÓN
     // ========================================================
-
     clientes =
       await Cliente
         .find()
@@ -860,8 +657,6 @@ static async getFormNuevoTurno(req, res) {
         .lean({
           virtuals: true
         });
-
-
     // Ejemplo:
     //
     // /turnos/nuevo?cliente=671234...
@@ -870,108 +665,71 @@ static async getFormNuevoTurno(req, res) {
       String(
         req.query.cliente || ''
       ).trim();
-
-
     if (
       clienteDesdeUrl &&
       mongoose.Types.ObjectId.isValid(
         clienteDesdeUrl
       )
     ) {
-
       // Confirmamos que realmente exista dentro
       // de los pacientes disponibles.
       const existePaciente =
         clientes.some(
           function (cliente) {
-
             const id =
               cliente._id ||
               cliente.id;
-
-
             return (
               id &&
               id.toString() ===
                 clienteDesdeUrl
             );
-
           }
         );
-
-
       if (existePaciente) {
-
         clienteSeleccionadoId =
           clienteDesdeUrl;
-
       }
-
     }
-
   }
-
-
   res.render(
     'nuevo-turno',
     {
-
       tituloPage:
         'Solicitar Nuevo Turno',
-
       clientes:
         clientes,
-
       profesionales:
         profesionales || [],
-
       especialidades:
         especialidades || [],
-
       // NUEVO
       clienteSeleccionadoId,
       transferenciaDescuentoPct: descuentoTransferencia()
-
     }
   );
 }
-
-
   // ==========================================================
   // 4. CREAR TURNO
   // ==========================================================
-
   static async crearTurno(
     req,
     res
   ) {
-
     const usuario =
       req.session.usuario;
-
-
     let {
-
       cliente_id,
-
       profesional_id,
-
       fecha,
-
       hora,
-
       modalidadTurno
-
     } = req.body;
-
-
     // Aceptamos ambas variantes para no romper formularios
     // anteriores de TurnoFlex.
-
     const metodoPagoElegido =
       req.body.metodo_pago ||
       req.body.metodoPago;
-
     // La elección administrativa afecta únicamente turnos nuevos.
     // No se acepta un importe numérico del navegador.
     const esRecepcion = ['admin', 'personal'].includes(usuario?.rol);
@@ -989,179 +747,115 @@ static async getFormNuevoTurno(req, res) {
         throw crearError('Verificá el convenio y plan antes de aplicar copago o cobertura total.', 400);
       }
     }
-
-
     // --------------------------------------------------------
     // CAMPOS OBLIGATORIOS
     // --------------------------------------------------------
-
     if (
       !profesional_id ||
       !fecha ||
       !hora
     ) {
-
       throw crearError(
         'Completá profesional, fecha y horario para reservar el turno.',
         400
       );
-
     }
-
-
     if (
       !mongoose.Types.ObjectId.isValid(
         profesional_id
       )
     ) {
-
       throw crearError(
         'El profesional seleccionado no es válido.',
         400
       );
-
     }
-
-
     // --------------------------------------------------------
     // PACIENTE LOGUEADO
     // --------------------------------------------------------
-
     if (
       usuario?.rol ===
       'cliente'
     ) {
-
       const miPerfil =
         await Cliente.findOne({
-
           email:
             usuario.email
-
         });
-
-
       if (!miPerfil) {
-
         throw crearError(
           'No encontramos tu perfil de paciente.',
           404
         );
-
       }
-
-
       cliente_id =
         miPerfil._id;
-
     }
-
-
     if (
       !cliente_id ||
       !mongoose.Types.ObjectId.isValid(
         cliente_id
       )
     ) {
-
       throw crearError(
         'El paciente seleccionado no es válido.',
         400
       );
-
     }
-
-
     // --------------------------------------------------------
     // VALIDAR ENTIDADES
     // --------------------------------------------------------
-
     const [
-
       cliente,
-
       profesional
-
     ] = await Promise.all([
-
       Cliente.findById(
         cliente_id
       ),
-
       Profesional.findById(
         profesional_id
       )
-
     ]);
-
-
     if (!cliente) {
-
       throw crearError(
         'El paciente seleccionado no existe.',
         404
       );
-
     }
-
-
     if (!profesional) {
-
       throw crearError(
         'El profesional seleccionado no existe.',
         404
       );
-
     }
-
-
     // --------------------------------------------------------
     // MODALIDAD
     // --------------------------------------------------------
-
     const modalidadesValidas = [
-
       'regular',
-
       'presencial',
-
       'sobreturno',
-
       'telemedicina'
-
     ];
-
-
     let modalidad =
       modalidadTurno ||
       'regular';
-
-
     if (
       !modalidadesValidas.includes(
         modalidad
       )
     ) {
-
       modalidad =
         'regular';
-
     }
-
-
     // --------------------------------------------------------
     // DISPONIBILIDAD
     // --------------------------------------------------------
-
     const turnoExistente =
       await Turno.findOne({
-
         profesional_id,
-
         fecha,
-
         hora,
-
         estado: {
           $in: [
             'reservado',
@@ -1169,48 +863,32 @@ static async getFormNuevoTurno(req, res) {
             'En Espera'
           ]
         }
-
       });
-
-
     if (turnoExistente) {
-
       throw crearError(
         'Ese horario acaba de ser reservado. Elegí otro turno disponible.',
         409
       );
-
     }
-
-
     // --------------------------------------------------------
     // PRECIO PARTICULAR O COPAGO (calculado en servidor)
     // --------------------------------------------------------
     const especialidadData = await Especialidad.findOne({ nombre: profesional.especialidad });
     const datosPrecio = calcularPrecio(especialidadData, cliente, profesional, metodoPagoElegido, tipoCobroRecepcion);
     const montoSena = datosPrecio.montoTotal; // campo legado de MP: monto completo en turnos nuevos
-
     // --------------------------------------------------------
     // REGLAS DE PAGO
     // --------------------------------------------------------
-
     let metodoPago =
       'efectivo';
-
-
     let estadoPago =
       'pendiente';
-
-
     let estadoTurno =
       'reservado';
-
-
     if (
       usuario?.rol ===
       'cliente'
     ) {
-
       if (
         ![
           'efectivo',
@@ -1220,26 +898,17 @@ static async getFormNuevoTurno(req, res) {
           metodoPagoElegido
         )
       ) {
-
         throw crearError(
           'Seleccioná un medio de pago válido.',
           400
         );
-
       }
-
-
       metodoPago =
         metodoPagoElegido;
-
-
       if (metodoPago === 'mercadopago' || metodoPago === 'transferencia') {
         estadoTurno = 'pendiente_pago';
       }
-
     }
-
-
     // Los turnos creados por recepción conservan el medio de pago elegido.
     // Mercado Pago se habilita desde el detalle; no se genera una preferencia
     // durante la creación administrativa. La transferencia se verificará
@@ -1250,80 +919,55 @@ static async getFormNuevoTurno(req, res) {
         estadoTurno = 'pendiente_pago';
       }
     }
-
     // No corresponde cobrar dinero si el convenio fija copago cero.
     if (datosPrecio.tipoCobro === 'sin_cargo') {
       estadoPago = 'sin_cargo';
       metodoPago = 'efectivo';
       estadoTurno = 'reservado';
     }
-
     // --------------------------------------------------------
     // VALIDAR MERCADO PAGO ANTES DE RESERVAR
     // --------------------------------------------------------
-
     if (
       metodoPago ===
       'mercadopago' &&
       !process.env.MP_ACCESS_TOKEN
     ) {
-
       throw crearError(
         'Mercado Pago no se encuentra configurado en este momento.',
         503
       );
-
     }
-
-
     // --------------------------------------------------------
     // CREAR TURNO
     // --------------------------------------------------------
-
     const nuevoTurno =
       new Turno({
-
         cliente_id,
-
         profesional_id,
-
         fecha,
-
         hora,
-
         modalidad,
-
         estado:
           estadoTurno,
-
         metodoPago,
-
         estadoPago,
-
         montoSena,
         ...datosPrecio,
-
         creadoPor:
           obtenerUsuarioId(
             usuario
           )
-
       });
-
-
     // --------------------------------------------------------
     // AUDITORÍA DE CREACIÓN
     // --------------------------------------------------------
-
     registrarAuditoria(
       nuevoTurno,
       {
-
         accion:
           'creacion',
-
         usuario,
-
         detalle:
           `Turno creado para ${fecha} a las ${hora} hs. ` +
           `Tipo: ${datosPrecio.tipoCobro}; arancel: $${datosPrecio.precioBase}; ` +
@@ -1331,330 +975,201 @@ static async getFormNuevoTurno(req, res) {
           `medio: ${metodoPago}.` +
           (esRecepcion && tipoCobroRecepcion !== 'particular'
             ? ' Cobertura declarada como verificada por recepción.' : ''),
-
         estadoNuevo:
           estadoTurno,
-
         estadoPagoNuevo:
           estadoPago
-
       }
     );
-
-
     try {
-
       await nuevoTurno.save();
-
     } catch (error) {
-
       if (
         error.code ===
         11000
       ) {
-
         throw crearError(
           'Ese horario ya no está disponible.',
           409
         );
-
       }
-
       throw error;
-
     }
-
-
     // --------------------------------------------------------
     // NOTIFICACIÓN EN TIEMPO REAL
     // --------------------------------------------------------
-
     emitirActualizacion(
       req,
       {
-
         tipo:
           'NUEVO',
-
         id:
           nuevoTurno._id,
-
         mensaje:
           `Nuevo turno para el ${fecha} a las ${hora} hs.`
-
       }
     );
-
-
     // --------------------------------------------------------
     // ADMIN / RECEPCIÓN
     // --------------------------------------------------------
-
     if (
       usuario?.rol ===
         'admin' ||
       usuario?.rol ===
         'personal'
     ) {
-
       return res.redirect(
         `/turnos/${nuevoTurno._id}?exito=Turno+creado+correctamente`
       );
-
     }
-
-
     // --------------------------------------------------------
     // PACIENTE - EFECTIVO
     // --------------------------------------------------------
-
     if (
       metodoPago === 'efectivo' || metodoPago === 'transferencia'
     ) {
-
       return res.redirect(
         `/turnos/${nuevoTurno._id}?exito=Turno+reservado+correctamente`
       );
-
     }
-
-
     // --------------------------------------------------------
     // PACIENTE - MERCADO PAGO
     // --------------------------------------------------------
-
     try {
-
       const client =
         new MercadoPagoConfig({
-
           accessToken:
             process.env.MP_ACCESS_TOKEN
-
         });
-
-
       const preference =
         new Preference(
           client
         );
-
-
       const body = {
-
         items: [
-
           {
-
             id:
               nuevoTurno._id.toString(),
-
             title:
               `Pago de consulta - ${profesional.nombre} (${profesional.especialidad})`,
-
             quantity:
               1,
-
             currency_id:
               'ARS',
-
             unit_price:
               montoSena
-
           }
-
         ],
-
         external_reference:
           nuevoTurno._id.toString()
-
       };
-
       configurarCheckoutPro(body, nuevoTurno._id);
-
       const resultado =
         await preference.create({
           body
         });
-
-
-      nuevoTurno.mercadoPago.preferenceId =
-        resultado.id ||
-        '';
-
-
+      if (!resultado.id || !resultado.init_point || !esEnlaceCheckoutSeguro(resultado.init_point)) {
+        throw crearError('Mercado Pago no devolvió una preferencia o enlace válido.', 502);
+      }
+      nuevoTurno.mercadoPago.preferenceId = resultado.id;
       registrarAuditoria(
         nuevoTurno,
         {
-
           accion:
             'generacion_pago_mp',
-
           usuario,
-
           detalle:
             `Se generó una preferencia de Mercado Pago por $${montoSena}.`,
-
           estadoAnterior:
             nuevoTurno.estado,
-
           estadoNuevo:
             nuevoTurno.estado,
-
           estadoPagoAnterior:
             nuevoTurno.estadoPago,
-
           estadoPagoNuevo:
             nuevoTurno.estadoPago
-
         }
       );
-
-
       await nuevoTurno.save();
-
-
-      if (
-        !resultado.init_point
-      ) {
-
-        throw crearError(
-          'Mercado Pago no devolvió un enlace de pago válido.',
-          502
-        );
-
-      }
-
-
-      return res.redirect(
-        resultado.init_point
-      );
-
-
+      return res.redirect(303, resultado.init_point);
     } catch (error) {
-
-      // Si Mercado Pago falla durante la creación inicial,
-      // liberamos nuevamente el horario.
-
-      await Turno.findByIdAndDelete(
-        nuevoTurno._id
-      );
-
-
+      // Conservar el turno si Mercado Pago ya generó una preferencia.
+      // Evitar borrar una reserva potencialmente asociada a un pago.
+      if (!nuevoTurno.mercadoPago?.preferenceId) {
+        await Turno.findByIdAndDelete(nuevoTurno._id);
+      }
       if (
         error.statusCode
       ) {
-
         throw error;
-
       }
-
-
       throw crearError(
         'No fue posible iniciar el pago con Mercado Pago.',
         502
       );
-
     }
-
   }
-
-
   // ==========================================================
   // 5. CAMBIAR ESTADO
   // ==========================================================
-
   static async cambiarEstadoTurno(
     req,
     res
   ) {
-
     const {
       id
     } = req.params;
-
-
     const {
       nuevoEstado
     } = req.body;
-
-
     const usuario =
       req.session.usuario;
-
-
     if (
       !mongoose.Types.ObjectId.isValid(
         id
       )
     ) {
-
       throw crearError(
         'El identificador del turno no es válido.',
         400
       );
-
     }
-
-
     const turnoActual =
       await Turno.findById(
         id
       );
-
-
     if (!turnoActual) {
-
       throw crearError(
         'Turno no encontrado.',
         404
       );
-
     }
-
-
     const estadosValidos = [
-
       'reservado',
-
       'cancelado',
-
       'atendido',
-
       'pendiente_pago',
-
       'En Espera'
-
     ];
-
-
     if (
       !nuevoEstado ||
       !estadosValidos.includes(
         nuevoEstado
       )
     ) {
-
       throw crearError(
         'El estado solicitado no es válido.',
         400
       );
-
     }
-
-
     if (
       turnoActual.estado ===
       nuevoEstado
     ) {
-
       return res.redirect(
         `/turnos/${id}?info=El+turno+ya+se+encuentra+en+ese+estado`
       );
-
     }
-
-
     if (
       (
         turnoActual.estado ===
@@ -1669,405 +1184,260 @@ static async getFormNuevoTurno(req, res) {
           'atendido'
       )
     ) {
-
       throw crearError(
         `No se puede pasar directamente de ${turnoActual.estado} a ${nuevoEstado}.`,
         400
       );
-
     }
-
-
     const estadoAnterior =
       turnoActual.estado;
-
-
     const usuarioId =
       obtenerUsuarioId(
         usuario
       );
-
-
     // --------------------------------------------------------
     // HISTORIAL LEGACY
     // --------------------------------------------------------
-
     turnoActual.historialEstados.push({
-
       estadoAnterior,
-
       estadoNuevo:
         nuevoEstado,
-
       modificadoPor:
         usuarioId,
-
       fechaModificacion:
         new Date()
-
     });
-
-
     // --------------------------------------------------------
     // AUDITORÍA GENERAL
     // --------------------------------------------------------
-
     registrarAuditoria(
       turnoActual,
       {
-
         accion:
           'cambio_estado',
-
         usuario,
-
         detalle:
           `Estado actualizado de ${estadoAnterior} a ${nuevoEstado}.`,
-
         estadoAnterior,
-
         estadoNuevo:
           nuevoEstado,
-
         estadoPagoAnterior:
           turnoActual.estadoPago,
-
         estadoPagoNuevo:
           turnoActual.estadoPago
-
       }
     );
-
-
     turnoActual.estado =
       nuevoEstado;
-
-
     await turnoActual.save();
-
-
     emitirActualizacion(
       req,
       {
-
         tipo:
           'ESTADO',
-
         id:
           turnoActual._id,
-
         nuevoEstado:
           turnoActual.estado
-
       }
     );
-
-
     if (
       req.accepts('json') &&
       !req.accepts('html')
     ) {
-
       return res.status(
         200
       ).json({
-
         status:
           'success',
-
         data:
           turnoActual
-
       });
-
     }
-
-
     return res.redirect(
       `/turnos/${id}?exito=Estado+actualizado+correctamente`
     );
-
   }
-
-
   // ==========================================================
   // 6. MARCAR ATENDIDO
   // ==========================================================
-
   static async marcarAtendido(
     req,
     res
   ) {
-
     req.body.nuevoEstado =
       'atendido';
-
-
     return TurnoController
       .cambiarEstadoTurno(
         req,
         res
       );
-
   }
-
-
   // ==========================================================
   // 7. CANCELAR
   // ==========================================================
-
   static async cancelarTurno(
     req,
     res
   ) {
-
     req.body.nuevoEstado =
       'cancelado';
-
-
     return TurnoController
       .cambiarEstadoTurno(
         req,
         res
       );
-
   }
-
-
   // ==========================================================
   // 8. COBRAR EN EFECTIVO
   // ==========================================================
-
   static async cobrarEfectivo(
     req,
     res
   ) {
-
     const {
       id
     } = req.params;
-
-
     const usuario =
       req.session.usuario;
-
-
     if (
       !mongoose.Types.ObjectId.isValid(
         id
       )
     ) {
-
       throw crearError(
         'El identificador del turno no es válido.',
         400
       );
-
     }
-
-
     const turno =
       await Turno.findById(
         id
       );
-
-
     if (!turno) {
-
       throw crearError(
         'Turno no encontrado.',
         404
       );
-
     }
-
-
     if (
       turno.estado ===
       'cancelado'
     ) {
-
       throw crearError(
         'No se puede registrar un cobro sobre un turno cancelado.',
         409
       );
-
     }
-
-
     if (
       turno.estadoPago !== 'pendiente'
     ) {
-
       return res.redirect(
         `/turnos/${id}?info=El+pago+ya+estaba+registrado`
       );
-
     }
-
-
     if (turno.mercadoPago?.preferenceId || turno.pagoFlex?.ordenId ||
         turno.metodoPago === 'transferencia') {
       throw crearError('Existe otra operación de cobro iniciada. Debe resolverse antes de cobrar efectivo.', 409);
     }
-
     const estadoAnterior =
       turno.estado;
-
-
     const estadoPagoAnterior =
       turno.estadoPago;
-
-
     turno.metodoPago =
       'efectivo';
-
-
     turno.estadoPago =
       'total_pagado';
-
-
     if (
       turno.estado ===
       'pendiente_pago'
     ) {
-
       turno.estado =
         'reservado';
-
-
       turno.historialEstados.push({
-
         estadoAnterior:
           'pendiente_pago',
-
         estadoNuevo:
           'reservado',
-
         modificadoPor:
           obtenerUsuarioId(
             usuario
           ),
-
         fechaModificacion:
           new Date()
-
       });
-
     }
-
-
     registrarAuditoria(
       turno,
       {
-
         accion:
           'cobro_efectivo',
-
         usuario,
-
         detalle:
           'Pago registrado en efectivo desde caja.',
-
         estadoAnterior,
-
         estadoNuevo:
           turno.estado,
-
         estadoPagoAnterior,
-
         estadoPagoNuevo:
           'total_pagado'
-
       }
     );
-
-
     await turno.save();
-
-
     emitirActualizacion(
       req,
       {
-
         tipo:
           'PAGO',
-
         id:
           turno._id,
-
         metodoPago:
           'efectivo',
-
         estadoPago:
           turno.estadoPago,
-
         nuevoEstado:
           turno.estado
-
       }
     );
-
-
     if (
       req.accepts('json') &&
       !req.accepts('html')
     ) {
-
       return res.status(
         200
       ).json({
-
         status:
           'success',
-
         data:
           turno
-
       });
-
     }
-
-
     return res.redirect(
       `/turnos/${id}?exito=Pago+en+efectivo+registrado+correctamente`
     );
-
   }
-
-
   // ==========================================================
   // 9. GENERAR / REGENERAR MERCADO PAGO
   // ==========================================================
-
   static async generarPagoMP(
     req,
     res
   ) {
-
     const {
       id
     } = req.params;
-
-
     const usuario =
       req.session.usuario;
-
-
     if (
       !mongoose.Types.ObjectId.isValid(
         id
       )
     ) {
-
       throw crearError(
         'El identificador del turno no es válido.',
         400
       );
-
     }
-
-
     const turno =
       await Turno.findById(
         id
@@ -2078,316 +1448,212 @@ static async getFormNuevoTurno(req, res) {
         .populate(
           'cliente_id'
         );
-
-
     if (!turno) {
-
       throw crearError(
         'Turno no encontrado.',
         404
       );
-
     }
-
-
     // --------------------------------------------------------
     // SEGURIDAD DEL PACIENTE
     // --------------------------------------------------------
-
     if (
       usuario?.rol ===
       'cliente'
     ) {
-
       if (
         turno.cliente_id?.email !==
         usuario.email
       ) {
-
         throw crearError(
           'No tenés permisos para pagar este turno.',
           403
         );
-
       }
-
     }
-
-
     if (
       turno.estado ===
         'cancelado' ||
       turno.estado ===
         'atendido'
     ) {
-
       throw crearError(
         'Este turno ya no admite operaciones de pago.',
         409
       );
-
     }
-
-
     // No iniciar una segunda seña con ningún proveedor.
     if (turno.estadoPago !== 'pendiente') {
       return res.redirect(
         `/turnos/${id}?info=Este+turno+ya+tiene+una+se%C3%B1a+registrada`
       );
     }
-
     if (turno.metodoPago === 'transferencia') {
       throw crearError('Este turno ya eligió transferencia. Debe resolverse ese medio de pago.', 409);
     }
-
-    if (turno.mercadoPago?.preferenceId && turno.tipoCobro !== 'legacy') {
-      throw crearError('Ya hay un checkout de Mercado Pago iniciado para este turno. Revisá el estado antes de volver a cobrar.', 409);
-    }
-
     if (turno.pagoFlex?.ordenId) {
       throw crearError('Este turno ya tiene una orden PagoFlex. Verificá ese pago primero.', 409);
     }
-
     const accessToken =
       process.env.MP_ACCESS_TOKEN;
-
-
     if (!accessToken) {
-
       throw crearError(
         'Mercado Pago no se encuentra configurado.',
         503
       );
-
     }
-
-
     const profesional =
       turno.profesional_id;
-
-
     if (!profesional) {
-
       throw crearError(
         'No encontramos el profesional asociado al turno.',
         404
       );
-
     }
-
-
     const especialidadData =
       await Especialidad.findOne({
-
         nombre:
           profesional.especialidad
-
       });
-
-
     // No recalcular un precio particular/copago ya fijado al reservar.
     const montoSena = turno.tipoCobro && turno.tipoCobro !== 'legacy'
       ? importeValidado(turno.montoTotal, 'El importe total')
       : importeValidado(turno.montoSena || especialidadData?.montoSena, 'El importe histórico');
-
-
     const client =
       new MercadoPagoConfig({
-
         accessToken
-
       });
-
-
-    const preference =
-      new Preference(
-        client
-      );
-
-
+    const preference = new Preference(client);
+    // Recuperar el checkout anterior si el turno todavía está pendiente.
+    if (turno.mercadoPago?.preferenceId) {
+      let anterior;
+      try {
+        anterior = await preference.get({
+          preferenceId: turno.mercadoPago.preferenceId
+        });
+      } catch (error) {
+        console.error('No se pudo consultar la preferencia existente:', error);
+        throw crearError('No se pudo recuperar el pago anterior. Revisá su estado antes de crear otro.', 409);
+      }
+      if (String(anterior.external_reference || '') !== String(turno._id)) {
+        throw crearError('La preferencia existente no corresponde a este turno.', 409);
+      }
+      if (anterior.preference_expired === true ||
+          (anterior.expiration_date_to && new Date(anterior.expiration_date_to).getTime() <= Date.now())) {
+        throw crearError('La preferencia anterior venció. Revisá el estado del pago antes de renovarla.', 409);
+      }
+      const destino = anterior.init_point;
+      if (!destino || !esEnlaceCheckoutSeguro(destino)) {
+        throw crearError('Mercado Pago no devolvió un enlace de checkout válido.', 502);
+      }
+      return res.redirect(303, destino);
+    }
     const body = {
-
       items: [
-
         {
-
           id:
             turno._id.toString(),
-
           title:
             `Pago de consulta - ${profesional.nombre} (${profesional.especialidad})`,
-
           quantity:
             1,
-
           currency_id:
             'ARS',
-
           unit_price:
             montoSena
-
         }
-
       ],
-
       external_reference:
         turno._id.toString()
-
     };
-
     configurarCheckoutPro(body, turno._id);
-
     let resultado;
-
-
     try {
-
       resultado =
         await preference.create({
           body
         });
-
     } catch (error) {
-
       console.error(
         '❌ Mercado Pago:',
         error
       );
-
-
       throw crearError(
         'No fue posible generar el enlace de Mercado Pago.',
         502
       );
-
     }
-
-
-    if (
-      !resultado.init_point
-    ) {
-
-      throw crearError(
-        'Mercado Pago no devolvió un enlace válido.',
-        502
-      );
-
+    if (!resultado.id || !resultado.init_point || !esEnlaceCheckoutSeguro(resultado.init_point)) {
+      throw crearError('Mercado Pago no devolvió una preferencia o enlace válido.', 502);
     }
-
-
     const estadoAnterior =
       turno.estado;
-
-
     const estadoPagoAnterior =
       turno.estadoPago;
-
-
     turno.metodoPago =
       'mercadopago';
-
-
     turno.montoSena =
       montoSena;
-
-
     turno.mercadoPago.preferenceId =
       resultado.id ||
       '';
-
-
     if (
       turno.estadoPago ===
       'pendiente'
     ) {
-
       turno.estado =
         'pendiente_pago';
-
     }
-
-
     registrarAuditoria(
       turno,
       {
-
         accion:
           'generacion_pago_mp',
-
         usuario,
-
         detalle:
           `Preferencia de Mercado Pago generada por $${montoSena}.`,
-
         estadoAnterior,
-
         estadoNuevo:
           turno.estado,
-
         estadoPagoAnterior,
-
         estadoPagoNuevo:
           turno.estadoPago
-
       }
     );
-
-
     if (
       estadoAnterior !==
       turno.estado
     ) {
-
       turno.historialEstados.push({
-
         estadoAnterior,
-
         estadoNuevo:
           turno.estado,
-
         modificadoPor:
           obtenerUsuarioId(
             usuario
           ),
-
         fechaModificacion:
           new Date()
-
       });
-
     }
-
-
     await turno.save();
-
-
     emitirActualizacion(
       req,
       {
-
         tipo:
           'PAGO_MP',
-
         id:
           turno._id,
-
         nuevoEstado:
           turno.estado,
-
         estadoPago:
           turno.estadoPago
-
       }
     );
-
-
     return res.redirect(
       resultado.init_point
     );
-
   }
-
-
   // ============================================================
   // MERCADO PAGO: REGRESO DESDE CHECKOUT PRO
   // Nunca confiamos en status/collection_status del navegador.
@@ -2416,8 +1682,13 @@ static async getFormNuevoTurno(req, res) {
     }
     const idPago = String(req.query.payment_id || req.query.collection_id || '');
     if (!/^\d{1,30}$/.test(idPago)) {
-      // Puede ocurrir con pagos pendientes o si el usuario vuelve sin pagar.
-      return res.redirect(303, `/turnos/${id}?info=Pago+pendiente+de+verificacion`);
+      const retorno = String(req.query.resultadoPago || '');
+      const mensaje = retorno === 'rechazado'
+        ? 'No se completo el pago. Podes intentarlo nuevamente'
+        : retorno === 'pendiente'
+          ? 'El pago sigue pendiente de confirmacion'
+          : 'No se confirmo ningun pago. Tu turno sigue pendiente';
+      return res.redirect(303, `/turnos/${id}?info=${encodeURIComponent(mensaje)}`);
     }
     // La URL de retorno NO autoriza el pago: lo determina la API del proveedor.
     const resultado = await sincronizarPagoMercadoPago(idPago, req.app, id);
@@ -2430,7 +1701,6 @@ static async getFormNuevoTurno(req, res) {
           : 'Pago+no+aprobado+por+Mercado+Pago';
     return res.redirect(303, `/turnos/${id}?info=${mensaje}`);
   }
-
   // ============================================================
   // PAGOFLEX - TRANSFERENCIA BANCARIA REAL, CONTROL ADMINISTRATIVO
   // No acepta comprobantes como acreditación automática.
@@ -2472,7 +1742,6 @@ static async getFormNuevoTurno(req, res) {
     await turno.save();
     return res.redirect(303, `/turnos/${turno.id}?info=Datos+de+transferencia+disponibles`);
   }
-
   static async informarTransferencia(req, res) {
     validarCsrfTransferencia(req);
     const turno = await obtenerTurnoParaCobro(req);
@@ -2503,7 +1772,6 @@ static async getFormNuevoTurno(req, res) {
     if (!actualizado) throw crearError('Esta transferencia ya fue informada o procesada.', 409);
     return res.redirect(303, `/turnos/${turno.id}?info=Transferencia+informada.+Esperando+validacion`);
   }
-
   static async confirmarTransferencia(req, res) {
     validarCsrfTransferencia(req);
     if (!['admin','personal'].includes(req.session?.usuario?.rol)) throw crearError('Acceso denegado.', 403);
@@ -2545,7 +1813,6 @@ static async getFormNuevoTurno(req, res) {
     emitirActualizacion(req, {tipo:'PAGO_TRANSFERENCIA',id:turno._id,estadoPago:'total_pagado',nuevoEstado});
     return res.redirect(303, `/turnos/${turno.id}?exito=Transferencia+acreditada`);
   }
-
   static async rechazarTransferencia(req, res) {
     validarCsrfTransferencia(req);
     if (!['admin','personal'].includes(req.session?.usuario?.rol)) throw crearError('Acceso denegado.', 403);
@@ -2570,13 +1837,10 @@ static async getFormNuevoTurno(req, res) {
     if (!actualizado) throw crearError('La transferencia ya fue procesada.', 409);
     return res.redirect(303, `/turnos/${turno.id}?info=Transferencia+no+acreditada`);
   }
-
-
   // Endpoint para la API de la Sala de Espera
   static async getTurnosSalaEspera(req, res) {
     try {
       const hoy = new Date().toISOString().slice(0, 10); // Formato YYYY-MM-DD
-      
       const turnosActivos = await Turno.find({
         fecha: hoy,
         estado: { $in: ['reservado', 'En Espera'] }
@@ -2585,14 +1849,10 @@ static async getFormNuevoTurno(req, res) {
       .populate('profesional_id', 'nombre especialidad')
       .sort({ hora: 1 })
       .lean();
-
       return res.status(200).json(turnosActivos);
     } catch (error) {
       return res.status(500).json({ error: 'Error al obtener datos de la sala de espera.' });
     }
   }
-
-
 }
-
 export default TurnoController;
