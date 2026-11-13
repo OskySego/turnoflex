@@ -2,13 +2,9 @@ import path from 'path';
 
 import express from 'express';
 
-import {
-  createServer
-} from 'http';
+import { createServer } from 'http';
 
-import {
-  Server
-} from 'socket.io';
+import { Server } from 'socket.io';
 
 import helmet from 'helmet';
 
@@ -17,6 +13,12 @@ import 'dotenv/config';
 import session from 'express-session';
 
 import TurnoController from './src/controllers/turnoController.js';
+
+import accesosInstitucionalesRoutes from './src/routes/accesosInstitucionalesRoutes.js';
+
+import { verificarCuentaHabilitada } from './src/middlewares/verificarCuentaHabilitada.js';
+
+import { getUltimosLlamadosSalaEspera } from './src/controllers/salaEsperaHistorialController.js';
 
 // ============================================================
 // CONFIGURACIÓN
@@ -167,34 +169,8 @@ app.set(
 );
 
 
-io.on(
-  'connection',
-  (socket) => {
-
-    console.log(
-      '⚡ Nueva pantalla conectada a TurnoFlex mediante Socket.IO'
-    );
-
-
-    socket.on(
-      'disconnect',
-      () => {
-
-        console.log(
-          '🔌 Pantalla desconectada de TurnoFlex'
-        );
-
-      }
-    );
-
-  }
-);
-
-// ============================================================
-// Notificación sala de espera
-// ============================================================
-app.get('/api/sala-espera/activos', TurnoController.getTurnosSalaEspera);
-app.get('/sala-espera', (req, res) => res.render('sala-espera')); // O con renderizado de vistas
+// Las rutas de la sala de espera se registran más abajo,
+// cuando la sesión y los permisos ya están configurados.
 
 // ============================================================
 // INICIO CONTROLADO: primero MongoDB, luego servicios externos.
@@ -249,41 +225,49 @@ if (!secretoConfigurado && process.env.NODE_ENV !== 'test') {
 const sessionSecret = secretoConfigurado || 'TurnoFlexSecretKeySuperSegura2026';
 
 
-app.use(
-  session({
 
-    name:
-      'turnoflex.sid',
+const sessionMiddleware = session({
+  name: 'turnoflex.sid',
+  secret: sessionSecret,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: 'auto',
+    maxAge: 1000 * 60 * 60 * 8
+  }
+});
 
-    secret:
-      sessionSecret,
+// Compartimos la misma sesión en HTTP y Socket.IO.
+app.use(sessionMiddleware);
 
-    resave:
-      false,
+// Requiere Socket.IO 4.6 o superior.
+io.engine.use(sessionMiddleware);
 
-    saveUninitialized:
-      false,
+// El servidor decide qué conexiones pueden
+// ingresar a la sala de espera.
+io.on('connection', (socket) => {
+  const usuario = socket.request.session?.usuario;
 
-    cookie: {
+  const autorizado = ['admin', 'personal'].includes(
+    usuario?.rol
+  );
 
-      httpOnly:
-        true,
+  if (autorizado) {
+    socket.join('sala-espera');
+  }
 
-      sameSite:
-        'lax',
+  console.log(
+    '⚡ Socket.IO conectado. Acceso a sala:',
+    autorizado ? 'autorizado' : 'no autorizado'
+  );
 
-      secure: 'auto',
+  socket.on('disconnect', () => {
+    console.log('🔌 Socket.IO desconectado');
+  });
+});
 
-      maxAge:
-        1000 *
-        60 *
-        60 *
-        8
-
-    }
-
-  })
-);
 
 
 // ============================================================
@@ -391,15 +375,126 @@ app.use(
 );
 
 
+
 // ============================================================
-// AUTENTICACIÓN
+// TURNOFLEX - SALA DE ESPERA PROTEGIDA
 // ============================================================
 
-app.use(
-  '/auth',
-  authRoutes
+function autorizarSalaEspera(req, res, next) {
+  const usuario = req.session?.usuario;
+  const esApi = req.path.startsWith('/api/');
+
+  res.set('Cache-Control', 'no-store');
+
+  // Sesión no iniciada.
+  if (!usuario) {
+    if (esApi) {
+      return res.status(401).json({
+        error: 'Iniciá sesión para acceder.'
+      });
+    }
+
+    return res.redirect('/auth/login');
+  }
+
+  // Solo administración y recepción.
+  if (!['admin', 'personal'].includes(usuario.rol)) {
+    if (esApi) {
+      return res.status(403).json({
+        error: 'No autorizado.'
+      });
+    }
+
+    return res.status(403).send(
+      'No tenés permisos para abrir la sala de espera.'
+    );
+  }
+
+  return next();
+}
+
+// Consulto el último llamado del día para recuperar la pantalla
+// después de actualizarla o reconectarla.
+async function consultarUltimoLlamadoSalaEspera(req, res) {
+  try {
+    const partes = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(new Date());
+
+    const dato = (tipo) =>
+      partes.find((parte) => parte.type === tipo)?.value || '';
+
+    const hoy = `${dato('year')}-${dato('month')}-${dato('day')}`;
+
+    const turno = await Turno.findOne({
+      fecha: hoy,
+      ultimoLlamadoSalaEn: { $ne: null },
+      estado: { $ne: 'cancelado' }
+    })
+      .select('_id cliente_id profesional_id hora ultimoLlamadoSalaEn')
+      .populate('cliente_id', 'nombre')
+      .populate('profesional_id', 'nombre sede')
+      .sort({ ultimoLlamadoSalaEn: -1 })
+      .lean();
+
+    if (!turno?.ultimoLlamadoSalaEn) {
+      return res.status(200).json({ llamado: null });
+    }
+
+    const sede = String(turno.profesional_id?.sede || '').trim();
+    const coincidencia = sede.match(/consultorio\s*[-#:]?\s*[\w]+/i);
+    const consultorio = coincidencia
+      ? coincidencia[0].replace(/^consultorio/i, 'Consultorio')
+      : sede || 'Consultorio no asignado';
+
+    return res.status(200).json({
+      llamado: {
+        turnoId: String(turno._id),
+        paciente: String(turno.cliente_id?.nombre || 'Paciente'),
+        profesional: String(turno.profesional_id?.nombre || 'Profesional'),
+        consultorio,
+        hora: String(turno.hora || ''),
+        fecha: new Date(turno.ultimoLlamadoSalaEn).toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Error al consultar el último llamado de sala:', error);
+    return res.status(500).json({
+      error: 'No se pudo obtener el último llamado de la sala.'
+    });
+  }
+}
+
+// Muestro los turnos de espera solamente a personal autorizado.
+app.get(
+  '/api/sala-espera/activos',
+  autorizarSalaEspera,
+  TurnoController.getTurnosSalaEspera
 );
 
+// Recupero el último llamado para mantener la pantalla actualizada.
+app.get(
+  '/api/sala-espera/ultimo-llamado',
+  autorizarSalaEspera,
+  consultarUltimoLlamadoSalaEspera
+);
+
+// Muestro los últimos cinco llamados del día.
+app.get(
+  '/api/sala-espera/ultimos-llamados',
+  autorizarSalaEspera,
+  getUltimosLlamadosSalaEspera
+);
+
+// Esta pantalla también requiere una sesión autorizada.
+app.get(
+  '/sala-espera',
+  autorizarSalaEspera,
+  (req, res) => res.render('sala-espera')
+);
 
 
  // ============================================================
@@ -609,10 +704,29 @@ app.get(
   }
 );
 
+// ============================================================
+// TURNOFLEX - VERIFICAR CUENTAS ACTIVAS
+// ============================================================
+
+app.use(verificarCuentaHabilitada);
 
 // ============================================================
 // RUTAS PROTEGIDAS
 // ============================================================
+
+app.use(
+  '/auth',
+  authRoutes
+);
+
+// ============================================================
+// TURNOFLEX - CUENTAS INSTITUCIONALES
+// ============================================================
+
+app.use(
+  '/accesos',
+  accesosInstitucionalesRoutes
+);
 
 app.use(
   '/turnos',

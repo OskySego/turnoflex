@@ -76,7 +76,8 @@ const especialidadesBase = [
   { nombre: 'Gastroenterología', precioParticular: 33000, copagoObraSocial: 11500, montoSena: 11500, activa: true },
   { nombre: 'Nutrición', precioParticular: 22000, copagoObraSocial: 7500, montoSena: 7500, activa: true },
   { nombre: 'Psiquiatría', precioParticular: 35000, copagoObraSocial: 12000, montoSena: 12000, activa: true },
-  { nombre: 'Cirugía General', precioParticular: 40000, copagoObraSocial: 15000, montoSena: 15000, activa: true }
+  { nombre: 'Cirugía General', precioParticular: 40000, copagoObraSocial: 15000, montoSena: 15000, activa: true },
+  { nombre: 'Urología', precioParticular: 40000, copagoObraSocial: 15000, montoSena: 15000, activa: true }
 ];
 
 // Historias clínicas reales y detalladas para probar el módulo de pacientes
