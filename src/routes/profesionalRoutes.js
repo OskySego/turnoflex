@@ -1,3 +1,8 @@
+/**
+ * Enrutador para la gestión de Profesionales y agendas médicas en TurnoFlex.
+ * Administra el ABM completo de profesionales, configuraciones de horarios, sobreturnos, telemedicina y cuentas asociadas.
+ */
+
 import { Router } from 'express';
 import mongoose from 'mongoose';
 import { ProfesionalController } from '../controllers/profesionalController.js';
@@ -8,6 +13,7 @@ import { asegurarAutenticacion, permitirRoles } from '../middlewares/authMiddlew
 
 const router = Router();
 
+// Middleware común de acceso restringido a administradores y personal
 const acceso = [
   asegurarAutenticacion,
   permitirRoles('admin', 'personal')
@@ -22,6 +28,10 @@ const diasValidos = [
   'Sábado',
   'Domingo'
 ];
+
+// ============================================================
+// HELPERS DE VALIDACIÓN Y NORMALIZACIÓN DE ENTRADAS
+// ============================================================
 
 function listaDias(valor) {
   const lista = Array.isArray(valor)
@@ -59,8 +69,9 @@ function textoObligatorio(valor, campo) {
   return valor.trim();
 }
 
+
 // ============================================================
-// LISTADO
+// 1. LISTADO DE PROFESIONALES
 // ============================================================
 
 router.get(
@@ -69,8 +80,9 @@ router.get(
   ProfesionalController.getProfesionales
 );
 
+
 // ============================================================
-// NUEVO PROFESIONAL
+// 2. FORMULARIO DE NUEVO PROFESIONAL
 // ============================================================
 
 router.get(
@@ -83,8 +95,9 @@ router.get(
   }
 );
 
+
 // ============================================================
-// CREAR PROFESIONAL
+// 3. CREAR NUEVO PROFESIONAL
 // ============================================================
 
 router.post(
@@ -94,8 +107,9 @@ router.post(
   ProfesionalController.crearProfesional
 );
 
+
 // ============================================================
-// ABRIR EDICIÓN
+// 4. FORMULARIO DE EDICIÓN
 // ============================================================
 
 router.get(
@@ -132,8 +146,9 @@ router.get(
   }
 );
 
+
 // ============================================================
-// GUARDAR TODOS LOS CAMBIOS
+// 5. PROCESAR Y GUARDAR ACTUALIZACIÓN DE DATOS Y AGENDA
 // ============================================================
 
 router.post(
@@ -158,7 +173,7 @@ router.post(
       }
 
       // ============================================
-      // 1. IDENTIFICACIÓN
+      // 5.1. IDENTIFICACIÓN Y DATOS PERSONALES
       // ============================================
 
       const camposObligatorios = [
@@ -198,7 +213,7 @@ router.post(
         : '';
 
       // ============================================
-      // 2. AGENDA REGULAR
+      // 5.2. AGENDA REGULAR
       // ============================================
 
       const modalidades = [
@@ -255,14 +270,13 @@ router.post(
       cambios.duracionTurnoMinutos = duracion;
 
       // ============================================
-      // 3. SOBRETURNOS
+      // 5.3. CONFIGURACIÓN DE SOBRETURNOS
       // ============================================
 
       cambios.permiteSobreturnos =
         req.body.permiteSobreturnos === 'on';
 
       if (cambios.permiteSobreturnos) {
-
         cambios.diasSobreturnos = listaDias(
           req.body.diasSobreturnos
         );
@@ -308,7 +322,6 @@ router.post(
         cambios.cantidadMaximaSobreturnos = cantidad;
 
       } else {
-
         cambios.diasSobreturnos = [];
         cambios.horaInicioSobreturnos = '';
         cambios.horaFinSobreturnos = '';
@@ -316,14 +329,13 @@ router.post(
       }
 
       // ============================================
-      // 4. TELEMEDICINA
+      // 5.4. CONFIGURACIÓN DE TELEMEDICINA
       // ============================================
 
       cambios.ofreceTelemedicina =
         req.body.ofreceTelemedicina === 'on';
 
       if (cambios.ofreceTelemedicina) {
-
         cambios.diasTelemedicina = listaDias(
           req.body.diasTelemedicina
         );
@@ -354,18 +366,16 @@ router.post(
         cambios.horaFinTelemedicina = finTele;
 
       } else {
-
         cambios.diasTelemedicina = [];
         cambios.horaInicioTelemedicina = '';
         cambios.horaFinTelemedicina = '';
       }
 
       // ============================================
-      // 5. GUARDAR EN MONGODB
+      // 5.5. PERSISTENCIA Y SINCRONIZACIÓN CON USUARIO
       // ============================================
 
-      // Sincronizar el correo particular con el usuario institucional
-      // para que la agenda y la cuenta no pierdan su vínculo.
+      // Sincronizamos el correo con el usuario institucional vinculado para mantener consistencia
       const emailAnterior = profesional.email;
       const cuentaVinculada = await Usuario.findOne({
         profesional_id: profesional._id,
@@ -388,6 +398,7 @@ router.post(
       profesional.set(cambios);
       await profesional.save();
 
+      // Si cambió el correo y hay cuenta vinculada, actualizamos también en la colección Usuario
       if (cuentaVinculada && cuentaVinculada.email !== cambios.email) {
         try {
           await Usuario.updateOne(
@@ -395,7 +406,7 @@ router.post(
             { $set: { email: cambios.email } }
           );
         } catch (error) {
-          // Mantener consistente el campo correo si falla la segunda escritura.
+          // Rollback preventivo: restauramos el email anterior en Profesional si falla la actualización del usuario
           await Profesional.updateOne(
             { _id: profesional._id },
             { $set: { email: emailAnterior } }
@@ -416,7 +427,6 @@ router.post(
       );
 
     } catch (error) {
-
       console.error(
         '❌ Error al editar profesional:',
         error
@@ -450,10 +460,12 @@ router.post(
   }
 );
 
+
 // ============================================================
-// LIBERAR EMAIL DE PRUEBA QUE QUEDÓ HUÉRFANO
-// Esta ruta FIJA va antes de /:id.
+// 6. UTILIDADES ADMINISTRATIVAS (LIBERAR CORREO HUÉRFANO)
+// NOTA: Esta ruta estática debe declararse obligatoriamente antes de /:id
 // ============================================================
+
 router.post(
   '/cuentas-huerfanas/liberar',
   asegurarAutenticacion,
@@ -461,18 +473,23 @@ router.post(
   ProfesionalController.liberarCorreoHuerfano
 );
 
+
 // ============================================================
-// DESACTIVAR (COMPATIBLE CON EL FORMULARIO ANTERIOR)
+// 7. DESACTIVAR PROFESIONAL (BAJA LÓGICA)
 // ============================================================
+
 router.post(
   '/:id/eliminar',
   ...acceso,
   ProfesionalController.eliminarProfesional
 );
 
+
 // ============================================================
-// REACTIVAR / ELIMINAR DEFINITIVAMENTE: SOLO ADMIN
+// 8. ACCIONES CRÍTICAS (EXCLUSIVO ADMINISTRADOR)
 // ============================================================
+
+// Reactivar profesional dado de baja
 router.post(
   '/:id/reactivar',
   asegurarAutenticacion,
@@ -480,6 +497,7 @@ router.post(
   ProfesionalController.reactivarProfesional
 );
 
+// Eliminación permanente de la base de datos
 router.post(
   '/:id/eliminar-definitivamente',
   asegurarAutenticacion,
@@ -487,8 +505,10 @@ router.post(
   ProfesionalController.eliminarProfesionalDefinitivamente
 );
 
+
 // ============================================================
-// 2. DETALLE PROFESIONAL (SIEMPRE AL FINAL)
+// 9. DETALLE DE PROFESIONAL
+// IMPORTANTE: Esta ruta dinámica debe permanecer siempre al final
 // ============================================================
 
 router.get(

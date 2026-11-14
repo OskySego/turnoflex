@@ -1,14 +1,27 @@
-// TurnoFlex: resumen de agenda para Recepción y Administración.
-// Consulta de solo lectura. NO modifica turnos ni pagos.
+/**
+ * Enrutador de resumen de agenda para Recepción y Administración en TurnoFlex.
+ * Proporciona vistas de consulta de solo lectura para estadísticas y control diario sin alterar datos operativos.
+ */
+
 import { Router } from 'express';
 import { asegurarAutenticacion, permitirRoles } from '../middlewares/authMiddleware.js';
 import { Turno } from '../models/Turno.js';
-// Registrar los modelos empleados en populate() de manera explícita.
+
+// Registramos explícitamente los modelos requeridos para que las consultas con populate() funcionen sin problemas
 import '../models/Cliente.js';
 import '../models/Profesional.js';
 
 const router = Router();
+
+// ============================================================
+// RESTRICCIÓN DE ACCESO: SOLO ADMINISTRADORES Y PERSONAL
+// ============================================================
+
 router.use(asegurarAutenticacion, permitirRoles('admin', 'personal'));
+
+// ============================================================
+// HELPERS DE FECHA Y VALIDACIÓN
+// ============================================================
 
 function fechaArgentina() {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -25,8 +38,14 @@ function fechaValida(valor) {
   return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === valor;
 }
 
+
+// ============================================================
+// ENDPOINT: OBTENER RESUMEN DE AGENDA DIARIA
+// ============================================================
+
 router.get('/resumen', async (req, res, next) => {
   try {
+    // Blindamos las cabeceras para evitar almacenamiento en caché de información operativa sensible
     res.set('Cache-Control', 'private, no-store, max-age=0');
     res.set('X-Content-Type-Options', 'nosniff');
 
@@ -35,7 +54,7 @@ router.get('/resumen', async (req, res, next) => {
       return res.status(400).json({ error: 'La fecha debe tener formato AAAA-MM-DD.' });
     }
 
-    // El listado tiene un límite visual; la cuenta total siempre incluye todos los turnos.
+    // Obtenemos en paralelo el conteo total real y el listado acotado para la interfaz visual
     const [total, turnos] = await Promise.all([
       Turno.countDocuments({ fecha }),
       Turno.find({ fecha })
@@ -50,11 +69,12 @@ router.get('/resumen', async (req, res, next) => {
     const estados = { reservado: 0, pendiente_pago: 0, atendido: 0, cancelado: 0, en_espera: 0 };
     let pagosSinCompletar = 0;
 
-    // Estadísticas completas sin descargar información médica ni datos privados extras.
+    // Calculamos estadísticas completas mediante agregación de Mongo sin comprometer datos privados
     const resumenEstados = await Turno.aggregate([
       { $match: { fecha } },
       { $group: { _id: { estado: '$estado', pago: '$estadoPago' }, n: { $sum: 1 } } }
     ]);
+
     for (const item of resumenEstados) {
       const estado = item._id.estado;
       if (estado === 'En Espera') estados.en_espera += item.n;
@@ -82,5 +102,10 @@ router.get('/resumen', async (req, res, next) => {
     return next(error);
   }
 });
+
+
+// ============================================================
+// EXPORTACIÓN DEL ENRUTADOR
+// ============================================================
 
 export default router;

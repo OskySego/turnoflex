@@ -1,3 +1,7 @@
+/**
+ * Enrutador del panel de control y gestión operativa para profesionales en TurnoFlex.
+ * Define las rutas protegidas para visualización de agenda médica, control de atención, cancelaciones y llamados a sala.
+ */
 
 import { Router } from 'express';
 
@@ -17,10 +21,10 @@ import {
 const router = Router();
 
 // ============================================================
-// MI AGENDA MÉDICA
-// GET /medico/agenda
+// GESTIÓN DE AGENDA MÉDICA
 // ============================================================
 
+// Visualización de la agenda y turnos asignados al profesional logueado
 router.get(
   '/agenda',
 
@@ -32,10 +36,10 @@ router.get(
 );
 
 // ============================================================
-// MARCAR TURNO COMO ATENDIDO
-// POST /medico/turnos/:id/atendido
+// ACCIONES SOBRE EL ESTADO DE LOS TURNOS
 // ============================================================
 
+// Marcar un turno como atendido tras la consulta
 router.post(
   '/turnos/:id/atendido',
 
@@ -46,11 +50,7 @@ router.post(
   ProfesionalDashboardController.marcarAtendido
 );
 
-// ============================================================
-// CANCELAR TURNO
-// POST /medico/turnos/:id/cancelar
-// ============================================================
-
+// Cancelar un turno desde la vista del profesional
 router.post(
   '/turnos/:id/cancelar',
 
@@ -61,11 +61,7 @@ router.post(
   ProfesionalDashboardController.cancelarTurno
 );
 
-// ============================================================
-// LLAMAR PACIENTE A SALA DE ESPERA
-// POST /medico/turnos/:id/llamar
-// ============================================================
-
+// Disparar el llamado al paciente hacia el consultorio (sala de espera)
 router.post(
   '/turnos/:id/llamar',
 
@@ -77,7 +73,7 @@ router.post(
 );
 
 // ============================================================
-// EXPORTAR RUTAS
+// EXPORTACIÓN DEL ENRUTADOR
 // ============================================================
 
 export default router;

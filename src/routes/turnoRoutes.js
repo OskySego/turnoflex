@@ -1,3 +1,8 @@
+/**
+ * Enrutador integral para la gestión de Turnos en TurnoFlex.
+ * Centraliza las rutas de alta, listado, control de pagos (efectivo, Mercado Pago y transferencias), estados operativos y detalles.
+ */
+
 import { Router } from 'express';
 
 import { TurnoController } from '../controllers/turnoController.js';
@@ -23,17 +28,19 @@ const router = Router();
 
 
 // ============================================================
-// COTIZACIÓN ADMINISTRATIVA - PREVIA A NUEVA RESERVA
+// 1. COTIZACIÓN ADMINISTRATIVA
 // ============================================================
+
+// Cálculo previo de aranceles antes de confirmar una reserva desde recepción
 router.get('/cotizacion',
   asegurarAutenticacion,
   verificarRol('admin', 'personal'),
   catchAsync(TurnoController.cotizarTurnoRecepcion)
 );
 
+
 // ============================================================
-// NUEVO TURNO
-// Admin / Recepción / Paciente
+// 2. FORMULARIO DE NUEVO TURNO
 // ============================================================
 
 router.get(
@@ -54,8 +61,8 @@ router.get(
 
 
 // ============================================================
-// LISTADO
-// El controlador limita al paciente a sus propios turnos.
+// 3. LISTADO GENERAL DE TURNOS
+// (El controlador filtra automáticamente según el rol del usuario logueado)
 // ============================================================
 
 router.get(
@@ -76,7 +83,7 @@ router.get(
 
 
 // ============================================================
-// CREAR TURNO
+// 4. CREACIÓN DE NUEVO TURNO
 // ============================================================
 
 router.post(
@@ -99,12 +106,10 @@ router.post(
 
 
 // ============================================================
-// COBRO EN EFECTIVO
-//
-// Solo Administración y Recepción.
-// Un paciente nunca debe poder marcar su propio turno como pago.
+// 5. GESTIÓN FINANCIERA Y PAGOS
 // ============================================================
 
+// Cobro en efectivo en mostrador (restringido a administración y personal)
 router.post(
   '/:id/cobrar',
 
@@ -121,18 +126,7 @@ router.post(
 );
 
 
-// ============================================================
-// MERCADO PAGO
-//
-// Admin / Recepción:
-// pueden generar el enlace desde el detalle.
-//
-// Paciente:
-// puede pagar únicamente un turno propio.
-// La validación de propiedad está en turnoController.js.
-// ============================================================
-
-// Regreso del checkout: protegido por sesión; consulta el pago con la API.
+// Retorno del checkout de Mercado Pago: protegido por sesión, consulta el estado directo en la API
 router.get(
   '/:id/verificar-pago',
   asegurarAutenticacion,
@@ -140,6 +134,7 @@ router.get(
   catchAsync(TurnoController.verificarPagoMP)
 );
 
+// Generación de preferencia de pago en Mercado Pago
 router.get(
   '/:id/pagar-mp',
 
@@ -158,13 +153,25 @@ router.get(
 
 
 // ============================================================
-// MARCAR ATENDIDO
-//
-// Solamente Administración / Recepción.
-//
-// IMPORTANTE:
-// el profesional utiliza sus rutas seguras bajo /medico,
-// no estas rutas administrativas.
+// 6. FLUJO DE TRANSFERENCIAS BANCARIAS Y PAGO-FLEX
+// ============================================================
+
+router.post('/:id/transferencia/iniciar', asegurarAutenticacion,
+  verificarRol('admin','personal','cliente'), catchAsync(TurnoController.iniciarTransferencia));
+
+router.post('/:id/transferencia/informar', asegurarAutenticacion,
+  verificarRol('admin','personal','cliente'), catchAsync(TurnoController.informarTransferencia));
+
+router.post('/:id/transferencia/confirmar', asegurarAutenticacion,
+  verificarRol('admin','personal'), catchAsync(TurnoController.confirmarTransferencia));
+
+router.post('/:id/transferencia/rechazar', asegurarAutenticacion,
+  verificarRol('admin','personal'), catchAsync(TurnoController.rechazarTransferencia));
+
+
+// ============================================================
+// 7. CAMBIOS DE ESTADO OPERATIVO (ATENCIÓN Y CANCELACIÓN)
+// Nota: El profesional maneja sus acciones desde su propio enrutador /medico
 // ============================================================
 
 router.post(
@@ -181,11 +188,6 @@ router.post(
     TurnoController.marcarAtendido
   )
 );
-
-
-// ============================================================
-// CANCELAR
-// ============================================================
 
 router.post(
   '/:id/cancelar',
@@ -204,23 +206,9 @@ router.post(
 
 
 // ============================================================
-// PAGOFLEX: TRANSFERENCIA (no usa el simulador antiguo)
-// ============================================================
-router.post('/:id/transferencia/iniciar', asegurarAutenticacion,
-  verificarRol('admin','personal','cliente'), catchAsync(TurnoController.iniciarTransferencia));
-router.post('/:id/transferencia/informar', asegurarAutenticacion,
-  verificarRol('admin','personal','cliente'), catchAsync(TurnoController.informarTransferencia));
-router.post('/:id/transferencia/confirmar', asegurarAutenticacion,
-  verificarRol('admin','personal'), catchAsync(TurnoController.confirmarTransferencia));
-router.post('/:id/transferencia/rechazar', asegurarAutenticacion,
-  verificarRol('admin','personal'), catchAsync(TurnoController.rechazarTransferencia));
-
-
-// ============================================================
-// DETALLE
-//
-// Lo dejamos AL FINAL de las rutas dinámicas para mantener
-// una estructura clara y evitar futuras colisiones.
+// 8. DETALLE DE TURNO
+// IMPORTANTE: Esta ruta dinámica debe permanecer siempre al final
+// para evitar colisiones con los endpoints anteriores.
 // ============================================================
 
 router.get(

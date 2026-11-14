@@ -1,3 +1,8 @@
+/**
+ * Enrutador de autenticación y gestión de sesiones en TurnoFlex.
+ * Define las rutas para inicio de sesión, alta de cuentas nuevas y cierre de sesión, aplicando rate limiting y validaciones.
+ */
+
 import { Router } from 'express';
 import { AuthController } from '../controllers/authController.js';
 import { evitarDobleLogin } from '../middlewares/authMiddleware.js';
@@ -7,27 +12,35 @@ import { catchAsync } from '../utils/catchAsync.js';
 
 const router = Router();
 
-// Mostrar formulario de inicio de sesión
+// ============================================================
+// RUTAS DE INICIO DE SESIÓN (LOGIN)
+// ============================================================
+
+// Renderizamos el formulario de acceso
 router.get(
   '/login',
   AuthController.getLogin
 );
 
-// Procesar login, incluso si existe una sesión anterior
+// Procesamos el ingreso con limitador de intentos (permite pisar una sesión anterior si hace falta)
 router.post(
   '/login',
   loginLimiter,
   catchAsync(AuthController.postLogin)
 );
 
-// Mostrar formulario de registro
+// ============================================================
+// RUTAS DE REGISTRO DE USUARIOS
+// ============================================================
+
+// Renderizamos el formulario de registro (bloqueado si ya existe una sesión activa)
 router.get(
   '/register',
   evitarDobleLogin,
   AuthController.getRegister
 );
 
-// Procesar registro
+// Validamos los campos de entrada y creamos la cuenta nueva
 router.post(
   '/register',
   evitarDobleLogin,
@@ -35,7 +48,11 @@ router.post(
   catchAsync(AuthController.postRegister)
 );
 
-// Cerrar sesión
+// ============================================================
+// CIERRE DE SESIÓN Y EXPORTACIÓN
+// ============================================================
+
+// Finalizamos la sesión actual y limpiamos credenciales
 router.get(
   '/logout',
   AuthController.logout

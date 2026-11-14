@@ -1,3 +1,8 @@
+/**
+ * Enrutador para la gestión de Clientes / Pacientes y vínculos familiares en TurnoFlex.
+ * Centraliza las rutas de listado, altas, perfil de usuario y el nuevo subsistema de relaciones familiares.
+ */
+
 import { Router } from 'express';
 
 import { ClienteController } from '../controllers/clienteController.js';
@@ -65,8 +70,7 @@ router.post(
 
 
 // ============================================================
-// 4. MI PERFIL
-// Solo paciente
+// 4. MI PERFIL (EXCLUSIVO PACIENTES)
 // ============================================================
 
 router.get(
@@ -88,8 +92,8 @@ router.post(
 // ============================================================
 // SISTEMA ANTIGUO DE GRUPO FAMILIAR
 //
-// Lo dejamos funcionando por ahora.
-// Más adelante podremos migrarlo al nuevo sistema.
+// Lo dejamos funcionando por compatibilidad temporal.
+// Más adelante lo migraremos por completo al nuevo esquema.
 // ============================================================
 
 router.post(
@@ -130,11 +134,8 @@ router.get(
 // BUSCAR PACIENTES EXISTENTES
 //
 // Ejemplo:
-//
 // /clientes/ID/familiares/buscar?q=juan
-//
 // o
-//
 // /clientes/ID/familiares/buscar?q=40123456
 // ------------------------------------------------------------
 
@@ -219,7 +220,7 @@ router.post(
 // 6. DETALLE DE PACIENTE
 //
 // IMPORTANTE:
-// ESTA RUTA DEBE PERMANECER AL FINAL.
+// ESTA RUTA DEBE PERMANECER AL FINAL PARA EVITAR COLISIONES CON SLUGS DINÁMICOS.
 // ============================================================
 
 router.get(

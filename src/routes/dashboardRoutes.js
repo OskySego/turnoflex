@@ -1,3 +1,8 @@
+/**
+ * Enrutador del panel de control / métricas (Dashboard) para TurnoFlex.
+ * Centraliza el acceso al área gerencial de estadísticas protegida exclusivamente para administradores.
+ */
+
 import { Router } from 'express';
 
 import {
@@ -22,11 +27,10 @@ const router =
 
 
 // ============================================================
-// TURNOFLEX INTELLIGENCE
-//
-// Área gerencial exclusiva para administradores.
+// TURNOFLEX INTELLIGENCE - PANEL GERENCIAL
 // ============================================================
 
+// Vista principal de métricas y estadísticas (restringida a administradores)
 router.get(
   '/',
 
@@ -41,5 +45,9 @@ router.get(
   )
 );
 
+
+// ============================================================
+// EXPORTACIÓN DEL ENRUTADOR
+// ============================================================
 
 export default router;

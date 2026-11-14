@@ -1,3 +1,8 @@
+/**
+ * Enrutador de pruebas del servicio de WhatsApp para TurnoFlex.
+ * Permite realizar envíos de prueba simulados restringidos exclusivamente a administradores y entornos fuera de producción.
+ */
+
 import { Router } from 'express';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import rateLimit from 'express-rate-limit';
@@ -11,9 +16,14 @@ import { enviarWhatsApp } from '../utils/whatsapp.js';
 
 const router = Router();
 
-// Solo administradores; deshabilitado en producción.
+// ============================================================
+// SEGURIDAD GLOBAL: SOLO ADMINS Y EXCLUSIVO DESARROLLO
+// ============================================================
+
+// Restringimos el acceso a administradores
 router.use(asegurarAutenticacion, permitirRoles('admin'));
 
+// Deshabilitamos por completo estas rutas de prueba en producción (retornan 404)
 router.use((req, res, next) => {
   if (process.env.NODE_ENV === 'production') {
     return res.sendStatus(404);
@@ -21,7 +31,11 @@ router.use((req, res, next) => {
   next();
 });
 
-// Evitar demasiados envíos de prueba.
+// ============================================================
+// CONFIGURACIÓN DE RATE LIMIT PARA PRUEBAS
+// ============================================================
+
+// Limitamos el spam de envíos de prueba (máximo 3 peticiones cada 30 minutos)
 const limitarPruebas = rateLimit({
   windowMs: 30 * 60 * 1000,
   limit: 3,
@@ -30,6 +44,11 @@ const limitarPruebas = rateLimit({
   message: 'Límite de pruebas alcanzado. Intentá más tarde.'
 });
 
+// ============================================================
+// HELPERS DE FECHA Y RENDERIZADO
+// ============================================================
+
+// Calcula la fecha de mañana en zona horaria de Argentina (YYYY-MM-DD)
 function mananaEnArgentina() {
   const partes = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/Argentina/Buenos_Aires',
@@ -48,6 +67,7 @@ function mananaEnArgentina() {
   )).toISOString().slice(0, 10);
 }
 
+// Renderiza la vista del panel de prueba con los datos provistos
 function mostrar(req, res, valores = {}) {
   return res.render('prueba-whatsapp', {
     tituloPage: 'Prueba de WhatsApp',
@@ -56,7 +76,11 @@ function mostrar(req, res, valores = {}) {
   });
 }
 
-// Pantalla de prueba.
+// ============================================================
+// RUTAS DE PRUEBA WHATSAPP
+// ============================================================
+
+// Pantalla principal del panel de pruebas
 router.get('/', (req, res) => {
   req.session.pruebaWhatsAppCsrf ??=
     randomBytes(32).toString('hex');
@@ -64,11 +88,12 @@ router.get('/', (req, res) => {
   return mostrar(req, res);
 });
 
-// Enviar recordatorio ficticio.
+// Enviar recordatorio de prueba ficticio por WhatsApp
 router.post('/', limitarPruebas, async (req, res) => {
   const esperado = req.session.pruebaWhatsAppCsrf;
   const recibido = req.body?._csrf;
 
+  // Validación de seguridad contra ataques CSRF usando comparación timing-safe
   if (
     typeof esperado !== 'string' ||
     typeof recibido !== 'string' ||
@@ -83,10 +108,12 @@ router.post('/', limitarPruebas, async (req, res) => {
     );
   }
 
+  // Limpiamos el teléfono ingresado para conservar únicamente dígitos
   const telefono = String(
     req.body?.telefono ?? ''
   ).replace(/\D/g, '');
 
+  // Validamos formato exacto de número argentino (549 + 10 dígitos)
   if (!/^549\d{10}$/.test(telefono)) {
     return mostrar(req, res, {
       error: 'Ingresá un número argentino en formato 549 + 10 dígitos.'
@@ -94,6 +121,7 @@ router.post('/', limitarPruebas, async (req, res) => {
   }
 
   try {
+    // Intentamos enviar el mensaje de prueba mediante la utilidad de WhatsApp
     const aceptado = await enviarWhatsApp(
       telefono,
       'Paciente de Prueba',
@@ -123,5 +151,9 @@ router.post('/', limitarPruebas, async (req, res) => {
     });
   }
 });
+
+// ============================================================
+// EXPORTACIÓN DEL ENRUTADOR
+// ============================================================
 
 export default router;

@@ -1,3 +1,8 @@
+/**
+ * Fábrica de enrutador para el Módulo Clínico de TurnoFlex.
+ * Gestiona endpoints seguros para historia clínica, carga y validación de estudios privados, evoluciones médicas y auditoría.
+ */
+
 import express from 'express';
 import multer from 'multer';
 import mongoose from 'mongoose';
@@ -12,7 +17,7 @@ import * as reglas from '../middlewares/politicasClinicas.js';
 import { crearEvolucionClinicaController } from '../controllers/evolucionClinicaController.js';
 import { crearHistoriaClinicaController } from '../controllers/historiaClinicaController.js';
 
-const MAX_ARCHIVO = 10 * 1024 * 1024;
+const MAX_ARCHIVO = 10 * 1024 * 1024; // Límite de 10 MB para estudios adjuntos
 
 const asyncRoute = fn => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
@@ -37,7 +42,7 @@ const fechaValida = valor =>
 
 
 // =====================================================
-// VALIDACIÓN DEL CONTENIDO REAL DEL ARCHIVO
+// VALIDACIÓN DE FIRMA BINARIA (MIME REAL)
 // =====================================================
 
 function tipoReal(buffer) {
@@ -45,10 +50,12 @@ function tipoReal(buffer) {
     return null;
   }
 
+  // Magic bytes para PDF
   if (buffer.subarray(0, 5).toString('ascii') === '%PDF-') {
     return { mime: 'application/pdf', ext: 'pdf' };
   }
 
+  // Magic bytes para PNG
   if (
     buffer.subarray(0, 8).equals(
       Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
@@ -57,6 +64,7 @@ function tipoReal(buffer) {
     return { mime: 'image/png', ext: 'png' };
   }
 
+  // Magic bytes para JPEG / JPG
   if (
     buffer.length >= 3 &&
     buffer[0] === 0xff &&
@@ -75,7 +83,7 @@ function tipoReal(buffer) {
 // =====================================================
 
 function crearRouterClinica(config) {
-
+  // Verificamos dependencias críticas inyectadas
   if (
     !config?.Cliente ||
     !config?.Turno ||
@@ -97,6 +105,7 @@ function crearRouterClinica(config) {
 
   const resolverPacienteId = config.resolverPacienteId;
 
+  // Definimos la ruta de almacenamiento privado (fuera del directorio público web)
   const carpetaPrivada = path.resolve(
     config.directorioPrivado ||
     process.env.TF_CLINICA_PRIVATE_DIR ||
@@ -108,7 +117,7 @@ function crearRouterClinica(config) {
     'public'
   );
 
-  // Los estudios nunca deben guardarse en public.
+  // Blindaje de seguridad: los estudios médicos jamás deben alojarse en carpetas públicas
   if (
     carpetaPrivada === directorioPublico ||
     carpetaPrivada.startsWith(directorioPublico + path.sep)
@@ -122,7 +131,7 @@ function crearRouterClinica(config) {
 
   
   // =====================================================
-  // CONFIGURACIÓN DE ARCHIVOS
+  // CONFIGURACIÓN DE MULTER (BUFFER EN MEMORIA)
   // =====================================================
 
   const subida = multer({
@@ -150,11 +159,11 @@ function crearRouterClinica(config) {
 
 
   // =====================================================
-  // IDENTIFICACIÓN DEL USUARIO
+  // MIDDLEWARE DE IDENTIFICACIÓN Y HEADERS DE SEGURIDAD
   // =====================================================
 
   router.use(asyncRoute(async (req, res, next) => {
-
+    // Cabeceras anti-cache estrictas para proteger datos médicos sensibles
     res.set('Cache-Control', 'no-store, private');
     res.set('Pragma', 'no-cache');
     res.set('X-Content-Type-Options', 'nosniff');
@@ -197,11 +206,10 @@ function crearRouterClinica(config) {
 
 
   // =====================================================
-  // SEGURIDAD DE FORMULARIOS CSRF
+  // PROTECCIÓN CSRF PARA FORMULARIOS CLÍNICOS
   // =====================================================
 
   router.use((req, res, next) => {
-
     if (!req.session) {
       return res.status(503).send(
         'Historia clínica requiere una sesión de servidor.'
@@ -220,7 +228,6 @@ function crearRouterClinica(config) {
   });
 
   function verificarCsrf(req, res, next) {
-
     const esperado = String(
       req.session?.tfClinicaCsrf || ''
     );
@@ -231,6 +238,7 @@ function crearRouterClinica(config) {
       ''
     );
 
+    // Comparación segura contra ataques de temporización (timing attack)
     if (
       esperado.length !== 64 ||
       recibido.length !== 64 ||
@@ -249,13 +257,12 @@ function crearRouterClinica(config) {
 
 
   // =====================================================
-  // HISTORIA CLÍNICA DEL PACIENTE AUTENTICADO
+  // REDIRECCIÓN A HISTORIA DEL PACIENTE AUTENTICADO
   // =====================================================
 
   router.get(
     '/mi-historia',
     asyncRoute(async (req, res) => {
-
       if (
         req.usuarioClinica.rol !== reglas.ROL_PACIENTE
       ) {
@@ -298,13 +305,12 @@ function crearRouterClinica(config) {
 
 
   // =====================================================
-  // VALIDAR IDENTIFICADOR DEL PACIENTE
+  // VALIDACIÓN DE PARÁMETRO PACIENTE ID
   // =====================================================
 
   router.use(
     '/pacientes/:pacienteId',
     (req, res, next) => {
-
       if (!esId(req.params.pacienteId)) {
         return res.status(400).send(
           'Identificador de paciente inválido.'
@@ -317,7 +323,7 @@ function crearRouterClinica(config) {
 
 
   // =====================================================
-  // FUNCIONES DE ROLES
+  // HELPERS DE ROLES Y BÚSQUEDA
   // =====================================================
 
   const usr = req => req.usuarioClinica;
@@ -337,7 +343,7 @@ function crearRouterClinica(config) {
 
 
   // =====================================================
-  // AUTORIZACIÓN DEL MÉDICO
+  // VERIFICACIÓN DE AUTORIZACIÓN MÉDICA POR TURNO
   // =====================================================
 
   async function medicoAutorizado(
@@ -346,7 +352,6 @@ function crearRouterClinica(config) {
     turnoId = null,
     { paraEscritura = false } = {}
   ) {
-
     if (!esMedico(req)) {
       return null;
     }
@@ -392,8 +397,8 @@ function crearRouterClinica(config) {
       return null;
     }
 
+    // Si se requiere para escritura, validamos restricciones de fecha (sólo turnos del día corriente o anteriores)
     if (paraEscritura) {
-
       const partes = new Intl.DateTimeFormat(
         'en-US',
         {
@@ -427,11 +432,10 @@ function crearRouterClinica(config) {
 
 
   // =====================================================
-  // AUTORIZACIÓN PARA LEER HISTORIA CLÍNICA
+  // AUTORIZACIÓN GENERAL DE LECTURA DE HISTORIA
   // =====================================================
 
   async function lecturaAutorizada(req, pacienteId) {
-
     const usuario = usr(req);
 
     if (usuario.rol === reglas.ROL_PACIENTE) {
@@ -455,7 +459,7 @@ function crearRouterClinica(config) {
 
 
   // =====================================================
-  // AUDITORÍA DE ACCIONES CLÍNICAS
+  // REGISTRO DE AUDITORÍA CLÍNICA
   // =====================================================
 
   async function auditar(
@@ -464,7 +468,6 @@ function crearRouterClinica(config) {
     accion,
     recursoId = null
   ) {
-
     await Auditoria.create({
       usuarioId: idDe(usr(req)),
       rol: usr(req).rol,
@@ -477,7 +480,7 @@ function crearRouterClinica(config) {
   }
 
 
-  // Controlador MVC: dependencias verificadas del router.
+  // Controlador MVC: dependencias verificadas del router
   const historiaClinicaController = crearHistoriaClinicaController({
     Cliente,
     lecturaAutorizada,
@@ -486,7 +489,7 @@ function crearRouterClinica(config) {
   });
 
   // =====================================================
-  // VISUALIZAR HISTORIA CLÍNICA
+  // VISUALIZACIÓN DE HISTORIA CLÍNICA
   // =====================================================
 
   router.get(
@@ -494,7 +497,7 @@ function crearRouterClinica(config) {
     asyncRoute(historiaClinicaController.verHistoria)
   );
 
-  // Controlador MVC de evoluciones y rectificaciones.
+  // Controlador MVC de evoluciones y rectificaciones médicas
   const evolucionClinicaController = crearEvolucionClinicaController({
     medicoAutorizado,
     buscarPaciente,
@@ -502,7 +505,7 @@ function crearRouterClinica(config) {
   });
 
   // =====================================================
-  // NUEVA EVOLUCIÓN MÉDICA - FORMULARIO
+  // FORMULARIO DE NUEVA EVOLUCIÓN MÉDICA
   // =====================================================
 
   router.get(
@@ -512,7 +515,7 @@ function crearRouterClinica(config) {
 
 
   // =====================================================
-  // GUARDAR EVOLUCIÓN MÉDICA
+  // PROCESAR Y GUARDAR EVOLUCIÓN MÉDICA
   // =====================================================
 
   router.post(
@@ -523,7 +526,7 @@ function crearRouterClinica(config) {
 
 
   // =====================================================
-  // FORMULARIO DE RECTIFICACIÓN MÉDICA
+  // FORMULARIO DE RECTIFICACIÓN DE NOTA CLÍNICA
   // =====================================================
 
   router.get(
@@ -533,7 +536,7 @@ function crearRouterClinica(config) {
 
 
   // =====================================================
-  // GUARDAR RECTIFICACIÓN MÉDICA
+  // PROCESAR Y GUARDAR RECTIFICACIÓN MÉDICA
   // =====================================================
 
   router.post(
@@ -544,13 +547,12 @@ function crearRouterClinica(config) {
 
 
   // =====================================================
-  // SECRETARÍA: FORMULARIO PARA ADJUNTAR ESTUDIO
+  // SECRETARÍA: VISTA FORMULARIO ADJUNTAR ESTUDIO
   // =====================================================
 
   router.get(
     '/pacientes/:pacienteId/estudios/nuevo',
     asyncRoute(async (req, res) => {
-
       if (!esSecretaria(req)) {
         return res.sendStatus(403);
       }
@@ -573,14 +575,13 @@ function crearRouterClinica(config) {
 
 
   // =====================================================
-  // SECRETARÍA: GUARDAR ESTUDIO
+  // SECRETARÍA: PROCESAR CARGA DE ESTUDIO
   // =====================================================
 
   router.post(
     '/pacientes/:pacienteId/estudios',
 
     (req, res, next) => {
-
       if (!esSecretaria(req)) {
         return res.sendStatus(403);
       }
@@ -595,7 +596,6 @@ function crearRouterClinica(config) {
     verificarCsrf,
 
     asyncRoute(async (req, res) => {
-
       const { pacienteId } = req.params;
 
       if (!esSecretaria(req)) {
@@ -627,6 +627,7 @@ function crearRouterClinica(config) {
         );
       }
 
+      // Verificamos que el contenido real del buffer coincida con un tipo permitido
       const tipo = tipoReal(req.file.buffer);
 
       if (
@@ -638,6 +639,7 @@ function crearRouterClinica(config) {
         );
       }
 
+      // Aseguramos existencia de la carpeta privada con permisos restrictivos (0700)
       await fsp.mkdir(
         carpetaPrivada,
         { recursive: true, mode: 0o700 }
@@ -651,6 +653,7 @@ function crearRouterClinica(config) {
         nombreGuardado
       );
 
+      // Guardamos el archivo físico con flag wx (falla si ya existe) y permisos 0600
       await fsp.writeFile(
         ubicacion,
         req.file.buffer,
@@ -660,7 +663,6 @@ function crearRouterClinica(config) {
       let estudio;
 
       try {
-
         estudio = await Estudio.create({
           pacienteId,
           cargadoPorUsuarioId: idDe(usr(req)),
@@ -679,9 +681,8 @@ function crearRouterClinica(config) {
             .update(req.file.buffer)
             .digest('hex')
         });
-
       } catch (err) {
-
+        // Rollback: si falla la inserción en BD, borramos el archivo físico recién creado
         await fsp.unlink(ubicacion).catch(() => {});
         throw err;
       }
@@ -693,7 +694,7 @@ function crearRouterClinica(config) {
         estudio._id
       );
 
-      // Secretaría recibe confirmación, no historia médica.
+      // Redirigimos a la confirmación de secretaría (no expone la historia clínica)
       return res.redirect(
         303,
         `/clinica/pacientes/${pacienteId}/estudios/${estudio._id}/confirmacion`
@@ -703,13 +704,12 @@ function crearRouterClinica(config) {
 
 
   // =====================================================
-  // CONFIRMACIÓN DEL ESTUDIO CARGADO
+  // PANTALLA DE CONFIRMACIÓN DE ESTUDIO CARGADO
   // =====================================================
 
   router.get(
     '/pacientes/:pacienteId/estudios/:estudioId/confirmacion',
     asyncRoute(async (req, res) => {
-
       const { pacienteId, estudioId } = req.params;
 
       if (
@@ -748,13 +748,12 @@ function crearRouterClinica(config) {
 
 
   // =====================================================
-  // DESCARGAR UN ESTUDIO
+  // DESCARGA SEGURA DE ESTUDIO CLÍNICO
   // =====================================================
 
   router.get(
     '/pacientes/:pacienteId/estudios/:estudioId/archivo',
     asyncRoute(async (req, res, next) => {
-
       const { pacienteId, estudioId } = req.params;
 
       if (!esId(estudioId)) {
@@ -776,6 +775,7 @@ function crearRouterClinica(config) {
         return res.sendStatus(404);
       }
 
+      // Validamos formato estricto del nombre guardado en disco para prevenir path traversal
       if (
         !/^[a-f0-9-]{36}\.(pdf|png|jpg)$/.test(
           estudio.nombreGuardado
@@ -800,6 +800,7 @@ function crearRouterClinica(config) {
         estudio._id
       );
 
+      // Sanitizamos el nombre original del archivo para la cabecera de descarga
       const nombreDescarga = estudio.nombreOriginal
         .replace(/[^a-zA-Z0-9_.-]/g, '_')
         .slice(0, 150) || 'estudio';
@@ -820,14 +821,13 @@ function crearRouterClinica(config) {
 
 
   // =====================================================
-  // MÉDICO: REVISAR UN ESTUDIO
+  // MÉDICO: REVISAR Y VALIDAR UN ESTUDIO
   // =====================================================
 
   router.post(
     '/pacientes/:pacienteId/estudios/:estudioId/revisar',
     verificarCsrf,
     asyncRoute(async (req, res) => {
-
       const { pacienteId, estudioId } = req.params;
 
       if (
@@ -851,6 +851,7 @@ function crearRouterClinica(config) {
         3000
       );
 
+      // Actualizamos el estado de revisión mediante operación atómica
       const estudio = await Estudio.findOneAndUpdate(
         {
           _id: estudioId,
@@ -896,11 +897,10 @@ function crearRouterClinica(config) {
 
 
   // =====================================================
-  // ERRORES DE CARGA DE ARCHIVOS
+  // MANEJADOR DE ERRORES DE MULTER / CARGA
   // =====================================================
 
   router.use((err, req, res, next) => {
-
     if (
       err instanceof multer.MulterError ||
       /Solo se admiten/.test(err.message || '')
