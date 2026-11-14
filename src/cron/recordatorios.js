@@ -10,7 +10,7 @@ let tareaProgramada = null;
 let ejecucionEnCurso = false;
 
 // ============================================================
-// CALCULAR MAÑANA EN ARGENTINA
+// CÁLCULO DE FECHA (MAÑANA EN ARGENTINA)
 // ============================================================
 
 function fechaDeMananaArgentina(ahora = new Date()) {
@@ -34,7 +34,7 @@ function fechaDeMananaArgentina(ahora = new Date()) {
 }
 
 // ============================================================
-// REGISTRAR INTENTO DE ENVÍO EN MONGODB
+// REGISTRO DE INTENTO EN MONGODB (CONTROL DE DUPLICADOS)
 // ============================================================
 
 async function registrarIntento(turnoId, fecha, canal) {
@@ -61,7 +61,7 @@ async function registrarIntento(turnoId, fecha, canal) {
 }
 
 // ============================================================
-// ACTUALIZAR RESULTADO
+// ACTUALIZACIÓN DE ESTADO DEL INTENTO
 // ============================================================
 
 async function actualizarIntento(id, estado, error = null) {
@@ -83,7 +83,7 @@ async function actualizarIntento(id, estado, error = null) {
 }
 
 // ============================================================
-// PROCESAR UN CANAL SIN DUPLICADOS AUTOMÁTICOS
+// PROCESAMIENTO POR CANAL (CORREO / WHATSAPP)
 // ============================================================
 
 async function procesarCanal(
@@ -110,7 +110,7 @@ async function procesarCanal(
   }
 
   try {
-    // Verificar que el turno siga reservado
+    // Verificamos que el turno siga reservado antes de disparar nada
     const sigueReservado = await Turno.exists({
       _id: turno._id,
       fecha,
@@ -125,7 +125,7 @@ async function procesarCanal(
 
     const resultado = await enviar();
 
-    // WhatsApp devuelve false si no pudo enviar
+    // WhatsApp devuelve false si falla el despacho
     if (canal === 'whatsapp' && resultado !== true) {
       throw new Error(
         'WhatsApp no confirmó el envío.'
@@ -170,7 +170,7 @@ async function procesarCanal(
 }
 
 // ============================================================
-// EJECUTAR RECORDATORIOS
+// EJECUCIÓN PRINCIPAL DE RECORDATORIOS
 // ============================================================
 
 export async function ejecutarRecordatorios(
@@ -202,7 +202,7 @@ export async function ejecutarRecordatorios(
       (simulacion ? ' [SIMULACIÓN]' : '')
     );
 
-    // Buscar solamente turnos reservados para mañana
+    // Buscamos únicamente turnos con estado reservado para la fecha de mañana
     const turnos = await Turno.find({
       fecha,
       estado: 'reservado'
@@ -226,7 +226,7 @@ export async function ejecutarRecordatorios(
         continue;
       }
 
-      // Simulación: no enviar ni registrar intentos
+      // Modo simulación: no disparamos envíos reales ni guardamos registros
       if (simulacion) {
         console.log(
           `🧪 Turno ${turno._id}: ` +
@@ -238,7 +238,7 @@ export async function ejecutarRecordatorios(
       }
 
       // ======================================================
-      // ENVÍO DE CORREO
+      // CANAL: CORREO ELECTRÓNICO
       // ======================================================
 
       if (cliente.email) {
@@ -258,7 +258,7 @@ export async function ejecutarRecordatorios(
       }
 
       // ======================================================
-      // ENVÍO DE WHATSAPP
+      // CANAL: WHATSAPP
       // ======================================================
 
       if (cliente.telefono) {
@@ -299,7 +299,7 @@ export async function ejecutarRecordatorios(
 }
 
 // ============================================================
-// PROGRAMAR RECORDATORIOS DIARIOS A LAS 07:00
+// CONFIGURACIÓN DE CRON JOB DIARIO (07:00 AM)
 // ============================================================
 
 export function iniciarCronJobs() {
