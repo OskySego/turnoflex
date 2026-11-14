@@ -1,9 +1,18 @@
+/**
+ * Servicio de gestión de identidades institucionales y envío de invitaciones para TurnoFlex.
+ * Maneja la validación de correos personales, generación de alias internos, tokens de activación y pasarelas de correo (Brevo / SMTP).
+ */
+
 import { randomBytes, createHash } from 'node:crypto';
 import nodemailer from 'nodemailer';
 import { Usuario } from '../models/Usuario.js';
 
 const DOMINIO_INTERNO = 'turnoflex.internal';
-const DURACION_TOKEN_MS = 24 * 60 * 60 * 1000;
+const DURACION_TOKEN_MS = 24 * 60 * 60 * 1000; // Validez de 24 horas para el token de activación
+
+// ============================================================
+// VALIDACIÓN Y VERIFICACIÓN DE MODELO
+// ============================================================
 
 export function validarCorreoPersonal(valor) {
   const correo = String(valor ?? '').trim().toLowerCase();
@@ -26,6 +35,11 @@ export function comprobarModeloUsuarioInstitucional() {
     }
   }
 }
+
+
+// ============================================================
+// GENERACIÓN DE ALIAS Y CREDENCIALES INSTITUCIONALES
+// ============================================================
 
 function aliasBase(nombre) {
   const palabras = String(nombre ?? '')
@@ -87,6 +101,11 @@ function origenPublico() {
   return url;
 }
 
+
+// ============================================================
+// ENVÍO DE CORREOS (BREVO API / SMTP DESARROLLO)
+// ============================================================
+
 async function enviarCorreoActivacion({ correoPersonal, nombre, alias, token }) {
   const link = `${origenPublico()}/accesos/activar/${token}`;
   const texto = [
@@ -105,6 +124,7 @@ async function enviarCorreoActivacion({ correoPersonal, nombre, alias, token }) 
     'TurnoFlex — una solución desarrollada por Los Claudestinos®'
   ].join('\n');
 
+  // Integración principal con API REST de Brevo (recomendada para producción en Render)
   if (process.env.BREVO_API_KEY) {
     if (!process.env.BREVO_SENDER_EMAIL) {
       throw new Error('Falta BREVO_SENDER_EMAIL.');
@@ -130,7 +150,7 @@ async function enviarCorreoActivacion({ correoPersonal, nombre, alias, token }) 
     return;
   }
 
-  // SMTP se limita a desarrollo local por defecto.
+  // Fallback SMTP local para pruebas de desarrollo (Gmail)
   if (process.env.NODE_ENV !== 'production' &&
       process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     const transporte = nodemailer.createTransport({
@@ -152,6 +172,11 @@ async function enviarCorreoActivacion({ correoPersonal, nombre, alias, token }) 
   throw new Error('Configurá BREVO_API_KEY y BREVO_SENDER_EMAIL para enviar invitaciones desde Render.');
 }
 
+
+// ============================================================
+// CREACIÓN Y REENVÍO DE CUENTAS INSTITUCIONALES
+// ============================================================
+
 export async function crearCuentaInstitucional({
   nombre, correoPersonal, rol, profesionalId = null
 }) {
@@ -171,8 +196,8 @@ export async function crearCuentaInstitucional({
   const alias = await obtenerCorreoInstitucional(nombre);
   const invitacion = generarInvitacion();
 
-  // Contraseña aleatoria que nadie conoce. No habilita el acceso;
-  // el titular establece la suya al completar la activación.
+  // Generamos una contraseña aleatoria inicial que nadie conoce. 
+  // El usuario establecerá su propia clave al completar el flujo de activación.
   const cuenta = await Usuario.create({
     nombre: String(nombre).trim(),
     email,
@@ -195,7 +220,8 @@ export async function crearCuentaInstitucional({
     });
     enviado = true;
   } catch (error) {
-    // No eliminar ni habilitar la cuenta: queda pendiente para reenviar.
+    // Si falla el envío de correo, la cuenta no se borra ni se habilita: 
+    // queda registrada como pendiente para permitir un posterior reenvío.
     console.error('Invitación no enviada:', error.message);
   }
 

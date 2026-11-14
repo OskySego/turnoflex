@@ -1,3 +1,8 @@
+/**
+ * Servicio de lógica transaccional para la administración de profesionales en TurnoFlex.
+ * Gestiona operaciones críticas con transacciones de MongoDB (bajas lógicas, reactivaciones, borrados seguros e integridad de huérfanos).
+ */
+
 import mongoose from 'mongoose';
 
 import { Profesional } from '../models/Profesional.js';
@@ -7,7 +12,7 @@ import { HistoriaClinica } from '../models/HistoriaClinica.js';
 
 
 // ============================================================
-// UTILIDADES
+// UTILIDADES Y HELPERS DE ERROR
 // ============================================================
 
 function errorHttp(mensaje, codigo = 400) {
@@ -27,7 +32,7 @@ function verificarId(id) {
 
 
 // ============================================================
-// TRANSACCIONES SEGURAS DE MONGODB
+// TRANSACCIONES SEGURAS DE MONGODB (SESSIONS)
 // ============================================================
 
 async function dentroTransaccion(operacion) {
@@ -49,12 +54,11 @@ async function dentroTransaccion(operacion) {
 
 
 // ============================================================
-// VERIFICAR REGISTROS RELACIONADOS
-//
-// No eliminar:
-// - Turnos existentes
-// - Historias clínicas
-// - Auditorías relacionadas
+// VERIFICACIÓN DE INTEGRIDAD Y RESTRICCIONES DE HISTORIAL
+// Evita eliminar profesionales que posean:
+// - Turnos registrados o vinculados
+// - Historias clínicas asociadas
+// - Registros de auditoría o modificaciones previas
 // ============================================================
 
 async function impedirBorradoConHistorial(
@@ -120,22 +124,20 @@ async function impedirBorradoConHistorial(
 
 
 // ============================================================
-// 1. DESACTIVAR PROFESIONAL
-//
-// Conserva:
-// - Perfil profesional
-// - Turnos
-// - Historias clínicas
-// - Cuenta institucional
-//
-// Bloquea el acceso y nuevas reservas.
+// 1. DESACTIVAR PROFESIONAL (BAJA LÓGICA SEGURA)
+// 
+// Conserva intactos:
+// - Perfil profesional y agenda histórica
+// - Turnos e historias clínicas
+// - Cuenta institucional asociada
+// 
+// Bloquea por completo el acceso y la generación de nuevas reservas.
 // ============================================================
 
 export async function desactivarProfesionalSeguro(id) {
   verificarId(id);
 
   return dentroTransaccion(async sesion => {
-
     const profesional = await Profesional
       .findById(id)
       .session(sesion);
@@ -154,6 +156,7 @@ export async function desactivarProfesionalSeguro(id) {
       );
     }
 
+    // Desactivamos la ficha profesional
     await Profesional.updateOne(
       {
         _id: profesional._id
@@ -169,6 +172,7 @@ export async function desactivarProfesionalSeguro(id) {
       }
     );
 
+    // Suspendemos administrativamente su cuenta de usuario vinculada
     await Usuario.updateMany(
       {
         profesional_id: profesional._id,
@@ -192,15 +196,14 @@ export async function desactivarProfesionalSeguro(id) {
 // ============================================================
 // 2. REACTIVAR PROFESIONAL
 //
-// Recupera el perfil y habilita nuevamente su cuenta.
-// No crea una cuenta institucional duplicada.
+// Restaura el perfil profesional y habilita nuevamente su cuenta de acceso,
+// evitando duplicar credenciales institucionales.
 // ============================================================
 
 export async function reactivarProfesionalSeguro(id) {
   verificarId(id);
 
   return dentroTransaccion(async sesion => {
-
     const profesional = await Profesional
       .findById(id)
       .session(sesion);
@@ -219,6 +222,7 @@ export async function reactivarProfesionalSeguro(id) {
       );
     }
 
+    // Reactivamos el perfil y limpiamos el timestamp de desactivación
     await Profesional.updateOne(
       {
         _id: profesional._id
@@ -236,6 +240,7 @@ export async function reactivarProfesionalSeguro(id) {
       }
     );
 
+    // Quitamos la suspensión administrativa del usuario asociado
     await Usuario.updateMany(
       {
         profesional_id: profesional._id,
@@ -257,21 +262,20 @@ export async function reactivarProfesionalSeguro(id) {
 
 
 // ============================================================
-// 3. ELIMINAR DEFINITIVAMENTE
+// 3. ELIMINAR PROFESIONAL DEFINITIVAMENTE
 //
-// Elimina:
+// Borra permanentemente:
 // - Perfil profesional
 // - Cuenta institucional vinculada
 //
-// No elimina registros médicos ni turnos.
-// Si existe historial, impide el borrado.
+// Restricción: No elimina registros médicos ni turnos. 
+// Si existe historial operativo asociado, se rechaza la operación.
 // ============================================================
 
 export async function eliminarProfesionalSeguro(id) {
   verificarId(id);
 
   return dentroTransaccion(async sesion => {
-
     const profesional = await Profesional
       .findById(id)
       .session(sesion);
@@ -290,7 +294,7 @@ export async function eliminarProfesionalSeguro(id) {
       .select('_id')
       .session(sesion);
 
-    // Detectar cuentas antiguas sin vínculo explícito.
+    // Detectamos preventivamente cuentas antiguas sin vínculo explícito en BD
     const cuentaAntiguaSinVinculo =
       await Usuario.exists({
         email: profesional.email,
@@ -314,6 +318,7 @@ export async function eliminarProfesionalSeguro(id) {
       );
     }
 
+    // Validamos que no existan turnos o historias clínicas previas antes de proceder
     await impedirBorradoConHistorial(
       profesional._id,
       cuentas.map(cuenta => cuenta._id),
@@ -352,13 +357,11 @@ export async function eliminarProfesionalSeguro(id) {
 // ============================================================
 // 4. LIBERAR CORREO DE UNA CUENTA HUÉRFANA
 //
-// Para recuperar un Gmail que quedó ocupado cuando
-// se eliminó el profesional pero no su usuario.
-//
-// Si no hay historial, elimina la cuenta huérfana.
-//
-// Si hay historial, archiva la identidad anterior
-// y libera el correo particular.
+// Utilidad diseñada para recuperar un correo particular (Gmail) que quedó 
+// retenido cuando se eliminó la ficha del profesional pero no su usuario.
+// 
+// - Si no hay historial asociado, borra la cuenta huérfana por completo.
+// - Si posee historial, archiva la identidad vieja y libera el email original.
 // ============================================================
 
 export async function liberarCorreoProfesionalHuerfano(
@@ -378,7 +381,6 @@ export async function liberarCorreoProfesionalHuerfano(
   }
 
   return dentroTransaccion(async sesion => {
-
     const cuenta = await Usuario.findOne({
       email,
       rol: 'profesional'
@@ -418,14 +420,12 @@ export async function liberarCorreoProfesionalHuerfano(
       );
 
     } catch (error) {
-
       if (error.statusCode !== 409) {
         throw error;
       }
 
-      // Existe historial: conservar la referencia,
-      // pero liberar el correo para futuras pruebas.
-
+      // Si existe historial médico/financiero: conservamos la referencia histórica,
+      // pero anonimizamos/archivamos el correo para permitir reusar el email original.
       const nuevoEmail =
         `archivado-${cuenta._id}@turnoflex.internal`;
 
@@ -464,7 +464,7 @@ export async function liberarCorreoProfesionalHuerfano(
       };
     }
 
-    // No hay historial: eliminar la cuenta huérfana.
+    // Si no posee historial vinculado: eliminamos físicamente la cuenta huérfana
     const borrado = await Usuario.deleteOne(
       {
         _id: cuenta._id,
