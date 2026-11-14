@@ -1,16 +1,23 @@
+/**
+ * Modelo Mongoose para el vínculo bidireccional entre pacientes en TurnoFlex.
+ * Gestiona las relaciones familiares, evita duplicados simétricos mediante clave única y soporta baja lógica.
+ */
+
 import mongoose from 'mongoose';
+
+// ============================================================
+// DEFINICIÓN DEL ESQUEMA DE RELACIÓN FAMILIAR
+// ============================================================
 
 const relacionFamiliarSchema = new mongoose.Schema(
   {
-    // Primer paciente de la relación
+    // Referencias a los dos pacientes vinculados en la relación
     pacienteA: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Cliente',
       required: true,
       index: true
     },
-
-    // Segundo paciente de la relación
     pacienteB: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Cliente',
@@ -18,9 +25,7 @@ const relacionFamiliarSchema = new mongoose.Schema(
       index: true
     },
 
-    // Cómo ve el paciente A al paciente B
-    // Ejemplo:
-    // Oscar -> Juan = "hijo/a"
+    // Rol o parentesco que tiene B respecto de A (ej: A ve a B como "hijo/a")
     parentescoAConB: {
       type: String,
       required: true,
@@ -41,9 +46,7 @@ const relacionFamiliarSchema = new mongoose.Schema(
       ]
     },
 
-    // Cómo ve el paciente B al paciente A
-    // Ejemplo:
-    // Juan -> Oscar = "padre"
+    // Rol o parentesco inverso que tiene A respecto de B (ej: B ve a A como "padre")
     parentescoBConA: {
       type: String,
       required: true,
@@ -64,8 +67,7 @@ const relacionFamiliarSchema = new mongoose.Schema(
       ]
     },
 
-    // Evita que dos pacientes sean asociados dos veces,
-    // incluso si intentamos invertir A y B.
+    // Clave compuesta normalizada para impedir vínculos duplicados aunque se invierta el orden A/B
     claveRelacion: {
       type: String,
       required: true,
@@ -73,14 +75,14 @@ const relacionFamiliarSchema = new mongoose.Schema(
       index: true
     },
 
-    // Permite desactivar una relación sin borrarla físicamente
+    // Flag de baja lógica para desactivar el vínculo sin perder historial
     activo: {
       type: Boolean,
       default: true,
       index: true
     },
 
-    // Usuario de TurnoFlex que creó la asociación
+    // Usuario del sistema que registró la vinculación
     creadoPor: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Usuario',
@@ -92,13 +94,11 @@ const relacionFamiliarSchema = new mongoose.Schema(
   }
 );
 
-
 // ============================================================
-// VALIDACIONES AUTOMÁTICAS
+// HOOKS DE VALIDACIÓN Y NORMALIZACIÓN DE CLAVE
 // ============================================================
 
 relacionFamiliarSchema.pre('validate', function () {
-
   if (!this.pacienteA || !this.pacienteB) {
     return;
   }
@@ -106,53 +106,24 @@ relacionFamiliarSchema.pre('validate', function () {
   const idA = this.pacienteA.toString();
   const idB = this.pacienteB.toString();
 
-  // Una persona no puede asociarse consigo misma.
+  // Cortamos si se intenta vincular un paciente consigo mismo
   if (idA === idB) {
-    throw new Error(
-      'Un paciente no puede ser asociado como familiar de sí mismo.'
-    );
+    throw new Error('Un paciente no puede ser asociado como familiar de sí mismo.');
   }
 
-  // Ordenamos los IDs siempre igual.
-  // Así:
-  //
-  // Oscar -> Juan
-  //
-  // y
-  //
-  // Juan -> Oscar
-  //
-  // generan exactamente la misma clave.
+  // Ordenamos los ObjectId alfabéticamente para generar siempre la misma clave simétrica
   const idsOrdenados = [idA, idB].sort();
-
-  this.claveRelacion =
-    `${idsOrdenados[0]}_${idsOrdenados[1]}`;
+  this.claveRelacion = `${idsOrdenados[0]}_${idsOrdenados[1]}`;
 });
 
-
 // ============================================================
-// ÍNDICES
-// ============================================================
-
-relacionFamiliarSchema.index({
-  pacienteA: 1,
-  activo: 1
-});
-
-relacionFamiliarSchema.index({
-  pacienteB: 1,
-  activo: 1
-});
-
-
-// ============================================================
-// MODELO
+// ÍNDICES COMPUESTOS Y EXPORTACIÓN DEL MODELO
 // ============================================================
 
-export const RelacionFamiliar =
-  mongoose.model(
-    'RelacionFamiliar',
-    relacionFamiliarSchema
-  );
+// Índices para acelerar la búsqueda de familiares activos desde cualquiera de los dos extremos
+relacionFamiliarSchema.index({ pacienteA: 1, activo: 1 });
+relacionFamiliarSchema.index({ pacienteB: 1, activo: 1 });
+
+export const RelacionFamiliar = mongoose.model('RelacionFamiliar', relacionFamiliarSchema);
 
 export default RelacionFamiliar;

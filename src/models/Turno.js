@@ -1,12 +1,18 @@
+/**
+ * Modelo Mongoose para la gestión integral de Turnos en TurnoFlex.
+ * Incluye agenda, fotografía congelada de aranceles, pasarelas de pago (Mercado Pago, transferencia y PagoFlex),
+ * seguimiento en sala de espera, historial de estados y trazabilidad completa mediante auditoría embebida.
+ */
+
 import mongoose from 'mongoose';
 
-
 // ============================================================
-// SUBDOCUMENTO DE AUDITORÍA
+// SUBDOCUMENTO DE AUDITORÍA DE MOVIMIENTOS
 // ============================================================
 
 const auditoriaSchema = new mongoose.Schema(
   {
+    // Tipo de evento registrado sobre el ciclo de vida del turno o su cobro
     accion: {
       type: String,
       enum: [
@@ -27,37 +33,34 @@ const auditoriaSchema = new mongoose.Schema(
       required: true
     },
 
+    // Usuario que ejecutó la acción y rol activo en ese momento
     realizadoPor: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Usuario',
       default: null
     },
-
     rol: {
       type: String,
       default: ''
     },
-
     detalle: {
       type: String,
       default: ''
     },
 
+    // Trazabilidad de transiciones de estado operativo y financiero
     estadoAnterior: {
       type: String,
       default: ''
     },
-
     estadoNuevo: {
       type: String,
       default: ''
     },
-
     estadoPagoAnterior: {
       type: String,
       default: ''
     },
-
     estadoPagoNuevo: {
       type: String,
       default: ''
@@ -73,38 +76,34 @@ const auditoriaSchema = new mongoose.Schema(
   }
 );
 
-
 // ============================================================
-// MODELO TURNO
+// DEFINICIÓN DEL ESQUEMA PRINCIPAL DE TURNO
 // ============================================================
 
 const turnoSchema = new mongoose.Schema(
   {
+    // Referencias principales y coordenadas de agenda
     cliente_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Cliente',
       required: true,
       index: true
     },
-
     profesional_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Profesional',
       required: true,
       index: true
     },
-
     fecha: {
       type: String,
       required: true,
       index: true
     },
-
     hora: {
       type: String,
       required: true
     },
-
     modalidad: {
       type: String,
       enum: [
@@ -115,7 +114,6 @@ const turnoSchema = new mongoose.Schema(
       ],
       default: 'regular'
     },
-
     estado: {
       type: String,
       enum: [
@@ -129,17 +127,17 @@ const turnoSchema = new mongoose.Schema(
       index: true
     },
 
+    // Configuración general de cobro y estado financiero
     metodoPago: {
       type: String,
       enum: [
         'efectivo',
         'mercadopago',
-        'pagoflex',  // históricos de demostración
+        'pagoflex', // históricos de demostración
         'transferencia'
       ],
       default: 'efectivo'
     },
-
     estadoPago: {
       type: String,
       enum: [
@@ -152,14 +150,14 @@ const turnoSchema = new mongoose.Schema(
       index: true
     },
 
-    // Compatibilidad con el webhook y turnos históricos.
+    // Se mantiene por compatibilidad con webhooks y registros históricos
     montoSena: {
       type: Number,
       min: 0,
       default: 0
     },
 
-    // Fotografía del precio en el momento de reservar (NO se recalcula después).
+    // Fotografía congelada de aranceles al momento de reservar (no se recalcula si cambian tarifas)
     tipoCobro: {
       type: String,
       enum: ['legacy', 'particular', 'copago', 'sin_cargo'],
@@ -170,12 +168,15 @@ const turnoSchema = new mongoose.Schema(
     descuentoMonto: { type: Number, min: 0, default: 0 },
     montoTotal: { type: Number, min: 0, default: null },
 
-    // PagoFlex es una transferencia real, NO un simulador.
-    // Su recepción se confirma manualmente cotejando el banco.
+    // ========================================================
+    // CANALES Y PASARELAS DE PAGO
+    // ========================================================
+
+    // Transferencia bancaria real: la acreditación se valida manualmente contra extracto
     transferencia: {
       estado: {
         type: String,
-        enum: ['sin_iniciar','iniciada','informada','acreditada','rechazada'],
+        enum: ['sin_iniciar', 'iniciada', 'informada', 'acreditada', 'rechazada'],
         default: 'sin_iniciar'
       },
       referencia: { type: String, maxlength: 80, default: '' },
@@ -184,40 +185,27 @@ const turnoSchema = new mongoose.Schema(
       verificadaPor: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', default: null }
     },
 
-
-    // ========================================================
-    // MERCADO PAGO
-    // ========================================================
-
+    // Datos de integración con Mercado Pago
     mercadoPago: {
-
       preferenceId: {
         type: String,
         default: ''
       },
-
       paymentId: {
         type: String,
         default: ''
       },
-
       status: {
         type: String,
         default: ''
       },
-
       statusDetail: {
         type: String,
         default: ''
       }
-
     },
 
-
-    // ========================================================
-    // PAGOFLEX - PAGOS DE DEMOSTRACIÓN
-    // ========================================================
-
+    // Datos de órdenes PagoFlex (entorno de demostración)
     pagoFlex: {
       ordenId: {
         type: String,
@@ -243,9 +231,8 @@ const turnoSchema = new mongoose.Schema(
       }
     },
 
-
     // ========================================================
-    // INFORMACIÓN MÉDICA
+    // OBSERVACIONES, SALA DE ESPERA Y TRAZABILIDAD
     // ========================================================
 
     notasMedicas: {
@@ -253,53 +240,35 @@ const turnoSchema = new mongoose.Schema(
       default: ''
     },
 
-
-    // ========================================================
-    // CREACIÓN
-    // ========================================================
-
     creadoPor: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Usuario',
       default: null
     },
 
-
-    // ========================================================
-    // HISTORIAL DE ESTADOS
-    //
-    // Lo conservamos para compatibilidad con lo que ya existe.
-    // ========================================================
-
-
-    // Última vez que el médico llamó a este paciente.
-    // No modifica el estado de atención ni el pago.
-    // Fecha y hora real del último llamado a consultorio.
+    // Timestamp del último llamado a consultorio (solo impacto visual en sala de espera)
     ultimoLlamadoSalaEn: {
       type: Date,
       default: null,
       index: true
     },
 
-
+    // Historial legado de cambios de estado (conservado por retrocompatibilidad)
     historialEstados: [
       {
         estadoAnterior: {
           type: String,
           default: ''
         },
-
         estadoNuevo: {
           type: String,
           default: ''
         },
-
         modificadoPor: {
           type: mongoose.Schema.Types.ObjectId,
           ref: 'Usuario',
           default: null
         },
-
         fechaModificacion: {
           type: Date,
           default: Date.now
@@ -307,28 +276,22 @@ const turnoSchema = new mongoose.Schema(
       }
     ],
 
-
-    // ========================================================
-    // AUDITORÍA GENERAL TURNOFLEX
-    // ========================================================
-
+    // Bitácora detallada de eventos operativos y financieros del turno
     auditoria: {
       type: [auditoriaSchema],
       default: []
     }
-
   },
-
   {
     timestamps: true
   }
 );
 
-
 // ============================================================
-// ÍNDICES
+// ÍNDICES COMPUESTOS Y EXPORTACIÓN DEL MODELO
 // ============================================================
 
+// Índice único para impedir doble reserva en mismo profesional, fecha y horario
 turnoSchema.index(
   {
     profesional_id: 1,
@@ -340,38 +303,11 @@ turnoSchema.index(
   }
 );
 
+// Índices de consulta frecuente para agenda diaria, historial de paciente y pantalla de sala
+turnoSchema.index({ fecha: 1, estado: 1 });
+turnoSchema.index({ cliente_id: 1, fecha: 1 });
+turnoSchema.index({ fecha: 1, ultimoLlamadoSalaEn: -1 });
 
-turnoSchema.index(
-  {
-    fecha: 1,
-    estado: 1
-  }
-);
-
-
-turnoSchema.index(
-  {
-    cliente_id: 1,
-    fecha: 1
-  }
-);
-
-
-turnoSchema.index({
-  fecha: 1,
-  ultimoLlamadoSalaEn: -1
-});
-
-
-// ============================================================
-// MODELO
-// ============================================================
-
-export const Turno =
-  mongoose.model(
-    'Turno',
-    turnoSchema
-  );
-
+export const Turno = mongoose.model('Turno', turnoSchema);
 
 export default Turno;
