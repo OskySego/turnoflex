@@ -1,11 +1,32 @@
+//- ============================================================
+//- VISTA DE CUENTA INSTITUCIONAL E INVITACIÓN - TURNOFLEX
+//- ============================================================
+//- Plantilla Pug que muestra el resumen de la cuenta institucional recién
+//- creada. Acá detallo los datos de acceso generados, informo si la
+//- invitación por correo salió bien y habilito el reenvío si quedó pendiente.
+
 extends layout
 
 block content
+
+  //- ============================================================
+  //- 1. CONTENEDOR PRINCIPAL Y TARJETA DE RESUMEN
+  //- ============================================================
+
   .container.py-5
+
     .row.justify-content-center
+
       .col-lg-8
+
         .card.border-0.shadow-sm.rounded-4
+
           .card-body.p-4.p-md-5
+
+
+            //- ====================================================
+            //- DATOS DE LA CUENTA INSTITUCIONAL
+            //- ====================================================
 
             h1.h3.fw-bold.mb-3
               | Cuenta institucional de TurnoFlex
@@ -26,14 +47,23 @@ block content
               strong Correo particular:
               |  #{cuenta.email}
 
+
+            //- ====================================================
+            //- ESTADO DE ENVÍO DE LA INVITACIÓN
+            //- ====================================================
+
+            //- Si el correo se envió correctamente, muestro las instrucciones de activación
             if enviado
+
               .alert.alert-success
                 strong Invitación enviada
                 p.mb-0.mt-2
                   | El usuario debe abrir el correo
                   | recibido y activar su cuenta.
 
+            //- Si falló el envío, aviso el problema y habilito el botón de reenvío
             else
+
               .alert.alert-warning
                 strong Invitación pendiente
                 p.mb-0.mt-2
@@ -48,6 +78,11 @@ block content
               )
                 button.btn.btn-warning(type='submit')
                   | Reenviar invitación
+
+
+            //- ====================================================
+            //- NAVEGACIÓN DE RETORNO
+            //- ====================================================
 
             a.btn.btn-outline-secondary(href='/')
               | Volver al inicio

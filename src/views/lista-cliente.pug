@@ -1,6 +1,17 @@
+//- ============================================================
+//- VISTA DE LISTADO DE PACIENTES - TURNOFLEX
+//- ============================================================
+//- Plantilla Pug que renderiza el directorio completo de pacientes.
+//- Acá organizo la cabecera, el buscador instantáneo, los filtros por tipo
+//- de cobertura médica y la grilla de tarjetas con acceso rápido a cada ficha.
+
 extends layout
 
 block content
+
+  //- ============================================================
+  //- 1. ESTILOS CSS EXCLUSIVOS DEL LISTADO DE PACIENTES
+  //- ============================================================
 
   style.
     .tf-pacientes-header {
@@ -143,7 +154,7 @@ block content
 
 
   //- ============================================================
-  //- CABECERA
+  //- 2. CABECERA VISUAL (HERO) Y ACCIONES SUPERIORES
   //- ============================================================
 
   .tf-pacientes-header.tfu-hero
@@ -176,6 +187,7 @@ block content
         )
           | Inicio
 
+        //- Habilito el botón de alta solo para administración y recepción
         if user && (user.rol === 'admin' || user.rol === 'personal')
 
           a.btn.text-white.rounded-3(
@@ -186,7 +198,7 @@ block content
 
 
   //- ============================================================
-  //- BUSCADOR Y FILTROS
+  //- 3. BARRA DE BÚSQUEDA Y FILTROS POR COBERTURA
   //- ============================================================
 
   if clientes && clientes.length > 0
@@ -236,7 +248,7 @@ block content
 
 
   //- ============================================================
-  //- SIN PACIENTES
+  //- 4. ESTADO VACÍO (SIN PACIENTES REGISTRADOS)
   //- ============================================================
 
   if !clientes || clientes.length === 0
@@ -263,7 +275,7 @@ block content
 
 
   //- ============================================================
-  //- GRILLA DE PACIENTES
+  //- 5. GRILLA DINÁMICA DE TARJETAS DE PACIENTES
   //- ============================================================
 
   else
@@ -272,6 +284,7 @@ block content
 
       each cliente in clientes
 
+        //- Preparo los datos derivados, iniciales y código corto de cada paciente
         - const clienteId = cliente._id || cliente.id
         - const nombre = cliente.nombre || 'Paciente'
         - const partesNombre = nombre.split(' ').filter(Boolean)
@@ -295,9 +308,9 @@ block content
             .card-body.p-4.d-flex.flex-column
 
 
-              //- ==================================================
-              //- IDENTIDAD
-              //- ==================================================
+              //- --------------------------------------------------
+              //- BLOQUE: IDENTIDAD Y CÓDIGO DE PACIENTE
+              //- --------------------------------------------------
 
               .d-flex.align-items-center.gap-3.mb-4
 
@@ -316,9 +329,9 @@ block content
                     = cliente.email || 'Sin email registrado'
 
 
-              //- ==================================================
-              //- DNI + LOCALIDAD
-              //- ==================================================
+              //- --------------------------------------------------
+              //- BLOQUE: DNI Y LOCALIDAD
+              //- --------------------------------------------------
 
               .row.g-2.mb-3
 
@@ -344,9 +357,9 @@ block content
                       = localidad || 'N/D'
 
 
-              //- ==================================================
-              //- CONTACTO
-              //- ==================================================
+              //- --------------------------------------------------
+              //- BLOQUE: DATOS DE CONTACTO
+              //- --------------------------------------------------
 
               .mb-3
 
@@ -368,9 +381,9 @@ block content
                     = cliente.email || 'N/D'
 
 
-              //- ==================================================
-              //- COBERTURA
-              //- ==================================================
+              //- --------------------------------------------------
+              //- BLOQUE: COBERTURA MÉDICA
+              //- --------------------------------------------------
 
               .mb-3
 
@@ -398,9 +411,9 @@ block content
                     | Particular
 
 
-              //- ==================================================
-              //- GRUPO FAMILIAR
-              //- ==================================================
+              //- --------------------------------------------------
+              //- BLOQUE: INDICADOR DE GRUPO FAMILIAR
+              //- --------------------------------------------------
 
               if familiares > 0
 
@@ -410,9 +423,9 @@ block content
                     | 👥 #{familiares} familiar#{familiares === 1 ? '' : 'es'} registrado#{familiares === 1 ? '' : 's'}
 
 
-              //- ==================================================
-              //- ACCIONES
-              //- ==================================================
+              //- --------------------------------------------------
+              //- BLOQUE: ACCIONES DE LA TARJETA
+              //- --------------------------------------------------
 
               .mt-auto.pt-2
 
@@ -431,9 +444,9 @@ block content
                       | + Nuevo turno
 
 
-    //- ============================================================
-    //- SIN RESULTADOS DE BÚSQUEDA
-    //- ============================================================
+    //- ==========================================================
+    //- MENSAJE DE BÚSQUEDA SIN COINCIDENCIAS
+    //- ==========================================================
 
     #sinResultados.tf-empty-search
 
@@ -448,7 +461,7 @@ block content
 
 
   //- ============================================================
-  //- BÚSQUEDA Y FILTROS
+  //- 6. SCRIPT CLIENT-SIDE: BÚSQUEDA Y FILTRADO EN TIEMPO REAL
   //- ============================================================
 
   script.
@@ -462,11 +475,10 @@ block content
           document.querySelectorAll('.paciente-wrapper')
         );
 
-      // Seleccionar únicamente los botones de filtro.
-      // No incluir las tarjetas de pacientes.
-
+      // Selecciono únicamente los botones de filtro para no incluir las tarjetas de pacientes
       const botones =
-        document.querySelectorAll('button.tf-filter-btn[data-cobertura]'
+        document.querySelectorAll(
+          'button.tf-filter-btn[data-cobertura]'
         );
 
       const sinResultados =
@@ -476,6 +488,7 @@ block content
         'todos';
 
 
+      // Evalúo cada tarjeta combinando el texto buscado y la cobertura seleccionada
       function aplicarFiltros() {
 
         const texto =
@@ -522,6 +535,7 @@ block content
         });
 
 
+        // Muestro el aviso de sin resultados si ninguna tarjeta quedó visible
         if (sinResultados) {
 
           sinResultados.style.display =
@@ -534,6 +548,7 @@ block content
       }
 
 
+      // Escucho la escritura en el campo de búsqueda
       if (buscador) {
 
         buscador.addEventListener(
@@ -544,6 +559,7 @@ block content
       }
 
 
+      // Actualizo los estilos de los botones de filtro y disparo el filtrado
       botones.forEach(function (boton) {
 
         boton.addEventListener(

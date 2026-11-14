@@ -1,7 +1,16 @@
+//- ============================================================
+//- VISTA DE BIENVENIDA / PORTADA PÚBLica - TURNOFLEX
+//- ============================================================
+//- Plantilla Pug que renderiza la landing page institucional de TurnoFlex,
+//- incorporando portada principal, demostración visual de la plataforma, 
+//- beneficios, paso a paso, perfiles, preguntas frecuentes y llamado a la acción.
 
 doctype html
 html(lang='es' data-tf-theme='dark')
   head
+    //- ========================================================
+    //- CONFIGURACIÓN DE METADATOS Y RECURSOS ESTÁTICOS
+    //- ========================================================
     meta(charset='UTF-8')
     meta(name='viewport' content='width=device-width, initial-scale=1.0')
     meta(name='theme-color' content='#0B1535')
@@ -16,23 +25,25 @@ html(lang='es' data-tf-theme='dark')
     link(rel='stylesheet' href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css')
 
   body.tfp-page.tfp-welcome
+    //- Enlace de accesibilidad para saltar directo al contenido principal
     a.tfp-skip(href='#contenido') Saltar al contenido
 
+    //- Incluimos la cabecera pública configurada para contexto de bienvenida
     - const tfHeaderContext = 'bienvenida'
     include partials/header-public
 
     main#contenido
 
-      //- ===============================================
-      //- PORTADA PRINCIPAL
-      //- ===============================================
+      //- ====================================================
+      //- PORTADA PRINCIPAL (HERO SECTION)
+      //- ====================================================
       section.tfp-hero(aria-labelledby='titulo-bienvenida')
         .tfp-glow.tfp-glow-one(aria-hidden='true')
         .tfp-glow.tfp-glow-two(aria-hidden='true')
 
         .tfp-shell.tfp-hero-grid
 
-          //- Presentación de TurnoFlex
+          //- Presentación institucional de TurnoFlex
           .tfp-hero-copy
             span.tfp-eyebrow
               i.bi.bi-stars(aria-hidden='true')
@@ -63,7 +74,7 @@ html(lang='es' data-tf-theme='dark')
                 i.bi.bi-check-circle-fill(aria-hidden='true')
                 |  Recordatorios integrados
 
-          //- Panel ilustrativo, sin carteles flotantes
+          //- Panel ilustrativo de demostración de interfaz
           .tfp-visual
             .tfp-orb.tfp-orb-top(aria-hidden='true')
             .tfp-orb.tfp-orb-bottom(aria-hidden='true')
@@ -183,9 +194,9 @@ html(lang='es' data-tf-theme='dark')
               strong Acceso protegido
               small Sesiones por usuario
 
-      //- ===============================================
-      //- BENEFICIOS DE LA PLATAFORMA
-      //- ===============================================
+      //- ====================================================
+      //- SECCIÓN: BENEFICIOS DE LA PLATAFORMA
+      //- ====================================================
       section#beneficios.tfp-section(aria-labelledby='beneficios-titulo')
         .tfp-shell
           .tfp-section-head
@@ -215,9 +226,9 @@ html(lang='es' data-tf-theme='dark')
               p Integración con WhatsApp para acompañar la comunicación sobre los turnos.
               span Más cerca del paciente
 
-      //- ===============================================
-      //- COMO FUNCIONA
-      //- ===============================================
+      //- ====================================================
+      //- SECCIÓN: CÓMO FUNCIONA
+      //- ====================================================
       section#como-funciona.tfp-section.tfp-section-tinted(aria-labelledby='pasos-titulo')
         .tfp-shell
           .tfp-section-head
@@ -244,9 +255,9 @@ html(lang='es' data-tf-theme='dark')
               h3 Consultá tu reserva
               p Revisá el estado y la información de tu turno.
 
-      //- ===============================================
-      //- PERFILES DE USUARIO
-      //- ===============================================
+      //- ====================================================
+      //- SECCIÓN: PERFILES DE USUARIO
+      //- ====================================================
       section#perfiles.tfp-section(aria-labelledby='perfiles-titulo')
         .tfp-shell
           .tfp-section-head
@@ -274,9 +285,9 @@ html(lang='es' data-tf-theme='dark')
               strong Administración
               small Gestión integral de la plataforma
 
-      //- ===============================================
-      //- PREGUNTAS FRECUENTES
-      //- ===============================================
+      //- ====================================================
+      //- SECCIÓN: PREGUNTAS FRECUENTES
+      //- ====================================================
       section#preguntas.tfp-section.tfp-section-tinted(aria-labelledby='preguntas-titulo')
         .tfp-shell.tfp-faq-grid
           .tfp-faq-intro
@@ -303,9 +314,9 @@ html(lang='es' data-tf-theme='dark')
               summary ¿Puedo ingresar desde el celular?
               p Sí, el diseño se adapta a pantallas de distintos tamaños.
 
-      //- ===============================================
-      //- LLAMADO FINAL A LA ACCION
-      //- ===============================================
+      //- ====================================================
+      //- LLAMADO FINAL A LA ACCIÓN (BOTTOM CTA)
+      //- ====================================================
       section.tfp-bottom-cta(aria-labelledby='cta-titulo')
         .tfp-shell.tfp-cta-panel
           div
@@ -318,4 +329,5 @@ html(lang='es' data-tf-theme='dark')
               i.bi.bi-arrow-right(aria-hidden='true')
             a.tfp-btn.tfp-btn-outline(href='/auth/login') Ya tengo cuenta
 
+    //- Incluimos el pie de página institucional compartido
     include partials/footer

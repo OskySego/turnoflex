@@ -1,15 +1,32 @@
+//- ============================================================
+//- PANEL Y AGENDA MÉDICA DEL PROFESIONAL - TURNOFLEX
+//- ============================================================
+//- Plantilla Pug para el espacio privado de cada profesional.
+//- Acá calculo las métricas del día en horario de Buenos Aires,
+//- muestro el próximo paciente, el avance de la jornada y la agenda
+//- interactiva con filtros, historia clínica, llamado y cambio de estado.
+
 extends layout
 
 block content
-  //- TurnoFlex • Centro médico v2. Usa el controlador y los permisos existentes.
+
+  //- ============================================================
+  //- 1. PREPARACIÓN DE DATOS Y HELPERS DE SERVIDOR
+  //- ============================================================
+
+  //- Normalizo los datos del profesional y calculo sus iniciales para el avatar
   - const medico = (typeof profesional !== 'undefined' && profesional) ? profesional : {}
   - const agenda = (typeof turnos !== 'undefined' && Array.isArray(turnos)) ? turnos : []
   - const nombreMedico = medico.nombre || 'Profesional'
   - const iniciales = nombreMedico.split(/\s+/).filter(Boolean).slice(0,2).map(p => p.charAt(0).toUpperCase()).join('') || 'MD'
+
+  //- Obtengo la fecha y hora actual en zona horaria de Buenos Aires
   - const partesAhora = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Argentina/Buenos_Aires', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23' }).formatToParts(new Date())
   - const v = tipo => partesAhora.find(p => p.type === tipo)?.value || ''
   - const hoy = v('year') + '-' + v('month') + '-' + v('day')
   - const horaActual = v('hour') + ':' + v('minute')
+
+  //- Filtro los turnos de hoy por estado y ordeno los próximos pendientes
   - const turnoDeHoy = agenda.filter(t => t && t.fecha === hoy)
   - const reservadosHoy = turnoDeHoy.filter(t => t.estado === 'reservado')
   - const atendidosHoy = turnoDeHoy.filter(t => t.estado === 'atendido')
@@ -17,9 +34,18 @@ block content
   - const proximo = futuros.length ? futuros[0] : null
   - const proximoPaciente = proximo ? (proximo.cliente_id || {}) : {}
   - const nombreCorto = nombreMedico.split(' ')[0]
+
+  //- Helper para formatear fechas YYYY-MM-DD a texto corto legible
   - const fechaBonita = value => { if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return value || 'Sin fecha'; const [y,m,d] = value.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('es-AR', { weekday: 'short', day:'2-digit', month:'short' }); }
 
+
+  //- ============================================================
+  //- 2. CONTENEDOR PRINCIPAL Y CABECERA (HERO)
+  //- ============================================================
+
   .md-shell.tfu-page#medicoPanel(data-hoy=hoy)
+
+    //- Muestro aviso de confirmación si viene alguna notificación desde el controlador
     if typeof mensajeExito !== 'undefined' && mensajeExito
       .md-notice(role='status')
         | ✓ #{mensajeExito}
@@ -39,6 +65,8 @@ block content
               strong= nombreMedico
               small
                 | #{medico.especialidad || 'Especialidad no informada'} · #{medico.sede || 'Sede no especificada'}
+
+        //- Reloj en tiempo real sincronizado con la hora local de Buenos Aires
         .md-clock(aria-label='Hora local de Buenos Aires')
           .md-clock-label
             | Hora local · Buenos Aires
@@ -49,6 +77,11 @@ block content
           .md-clock-live
             span.md-live-dot(aria-hidden='true')
             | Agenda conectada
+
+
+    //- ==========================================================
+    //- 3. RESUMEN ESTADÍSTICO DE LA JORNADA
+    //- ==========================================================
 
     section(aria-labelledby='medicoResumenTitulo')
       .md-section
@@ -61,6 +94,7 @@ block content
             | Cifras reales de tus turnos asignados para la fecha actual.
         a.md-link(href='#medicoAgenda')
           | Ver agenda de turnos ↓
+
       .row.g-3
         .col-6.col-xl-3
           .md-stat.tfu-card(style='--md-accent:#2861f2;--md-tint:rgba(40,97,242,.11)')
@@ -72,6 +106,7 @@ block content
             .md-stat-number= turnoDeHoy.length
             .md-stat-label
               | Turnos asignados
+
         .col-6.col-xl-3
           .md-stat.tfu-card(style='--md-accent:#8b5cf6;--md-tint:rgba(139,92,246,.11)')
             .md-stat-top
@@ -82,6 +117,7 @@ block content
             .md-stat-number= reservadosHoy.length
             .md-stat-label
               | Reservados de hoy
+
         .col-6.col-xl-3
           .md-stat.tfu-card(style='--md-accent:#0f9f73;--md-tint:rgba(15,159,115,.11)')
             .md-stat-top
@@ -92,6 +128,7 @@ block content
             .md-stat-number= atendidosHoy.length
             .md-stat-label
               | Atendidos hoy
+
         .col-6.col-xl-3
           .md-stat.tfu-card(style='--md-accent:#d99037;--md-tint:rgba(217,144,55,.11)')
             .md-stat-top
@@ -102,6 +139,11 @@ block content
             .md-stat-number= futuros.length
             .md-stat-label
               | Reservados desde ahora
+
+
+    //- ==========================================================
+    //- 4. TARJETAS DE PRÓXIMO PACIENTE Y AVANCE DEL DÍA
+    //- ==========================================================
 
     .row.g-3.mt-1
       .col-lg-6
@@ -124,6 +166,7 @@ block content
           else
             p.md-next-empty
               | No hay próximos turnos reservados. Tu agenda está al día.
+
       .col-lg-6
         section.md-mini(aria-labelledby='medicoAvanceTitulo')
           .md-mini-label
@@ -141,6 +184,11 @@ block content
           p.md-sub.mt-3
             | El avance se calcula sobre el total de turnos de hoy, incluidos los cancelados.
 
+
+    //- ==========================================================
+    //- 5. AGENDA MÉDICA INTERACTIVA Y LISTADO DE TURNOS
+    //- ==========================================================
+
     section#medicoAgenda(aria-labelledby='medicoAgendaTitulo')
       .md-section
         div
@@ -154,6 +202,8 @@ block content
           | ↻ Actualizar agenda
 
       .md-panel.tfu-card
+
+        //- Barra de filtros por período, búsqueda, estado y fecha
         .md-panel-top
           .d-flex.justify-content-between.align-items-center.gap-3.flex-wrap.mb-3
             .md-mode(role='group' aria-label='Período de agenda')
@@ -165,11 +215,13 @@ block content
                 | Todos
             .md-count#medicoConteo(aria-live='polite')
               | Cargando turnos...
+
           .row.g-3
             .col-lg-5
               label.md-field-label(for='medicoBuscar')
                 | Buscar paciente
               input.md-input#medicoBuscar(type='search' placeholder='Nombre o DNI' autocomplete='off')
+
             .col-sm-6.col-lg-3
               label.md-field-label(for='medicoFiltroEstado')
                 | Estado
@@ -186,13 +238,16 @@ block content
                   | Pendiente de pago
                 option(value='En Espera')
                   | En espera
+
             .col-sm-6.col-lg-4
               label.md-field-label(for='medicoFiltroFecha')
                 | Seleccionar fecha
               input.md-input#medicoFiltroFecha(type='date' value=hoy)
 
+        //- Listado de tarjetas de turnos asignados
         #medicoListado
           each turno in agenda
+            //- Preparo las etiquetas de estado, presencia y texto indexado de búsqueda
             - const paciente = turno && turno.cliente_id ? turno.cliente_id : {}
             - const estado = turno && turno.estado ? turno.estado : 'reservado'
             - const nombrePaciente = paciente.nombre || 'Paciente sin nombre'
@@ -201,12 +256,16 @@ block content
             - const nombreEstado = estado === 'reservado' ? 'Reservado' : estado === 'atendido' ? 'Atendido' : estado === 'cancelado' ? 'Cancelado' : estado === 'pendiente_pago' ? 'Pendiente de pago' : estado === 'En Espera' ? 'En espera' : estado
             - const claseEstado = estado === 'reservado' ? 'md-badge-reservado' : estado === 'atendido' ? 'md-badge-atendido' : estado === 'cancelado' ? 'md-badge-cancelado' : 'md-badge-otro'
             - const busqueda = (nombrePaciente + ' ' + (paciente.dni || '')).toLocaleLowerCase('es-AR')
+
             article.md-appointment.medico-turno(data-fecha=turno.fecha || '' data-hora=turno.hora || '' data-estado=estado data-busqueda=busqueda)
+              //- Horario y fecha del turno
               .md-when
                 strong
                   | #{turno.hora || '--:--'}
                 small
                   | #{fechaBonita(turno.fecha)}
+
+              //- Datos del paciente, modalidad y estado de presencia en sala
               .md-patient
                 h3= nombrePaciente
                 .md-detail
@@ -217,8 +276,8 @@ block content
                     | #{modalidad === 'telemedicina' ? 'Telemedicina' : modalidad === 'sobreturno' ? 'Sobreturno' : 'En consultorio'}
                 .mt-2
                   span.md-badge(class=claseEstado)
-                    = nombreEstado  
-                  //- Distingo la llegada de la atención médica.
+                    = nombreEstado
+                  //- Distingo la llegada a sala de espera de la atención médica
                   if estado !== 'atendido' && estado !== 'cancelado'
                     .mt-2
                       if pacientePresente
@@ -228,9 +287,9 @@ block content
                         span.badge.bg-secondary
                           | ◷ Aún no llegó
 
+              //- Controles clínicos y de gestión del turno
               .md-controls
-                //- Enlaces visibles solo en turnos no cancelados, con paciente cargado.
-                //- Las rutas vuelven a validar identidad médica y asignación en MongoDB.
+                //- Acceso a historia clínica y evolución para turnos activos con paciente válido
                 if paciente && paciente._id && turno._id && !['cancelado', 'ausente'].includes(String(estado).toLowerCase())
                   a.md-btn.md-btn-clinica(
                     href=`/clinica/pacientes/${paciente._id}/historia`
@@ -243,7 +302,8 @@ block content
                       aria-label=`Registrar evolución de ${nombrePaciente}`
                     )
                       | + Evolución
-                //- Llamado a la sala de espera, solo si el turno es reservado y la fecha es hoy.
+
+                //- Llamado a sala de espera para turnos del día en estado reservado o en espera
                 if turno._id && turno.fecha === hoy && ['En espera', 'reservado'].includes(estado)
                   form.medico-llamar(
                     method="POST"
@@ -255,10 +315,10 @@ block content
                     button.md-btn-llamar(type="submit")
                       span.md-btn-llamar-icon(aria-hidden="true") 📢
                       span Llamar paciente
-                
-                if estado === 'reservado'
 
-                  //- Llamo únicamente a pacientes con llegada confirmada.
+                //- Acciones disponibles mientras el turno sigue reservado
+                if estado === 'reservado'
+                  //- Llamo al paciente cuando recepción ya confirmó su llegada
                   if pacientePresente && String(turno.fecha) === hoy
                     form(
                       method="POST"
@@ -270,7 +330,7 @@ block content
                       button.md-btn.md-btn-clinica(type="submit")
                         | 📢 Llamar paciente
 
-                  //- Registro la atención desde la agenda médica.
+                  //- Habilito marcar como atendido solo si el paciente está presente
                   if pacientePresente
                     form.medico-atendido(
                       method="POST"
@@ -281,7 +341,6 @@ block content
 
                       button.md-btn.md-btn-yes(type="submit")
                         | ✓ Atendido
-
                   else
                     span.md-muted(style="font-size:.76rem")
                       | Esperando confirmación de recepción
@@ -300,6 +359,7 @@ block content
                   span.md-muted(style="font-size:.76rem")
                     | Sin acciones pendientes
 
+        //- Estado vacío cuando los filtros no arrojan coincidencias
         .md-empty#medicoSinResultados(style='display:none' role='status')
           .md-empty-icon(aria-hidden='true')
             | ◫
@@ -311,10 +371,16 @@ block content
     p.md-action-note.mt-3
       | Tu agenda es privada: solo podés consultar y actualizar los turnos que te corresponden. Las cancelaciones requieren confirmación.
 
+
+  //- ============================================================
+  //- 6. LÓGICA JAVASCRIPT DEL PANEL MÉDICO
+  //- ============================================================
+
   script.
     document.addEventListener('DOMContentLoaded', function () {
       var panel = document.getElementById('medicoPanel');
       if (!panel) return;
+
       var hoy = panel.dataset.hoy || '';
       var items = Array.from(document.querySelectorAll('.medico-turno'));
       var botones = Array.from(document.querySelectorAll('.md-mode-btn'));
@@ -326,33 +392,41 @@ block content
       var refrescar = document.getElementById('medicoActualizar');
       var modo = 'hoy';
 
-      // Actualizo la agenda cuando recepción confirma una llegada.
+      // ========================================================
+      // SINCRONIZACIÓN EN TIEMPO REAL POR SOCKET.IO
+      // ========================================================
+
+      // Recargo la vista cuando recepción marca una llegada, salvo que esté escribiendo en un filtro
       if (typeof window.io === 'function') {
         const socket = window.io();
 
         socket.on('presencia_actualizada', function (datos) {
           if (datos?.fecha !== hoy) return;
 
-        // Si estoy escribiendo en un filtro, evito interrumpirme.
-        const activo = document.activeElement;
-        const editando = activo?.matches?.('input, select, textarea');
+          const activo = document.activeElement;
+          const editando = activo?.matches?.('input, select, textarea');
 
-        if (editando) {
-          if (refrescar) {
-            refrescar.textContent = '↻ Hay cambios · Actualizar agenda';
+          if (editando) {
+            if (refrescar) {
+              refrescar.textContent = '↻ Hay cambios · Actualizar agenda';
+            }
+            return;
           }
-          return;
-        }
 
-        window.location.reload();
+          window.location.reload();
         });
       }
+
+      // ========================================================
+      // RELOJ Y FECHA LOCAL DE BUENOS AIRES
+      // ========================================================
 
       function ahoraAR() {
         var partes = new Intl.DateTimeFormat('en-US', { timeZone:'America/Argentina/Buenos_Aires', year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23' }).formatToParts(new Date());
         var dato = function(t) { return (partes.find(function(p){return p.type === t;}) || {}).value || ''; };
         return { fecha:dato('year')+'-'+dato('month')+'-'+dato('day'), hora:dato('hour')+':'+dato('minute') };
       }
+
       function actualizarReloj() {
         var reloj = document.getElementById('medicoReloj');
         var fechaTexto = document.getElementById('medicoFecha');
@@ -360,6 +434,11 @@ block content
         if (reloj) reloj.textContent = new Intl.DateTimeFormat('es-AR', { timeZone:'America/Argentina/Buenos_Aires', hour:'2-digit',minute:'2-digit',hour12:false }).format(d);
         if (fechaTexto) fechaTexto.textContent = new Intl.DateTimeFormat('es-AR', { timeZone:'America/Argentina/Buenos_Aires', weekday:'long',day:'numeric',month:'long',year:'numeric' }).format(d);
       }
+
+      // ========================================================
+      // FILTRADO DE TURNOS EN AGENDA
+      // ========================================================
+
       function seleccionarModo(nuevo) {
         modo = nuevo;
         botones.forEach(function(b) {
@@ -369,12 +448,14 @@ block content
         });
         filtrar();
       }
+
       function filtrar() {
         var texto = (buscar.value || '').trim().toLocaleLowerCase('es-AR');
         var estadoActual = estado.value;
         var fechaActual = fecha.value;
         var ahora = ahoraAR();
         var n = 0;
+
         items.forEach(function(item) {
           var f = item.dataset.fecha || '';
           var h = item.dataset.hora || '';
@@ -385,24 +466,44 @@ block content
           item.style.display = visible ? '' : 'none';
           if (visible) n++;
         });
+
         conteo.textContent = n + (n === 1 ? ' turno encontrado' : ' turnos encontrados');
         vacio.style.display = n ? 'none' : 'block';
       }
-      botones.forEach(function(b) { b.addEventListener('click',function() { seleccionarModo(b.dataset.modo); }); });
+
+      // ========================================================
+      // EVENTOS DE INTERFAZ Y CONFIRMACIONES
+      // ========================================================
+
+      botones.forEach(function(b) {
+        b.addEventListener('click',function() {
+          seleccionarModo(b.dataset.modo);
+        });
+      });
+
       buscar.addEventListener('input',filtrar);
       estado.addEventListener('change',filtrar);
-      fecha.addEventListener('change',function() { seleccionarModo('fecha'); });
-      refrescar.addEventListener('click',function() { window.location.reload(); });
+      fecha.addEventListener('change',function() {
+        seleccionarModo('fecha');
+      });
+      refrescar.addEventListener('click',function() {
+        window.location.reload();
+      });
+
+      // Pido confirmación antes de marcar como atendido o cancelar un turno
       document.querySelectorAll('.medico-atendido').forEach(function(form) {
         form.addEventListener('submit',function(ev) {
           if (!window.confirm('¿Confirmás que el paciente fue atendido?')) ev.preventDefault();
         });
       });
+
       document.querySelectorAll('.medico-cancelar').forEach(function(form) {
         form.addEventListener('submit',function(ev) {
           if (!window.confirm('¿Querés cancelar este turno? Esta acción afectará la agenda del paciente.')) ev.preventDefault();
         });
       });
+
+      // Inicializo el reloj, el intervalo de actualización y el filtro por defecto
       actualizarReloj();
       window.setInterval(actualizarReloj, 60000);
       filtrar();

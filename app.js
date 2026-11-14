@@ -1,182 +1,80 @@
+// ============================================================
+// SERVIDOR PRINCIPAL - TURNOFLEX
+// ============================================================
+// Punto de entrada de la aplicación Express + Socket.IO.
+// Acá configuro la conexión a MongoDB, la seguridad HTTP, las sesiones
+// compartidas en tiempo real, los webhooks públicos, la sala de espera
+// protegida, el enrutamiento por roles y el manejo centralizado de errores.
+
 import path from 'path';
-
 import express from 'express';
-
 import { createServer } from 'http';
-
 import { Server } from 'socket.io';
-
 import helmet from 'helmet';
-
+import session from 'express-session';
 import 'dotenv/config';
 
-import session from 'express-session';
+// ============================================================
+// 1. IMPORTACIÓN DE CONFIGURACIÓN, SERVICIOS Y MODELOS
+// ============================================================
 
+import { connectDB } from './src/config/db.js';
+import { iniciarCronJobs } from './src/cron/recordatorios.js';
+import { iniciarWhatsApp } from './src/utils/whatsapp.js';
+import { Cliente } from './src/models/Cliente.js';
+import { Turno } from './src/models/Turno.js';
+
+// Controladores y middlewares
 import TurnoController from './src/controllers/turnoController.js';
-
-import accesosInstitucionalesRoutes from './src/routes/accesosInstitucionalesRoutes.js';
-
-import { verificarCuentaHabilitada } from './src/middlewares/verificarCuentaHabilitada.js';
-
 import { getUltimosLlamadosSalaEspera } from './src/controllers/salaEsperaHistorialController.js';
+import { asegurarAutenticacion } from './src/middlewares/authMiddleware.js';
+import { verificarCuentaHabilitada } from './src/middlewares/verificarCuentaHabilitada.js';
+import { errorHandler } from './src/middlewares/errorHandler.js';
 
-// ============================================================
-// CONFIGURACIÓN
-// ============================================================
-
-import {
-  connectDB
-} from './src/config/db.js';
-
-
-// ============================================================
-// RUTAS
-// ============================================================
-
-import authRoutes
-  from './src/routes/authRoutes.js';
-
-import turnoRoutes
-  from './src/routes/turnoRoutes.js';
-
-import profesionalRoutes
-  from './src/routes/profesionalRoutes.js';
-
-import clienteRoutes
-  from './src/routes/clienteRoutes.js';
-
-import dashboardRoutes
-  from './src/routes/dashboardRoutes.js';
-
-import profesionalDashboardRoutes
-  from './src/routes/profesionalDashboardRoutes.js';
-
-import mercadoPagoWebhookRoutes 
-  from './src/routes/mercadoPagoWebhookRoutes.js';
-
-
-import recepcionResumenRoutes 
-from './src/routes/recepcionResumenRoutes.js';
-
-// ============================================================
-// MIDDLEWARES
-// ============================================================
-
-import {
-  asegurarAutenticacion
-} from './src/middlewares/authMiddleware.js';
-
-import {
-  errorHandler
-} from './src/middlewares/errorHandler.js';
-
-// ============================================================
-// SERVICIOS
-// ============================================================
-
-import {
-  iniciarCronJobs
-} from './src/cron/recordatorios.js';
-
-import {
-  iniciarWhatsApp
-} from './src/utils/whatsapp.js';
-
-
-// ============================================================
-// MODELOS
-// ============================================================
-
-import {
-  Cliente
-} from './src/models/Cliente.js';
-
-import {
-  Turno
-} from './src/models/Turno.js';
-
-
-import pruebaWhatsAppRoutes
-  from './src/routes/pruebaWhatsAppRoutes.js';
-
-// Historia clínica con permisos por paciente y profesional (Etapa 4).
+// Rutas de módulos
+import authRoutes from './src/routes/authRoutes.js';
+import accesosInstitucionalesRoutes from './src/routes/accesosInstitucionalesRoutes.js';
+import turnoRoutes from './src/routes/turnoRoutes.js';
+import profesionalRoutes from './src/routes/profesionalRoutes.js';
+import clienteRoutes from './src/routes/clienteRoutes.js';
+import dashboardRoutes from './src/routes/dashboardRoutes.js';
+import profesionalDashboardRoutes from './src/routes/profesionalDashboardRoutes.js';
+import mercadoPagoWebhookRoutes from './src/routes/mercadoPagoWebhookRoutes.js';
+import recepcionResumenRoutes from './src/routes/recepcionResumenRoutes.js';
+import pruebaWhatsAppRoutes from './src/routes/pruebaWhatsAppRoutes.js';
 import { crearRouterParaTurnoFlex } from './src/routes/crearRouterParaTurnoFlex.js';
 
 
 // ============================================================
-// APP
+// 2. INICIALIZACIÓN DE EXPRESS, HTTP Y SOCKET.IO
 // ============================================================
 
-const app =
-  express();
+const app = express();
+const PORT = process.env.PORT || 3000;
 
+// Configuro el motor de plantillas Pug y oculto la cabecera tecnológica
+app.disable('x-powered-by');
+app.set('view engine', 'pug');
+app.set('views', path.join(process.cwd(), 'src/views'));
 
-const PORT =
-  process.env.PORT ||
-  3000;
-
-
-// ============================================================
-// CONFIGURACIÓN EXPRESS
-// ============================================================
-
-app.disable(
-  'x-powered-by'
-);
-
-
-app.set(
-  'view engine',
-  'pug'
-);
-
-
-app.set(
-  'views',
-  path.join(
-    process.cwd(),
-    'src/views'
-  )
-);
-
-
-// Para despliegues detrás de proxy,
-// por ejemplo Vercel / Render / Railway.
+// Habilito confianza en proxy inverso cuando corro detrás de túneles o hosting cloud
 if (process.env.TF_CLOUDFLARE_TUNNEL === '1') {
   app.set('trust proxy', 'loopback');
 } else if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
 }
 
+// Creo el servidor HTTP y vinculo la instancia de Socket.IO
+const httpServer = createServer(app);
+const io = new Server(httpServer);
+app.set('socketio', io);
+
 
 // ============================================================
-// HTTP + SOCKET.IO
+// 3. INICIO CONTROLADO DE BASE DE DATOS Y SERVICIOS EXTERNOS
 // ============================================================
 
-const httpServer =
-  createServer(app);
-
-
-const io =
-  new Server(
-    httpServer
-  );
-
-
-app.set(
-  'socketio',
-  io
-);
-
-
-// Las rutas de la sala de espera se registran más abajo,
-// cuando la sesión y los permisos ya están configurados.
-
-// ============================================================
-// INICIO CONTROLADO: primero MongoDB, luego servicios externos.
-// NODE_ENV=test no conecta a MongoDB, ni inicia WhatsApp/cron/HTTP.
-// ============================================================
-
+// En entorno de test evito conectar a MongoDB y levantar WhatsApp o cron jobs
 if (process.env.NODE_ENV !== 'test') {
   try {
     await connectDB();
@@ -185,36 +83,24 @@ if (process.env.NODE_ENV !== 'test') {
     process.exit(1);
   }
 
-  // Ambos servicios originales se conservan; arrancan con MongoDB lista.
+  // Arranco WhatsApp y los recordatorios automáticos una vez conectada la base
   iniciarWhatsApp(io);
   iniciarCronJobs();
 }
 
 
 // ============================================================
-// SEGURIDAD HTTP
+// 4. SEGURIDAD HTTP, SESIONES Y SALAS DE SOCKET.IO
 // ============================================================
 
+// Desactivo CSP temporalmente porque cargo Bootstrap, Flatpickr y Chart.js desde CDN
 app.use(
   helmet({
-
-    // Actualmente TurnoFlex utiliza algunos recursos
-    // externos como Bootstrap, Flatpickr y Chart.js.
-    // Por eso mantenemos CSP desactivado por ahora.
-    contentSecurityPolicy:
-      false
-
+    contentSecurityPolicy: false
   })
 );
 
-
-// ============================================================
-// SESIONES
-// ============================================================
-
-// No permitir un secreto predeterminado cuando la aplicación se despliegue.
-// En desarrollo se conserva temporalmente el valor previo para no alterar
-// sesiones existentes, pero configurá un secreto fuerte en tu propio .env.
+// Valido que en producción exista un secreto de sesión fuerte configurado en .env
 const secretoConfigurado = String(process.env.SESSION_SECRET || '').trim();
 if (process.env.NODE_ENV === 'production' && secretoConfigurado.length < 32) {
   throw new Error('SESSION_SECRET debe estar configurada con al menos 32 caracteres en producción.');
@@ -223,8 +109,6 @@ if (!secretoConfigurado && process.env.NODE_ENV !== 'test') {
   console.warn('⚠️ SESSION_SECRET no está definida; configurala en .env antes de usar TurnoFlex fuera de pruebas locales.');
 }
 const sessionSecret = secretoConfigurado || 'TurnoFlexSecretKeySuperSegura2026';
-
-
 
 const sessionMiddleware = session({
   name: 'turnoflex.sid',
@@ -239,27 +123,21 @@ const sessionMiddleware = session({
   }
 });
 
-// Compartimos la misma sesión en HTTP y Socket.IO.
+// Comparto la misma sesión entre Express y el motor de Socket.IO
 app.use(sessionMiddleware);
-
-// Requiere Socket.IO 4.6 o superior.
 io.engine.use(sessionMiddleware);
 
-// El servidor decide qué conexiones pueden
-// ingresar a la sala de espera.
+// Asigno cada conexión de Socket.IO a su sala correspondiente según el rol de sesión
 io.on('connection', (socket) => {
   const usuario = socket.request.session?.usuario;
+  const autorizado = ['admin', 'personal'].includes(usuario?.rol);
 
-  const autorizado = ['admin', 'personal'].includes(
-    usuario?.rol
-  );
-
-
-  // Conecto a los médicos con las novedades de recepción.
+  // Conecto a los profesionales con las novedades de presencia de recepción
   if (usuario?.rol === 'profesional') {
     socket.join('agenda-medica');
   }
 
+  // Permito acceso a los eventos de sala de espera solo a administración y recepción
   if (autorizado) {
     socket.join('sala-espera');
   }
@@ -275,152 +153,64 @@ io.on('connection', (socket) => {
 });
 
 
-
 // ============================================================
-// PARSERS
-// ============================================================
-
-app.use(
-  express.json({
-    limit: '1mb'
-  })
-);
-
-
-app.use(
-  express.urlencoded({
-
-    extended:
-      true,
-
-    limit:
-      '1mb'
-
-  })
-);
-
-
-// ============================================================
-// WEBHOOKS PÚBLICOS
-//
-// No requieren sesión de TurnoFlex.
-// La autenticidad de Mercado Pago se valida mediante x-signature.
+// 5. PARSERS, WEBHOOKS PÚBLICOS Y ARCHIVOS ESTÁTICOS
 // ============================================================
 
-app.use(
-  '/webhooks',
-  mercadoPagoWebhookRoutes
-);
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-// ============================================================
-// BOOTSTRAP LOCAL - TURNOFLEX
-// ============================================================
+// Registro el webhook de Mercado Pago antes de las sesiones; se valida por firma x-signature
+app.use('/webhooks', mercadoPagoWebhookRoutes);
 
+// Sirvo Bootstrap local desde node_modules y los recursos estáticos públicos
 app.use(
   '/vendor/bootstrap',
-  express.static(
-    path.join(
-      process.cwd(),
-      'node_modules',
-      'bootstrap',
-      'dist'
-    )
-  )
+  express.static(path.join(process.cwd(), 'node_modules', 'bootstrap', 'dist'))
 );
+app.use(express.static(path.join(process.cwd(), 'public')));
 
-// ============================================================
-// ARCHIVOS ESTÁTICOS
-// ============================================================
+// Respondo 204 a /favicon.ico para evitar errores 404 en consola cuando uso favicon.svg
+app.get('/favicon.ico', (req, res) => {
+  return res.status(204).end();
+});
 
-app.use(
-  express.static(
-    path.join(
-      process.cwd(),
-      'public'
-    )
-  )
-);
-
-
-// ============================================================
-// FAVICON
-//
-// Evita que el navegador genere un 404 innecesario si solicita
-// /favicon.ico mientras usamos favicon.svg.
-// ============================================================
-
-app.get(
-  '/favicon.ico',
-  (req, res) => {
-
-    return res
-      .status(204)
-      .end();
-
-  }
-);
+// Expongo el usuario autenticado de forma global en todas las vistas Pug
+app.use((req, res, next) => {
+  res.locals.user = req.session && req.session.usuario ? req.session.usuario : null;
+  next();
+});
 
 
 // ============================================================
-// USUARIO GLOBAL EN TODAS LAS VISTAS
+// 6. SALA DE ESPERA EN VIVO Y ENDPOINTS DE CONSULTA
 // ============================================================
 
-app.use(
-  (req, res, next) => {
-
-    res.locals.user =
-      req.session &&
-      req.session.usuario
-        ? req.session.usuario
-        : null;
-
-
-    next();
-
-  }
-);
-
-
-
-// ============================================================
-// TURNOFLEX - SALA DE ESPERA PROTEGIDA
-// ============================================================
-
+// Middleware que restringe la pantalla y las APIs de sala de espera a admin y recepción
 function autorizarSalaEspera(req, res, next) {
   const usuario = req.session?.usuario;
   const esApi = req.path.startsWith('/api/');
 
   res.set('Cache-Control', 'no-store');
 
-  // Sesión no iniciada.
   if (!usuario) {
     if (esApi) {
-      return res.status(401).json({
-        error: 'Iniciá sesión para acceder.'
-      });
+      return res.status(401).json({ error: 'Iniciá sesión para acceder.' });
     }
-
     return res.redirect('/auth/login');
   }
 
-  // Solo administración y recepción.
   if (!['admin', 'personal'].includes(usuario.rol)) {
     if (esApi) {
-      return res.status(403).json({
-        error: 'No autorizado.'
-      });
+      return res.status(403).json({ error: 'No autorizado.' });
     }
-
-    return res.status(403).send(
-      'No tenés permisos para abrir la sala de espera.'
-    );
+    return res.status(403).send('No tenés permisos para abrir la sala de espera.');
   }
 
   return next();
 }
 
-// Consulto el último llamado del día para recuperar la pantalla
-// después de actualizarla o reconectarla.
+// Recupero el último llamado del día en horario de Buenos Aires para reconstruir la pantalla al recargar
 async function consultarUltimoLlamadoSalaEspera(req, res) {
   try {
     const partes = new Intl.DateTimeFormat('en-US', {
@@ -430,9 +220,7 @@ async function consultarUltimoLlamadoSalaEspera(req, res) {
       day: '2-digit'
     }).formatToParts(new Date());
 
-    const dato = (tipo) =>
-      partes.find((parte) => parte.type === tipo)?.value || '';
-
+    const dato = (tipo) => partes.find((parte) => parte.type === tipo)?.value || '';
     const hoy = `${dato('year')}-${dato('month')}-${dato('day')}`;
 
     const turno = await Turno.findOne({
@@ -474,429 +262,142 @@ async function consultarUltimoLlamadoSalaEspera(req, res) {
   }
 }
 
-// Muestro los turnos de espera solamente a personal autorizado.
-app.get(
-  '/api/sala-espera/activos',
-  autorizarSalaEspera,
-  TurnoController.getTurnosSalaEspera
-);
-
-// Recupero el último llamado para mantener la pantalla actualizada.
-app.get(
-  '/api/sala-espera/ultimo-llamado',
-  autorizarSalaEspera,
-  consultarUltimoLlamadoSalaEspera
-);
-
-// Muestro los últimos cinco llamados del día.
-app.get(
-  '/api/sala-espera/ultimos-llamados',
-  autorizarSalaEspera,
-  getUltimosLlamadosSalaEspera
-);
-
-// Esta pantalla también requiere una sesión autorizada.
-app.get(
-  '/sala-espera',
-  autorizarSalaEspera,
-  (req, res) => res.render('sala-espera')
-);
-
-
- // ============================================================
- // TURNOFLEX - PORTADA PREMIUM
- // ============================================================
-
- // Permite visitar la portada en cualquier momento
- app.get('/bienvenida', (req, res) => {
-   return res.render('bienvenida');
- });
-
- // Muestra la portada a los visitantes sin sesión
- app.get('/', (req, res, next) => {
-   if (req.session?.usuario) {
-     return next();
-   }
-
-   return res.render('bienvenida');
- });
+app.get('/api/sala-espera/activos', autorizarSalaEspera, TurnoController.getTurnosSalaEspera);
+app.get('/api/sala-espera/ultimo-llamado', autorizarSalaEspera, consultarUltimoLlamadoSalaEspera);
+app.get('/api/sala-espera/ultimos-llamados', autorizarSalaEspera, getUltimosLlamadosSalaEspera);
+app.get('/sala-espera', autorizarSalaEspera, (req, res) => res.render('sala-espera'));
 
 
 // ============================================================
-// PÁGINA PRINCIPAL
-// REDIRECCIÓN / PANEL SEGÚN ROL
+// 7. PORTADA PÚBLICA Y PANEL PRINCIPAL POR ROL
 // ============================================================
 
-app.get(
-  '/',
-
-  asegurarAutenticacion,
-
-  async (req, res, next) => {
-
-    try {
-
-      const usuario =
-        req.session.usuario;
-
-
-      if (!usuario) {
-
-        return res.redirect(
-          '/auth/login'
-        );
-
-      }
-
-
-      const rol =
-        usuario.rol;
-
-
-      // ======================================================
-      // PROFESIONAL
-      // ======================================================
-
-      if (
-        rol ===
-        'profesional'
-      ) {
-
-        return res.redirect(
-          '/medico/agenda'
-        );
-
-      }
-
-
-      // ======================================================
-      // ADMINISTRADOR
-      // ======================================================
-
-      if (
-        rol ===
-        'admin'
-      ) {
-
-        return res.render(
-          'inicio-admin',
-          {
-
-            tituloPage:
-              'Centro de Operaciones'
-
-          }
-        );
-
-      }
-
-
-      // ======================================================
-      // RECEPCIÓN
-      // ======================================================
-
-      if (
-        rol ===
-        'personal'
-      ) {
-
-        return res.render(
-          'inicio-secretaria',
-          {
-
-            tituloPage:
-              'Centro Operativo'
-
-          }
-        );
-
-      }
-
-
-      // ======================================================
-      // PACIENTE
-      // ======================================================
-
-      if (
-        rol ===
-        'cliente'
-      ) {
-
-        const clientePerfil =
-          await Cliente.findOne({
-
-            email:
-              usuario.email
-
-          })
-            .lean();
-
-
-        let turnosAsignados =
-          [];
-
-
-        if (
-          clientePerfil
-        ) {
-
-          turnosAsignados =
-            await Turno.find({
-
-              cliente_id:
-                clientePerfil._id
-
-            })
-
-              .populate(
-                'profesional_id'
-              )
-
-              .sort({
-
-                fecha: 1,
-
-                hora: 1
-
-              })
-
-              .lean();
-
-        }
-
-
-        return res.render(
-          'inicio-cliente',
-          {
-
-            tituloPage:
-              'Mi Portal',
-
-            turnosAsignados
-
-          }
-        );
-
-      }
-
-
-      // ======================================================
-      // ROL DESCONOCIDO
-      // ======================================================
-
-      const error =
-        new Error(
-          'Tu cuenta no tiene un perfil de acceso válido en TurnoFlex.'
-        );
-
-
-      error.statusCode =
-        403;
-
-
-      throw error;
-
-
-    } catch (error) {
-
-      // Ahora cualquier problema llega al
-      // errorHandler global y a error.pug.
-      return next(
-        error
-      );
-
+// Permito acceder directamente a la portada institucional
+app.get('/bienvenida', (req, res) => {
+  return res.render('bienvenida');
+});
+
+// Si el visitante no inició sesión, muestro la portada; si está logueado, paso al panel por rol
+app.get('/', (req, res, next) => {
+  if (req.session?.usuario) {
+    return next();
+  }
+  return res.render('bienvenida');
+});
+
+// Redirijo o renderizo el inicio correspondiente según el rol del usuario autenticado
+app.get('/', asegurarAutenticacion, async (req, res, next) => {
+  try {
+    const usuario = req.session.usuario;
+    if (!usuario) {
+      return res.redirect('/auth/login');
     }
 
+    const rol = usuario.rol;
+
+    // Panel del profesional médico
+    if (rol === 'profesional') {
+      return res.redirect('/medico/agenda');
+    }
+
+    // Panel del administrador
+    if (rol === 'admin') {
+      return res.render('inicio-admin', {
+        tituloPage: 'Centro de Operaciones'
+      });
+    }
+
+    // Panel de secretaría / recepción
+    if (rol === 'personal') {
+      return res.render('inicio-secretaria', {
+        tituloPage: 'Centro Operativo'
+      });
+    }
+
+    // Portal del paciente con sus turnos ordenados cronológicamente
+    if (rol === 'cliente') {
+      const clientePerfil = await Cliente.findOne({ email: usuario.email }).lean();
+      let turnosAsignados = [];
+
+      if (clientePerfil) {
+        turnosAsignados = await Turno.find({ cliente_id: clientePerfil._id })
+          .populate('profesional_id')
+          .sort({ fecha: 1, hora: 1 })
+          .lean();
+      }
+
+      return res.render('inicio-cliente', {
+        tituloPage: 'Mi Portal',
+        turnosAsignados
+      });
+    }
+
+    // Rechazo cuentas que no tengan un rol reconocido
+    const error = new Error('Tu cuenta no tiene un perfil de acceso válido en TurnoFlex.');
+    error.statusCode = 403;
+    throw error;
+
+  } catch (error) {
+    return next(error);
   }
-);
+});
+
 
 // ============================================================
-// TURNOFLEX - VERIFICAR CUENTAS ACTIVAS
+// 8. CONTROL DE CUENTAS ACTIVAS Y RUTAS DE LA APLICACIÓN
 // ============================================================
 
+// Verifico que la cuenta siga habilitada antes de entrar a los módulos internos
 app.use(verificarCuentaHabilitada);
 
-// ============================================================
-// RUTAS PROTEGIDAS
-// ============================================================
+// Autenticación y gestión de accesos institucionales
+app.use('/auth', authRoutes);
+app.use('/accesos', accesosInstitucionalesRoutes);
 
-app.use(
-  '/auth',
-  authRoutes
-);
+// Módulos operativos protegidos por sesión
+app.use('/turnos', asegurarAutenticacion, turnoRoutes);
+app.use('/profesionales', asegurarAutenticacion, profesionalRoutes);
+app.use('/clientes', asegurarAutenticacion, clienteRoutes);
+app.use('/dashboard', asegurarAutenticacion, dashboardRoutes);
+app.use('/medico', asegurarAutenticacion, profesionalDashboardRoutes);
 
-// ============================================================
-// TURNOFLEX - CUENTAS INSTITUCIONALES
-// ============================================================
-
-app.use(
-  '/accesos',
-  accesosInstitucionalesRoutes
-);
-
-app.use(
-  '/turnos',
-
-  asegurarAutenticacion,
-
-  turnoRoutes
-);
-
-
-app.use(
-  '/profesionales',
-
-  asegurarAutenticacion,
-
-  profesionalRoutes
-);
-
-
-app.use(
-  '/clientes',
-
-  asegurarAutenticacion,
-
-  clienteRoutes
-);
-
-
-app.use(
-  '/dashboard',
-
-  asegurarAutenticacion,
-
-  dashboardRoutes
-);
-
-
-app.use(
-  '/medico',
-
-  asegurarAutenticacion,
-
-  profesionalDashboardRoutes
-);
-
-
- // ============================================================
- // PRUEBA DE WHATSAPP - ADMINISTRADOR
- // ============================================================
-
- app.use('/admin/prueba-whatsapp', pruebaWhatsAppRoutes);
-
-
- 
-// ============================================================
-// API DE RECEPCIÓN - AGENDA Y RESUMEN DIARIO
-// ============================================================
-
+// Herramientas administrativas, API de recepción y módulo de historia clínica
+app.use('/admin/prueba-whatsapp', pruebaWhatsAppRoutes);
 app.use('/api/recepcion', recepcionResumenRoutes);
-
-// Módulo clínico: sesiones y res.locals ya están establecidos.
-// NO montar dentro de /public ni después del handler 404.
 app.use('/clinica', asegurarAutenticacion, crearRouterParaTurnoFlex());
 
 
 // ============================================================
-// RUTA 404
-//
-// Debe estar después de todas las rutas reales.
+// 9. MANEJO DE RUTAS INEXISTENTES (404) Y ERRORES GLOBALES
 // ============================================================
 
-app.use(
-  (req, res, next) => {
+// Capturo cualquier ruta no declarada y la derivo al manejador global
+app.use((req, res, next) => {
+  console.log(`❌ 404 - Ruta solicitada: ${req.originalUrl}`);
+  const error = new Error('La página o recurso que buscás no existe.');
+  error.statusCode = 404;
+  return next(error);
+});
 
-    console.log(
-      `❌ 404 - Ruta solicitada: ${req.originalUrl}`
-    );
-
-
-    const error =
-      new Error(
-        'La página o recurso que buscás no existe.'
-      );
-
-
-    error.statusCode =
-      404;
-
-
-    return next(
-      error
-    );
-
-  }
-);
+// Middleware final de manejo de errores
+app.use(errorHandler);
 
 
 // ============================================================
-// MANEJADOR GLOBAL DE ERRORES
-//
-// SIEMPRE debe ser el último middleware.
+// 10. ARRANQUE DEL SERVIDOR Y EXPORTACIONES
 // ============================================================
 
-app.use(
-  errorHandler
-);
-
-
-// ============================================================
-// INICIAR SERVIDOR
-// ============================================================
-
-if (
-  process.env.NODE_ENV !==
-  'test'
-) {
-
-  httpServer.listen(
-    PORT,
-    () => {
-
-      console.log(
-        '================================='
-      );
-
-      console.log(
-        ' TurnoFlex'
-      );
-
-      console.log(
-        ' Gestión Médica Inteligente'
-      );
-
-      console.log(
-        '---------------------------------'
-      );
-
-      console.log(
-        ` Inicio: http://localhost:${PORT}`
-      );
-
-      console.log(
-        ` Entorno: ${process.env.NODE_ENV || 'development'}`
-      );
-
-      console.log(
-        ' Socket.IO: Activo'
-      );
-
-      console.log(
-        '================================='
-      );
-
-    }
-  );
-
+if (process.env.NODE_ENV !== 'test') {
+  httpServer.listen(PORT, () => {
+    console.log('=================================');
+    console.log(' TurnoFlex');
+    console.log(' Gestión Médica Inteligente');
+    console.log('---------------------------------');
+    console.log(` Inicio: http://localhost:${PORT}`);
+    console.log(` Entorno: ${process.env.NODE_ENV || 'development'}`);
+    console.log(' Socket.IO: Activo');
+    console.log('=================================');
+  });
 }
 
-
-// ============================================================
-// EXPORTACIONES
-// ============================================================
-
-export {
-  app,
-  httpServer
-};
+export { app, httpServer };

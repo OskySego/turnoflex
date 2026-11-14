@@ -1,9 +1,16 @@
+//- ============================================================
+//- VISTA DE DETALLE E HISTORIAL DE TURNO - TURNOFLEX
+//- ============================================================
+//- Plantilla Pug que renderiza la ficha completa de un turno médico,
+//- incorporando datos del paciente, profesional, panel de facturación,
+//- pasarelas de pago (Mercado Pago / Transferencias) y auditoría operativa.
+
 extends layout
 
 block content
 
   //- ============================================================
-  //- DATOS AUXILIARES
+  //- 1. VARIABLES AUXILIARES Y PERMISOS DE ACCESO
   //- ============================================================
 
   - const turnoId = turno ? (turno._id || turno.id) : null
@@ -25,7 +32,7 @@ block content
 
 
   //- ============================================================
-  //- ESTILOS EXCLUSIVOS DEL DETALLE
+  //- 2. ESTILOS CSS EXCLUSIVOS DEL DETALLE
   //- ============================================================
 
   style.
@@ -296,7 +303,7 @@ block content
 
 
   //- ============================================================
-  //- CONTENIDO
+  //- 3. CONTENEDOR PRINCIPAL
   //- ============================================================
 
   .turno-detail.tfu-page
@@ -309,7 +316,7 @@ block content
 
 
           //- ======================================================
-          //- CABECERA
+          //- CABECERA VISUAL (HERO) Y ESTADO DEL TURNO
           //- ======================================================
 
           .turno-hero.tfu-hero
@@ -355,14 +362,14 @@ block content
 
 
           //- ======================================================
-          //- CUERPO
+          //- CUERPO DE LA VISTA
           //- ======================================================
 
           .card-body.p-4.p-lg-5
 
 
             //- ====================================================
-            //- INFORMACIÓN GENERAL
+            //- INFORMACIÓN GENERAL (PACIENTE Y HORARIO)
             //- ====================================================
 
             .d-flex.justify-content-between.align-items-end.flex-wrap.gap-2.mb-3
@@ -413,7 +420,7 @@ block content
 
 
             //- ====================================================
-            //- PROFESIONAL
+            //- PROFESIONAL ASIGNADO
             //- ====================================================
 
             .info-panel.mb-4.tfu-card
@@ -441,7 +448,7 @@ block content
 
 
             //- ====================================================
-            //- FACTURACIÓN / COPAGO Y CONSULTA PARTICULAR
+            //- PANEL DE FACTURACIÓN, COPAGOS Y MÉTODOS DE PAGO
             //- ====================================================
             .billing-panel.mb-4.tfu-card
               .d-flex.justify-content-between.align-items-center.flex-wrap.gap-2.mb-3
@@ -471,7 +478,7 @@ block content
                     small.text-muted Total a abonar
                     p.fw-bold.fs-5.mb-0 $#{Number(turno.montoTotal || 0).toLocaleString('es-AR')}
               else if turno && turno.montoSena
-                p.text-muted.mb-3= turno.estadoPago === 'pendiente' ? 'Importe a confirmar en recepci\u00f3n antes de pagar.' : 'Consult\u00e1 con recepci\u00f3n el detalle de los pagos registrados.'
+                p.text-muted.mb-3= turno.estadoPago === 'pendiente' ? 'Importe a confirmar en recepción antes de pagar.' : 'Consultá con recepción el detalle de los pagos registrados.'
 
               .row.g-3
                 .col-md-6
@@ -504,16 +511,18 @@ block content
               if turno && turno.estadoPago === 'pendiente' && !esFinalizado
                 .mt-3.pt-3.border-top
                   if turno.tipoCobro === 'legacy'
-                    p.small.text-muted= 'El importe de esta atenci\u00f3n debe ser confirmado por recepci\u00f3n seg\u00fan la cobertura.'
+                    p.small.text-muted= 'El importe de esta atención debe ser confirmado por recepción según la cobertura.'
                   .d-flex.flex-wrap.align-items-center.gap-2
                     if puedeGestionar && turno.tipoCobro !== 'legacy' && turno.tipoCobro !== 'sin_cargo' && Number(turno.montoTotal || 0) > 0 && !(turno.mercadoPago && turno.mercadoPago.preferenceId) && !(turno.pagoFlex && turno.pagoFlex.ordenId) && turno.metodoPago !== 'transferencia'
                       form(action=`/turnos/${turnoId}/cobrar` method="POST")
                         button.btn.btn-success.fw-bold.rounded-3(type="submit") Registrar efectivo
+                    
                     //- La preferencia creada NO significa que el pago esté acreditado.
-                    //- Si sigue pendiente, mostrar el botón para continuar el checkout.
+                    //- Si sigue pendiente, muestro el botón para continuar el checkout en MP.
                     if (puedeGestionar || esCliente) && turno.tipoCobro !== 'legacy' && turno.tipoCobro !== 'sin_cargo' && Number(turno.montoTotal || 0) > 0 && turno.metodoPago !== 'transferencia' && !(turno.pagoFlex && turno.pagoFlex.ordenId)
                       a.btn.btn-primary.fw-bold.rounded-3(href=`/turnos/${turnoId}/pagar-mp` target="_blank" rel="noopener noreferrer")= turno.mercadoPago && turno.mercadoPago.preferenceId ? 'Continuar pago con Mercado Pago' : 'Pagar con Mercado Pago'
                       small.d-block.text-muted.mt-1 El pago se abre en otra pestaña. Podés regresar sin pagar; el estado seguirá pendiente hasta su verificación.
+                    
                     if (puedeGestionar || esCliente) && (turno.tipoCobro === 'particular' || turno.tipoCobro === 'copago') && !(turno.mercadoPago && turno.mercadoPago.preferenceId) && !(turno.pagoFlex && turno.pagoFlex.ordenId) && turno.metodoPago !== 'mercadopago' && (!turno.transferencia || turno.transferencia.estado === 'sin_iniciar')
                       form(action=`/turnos/${turnoId}/transferencia/iniciar` method="POST")
                         input(type="hidden" name="_transferenciaCsrf" value=transferenciaCsrf)
@@ -558,7 +567,7 @@ block content
 
 
             //- ====================================================
-            //- ACCIONES DEL TURNO
+            //- ACCIONES OPERATIVAS DEL TURNO
             //- ====================================================
 
             .d-flex.flex-wrap.align-items-center.justify-content-between.gap-3.mb-4
@@ -576,8 +585,8 @@ block content
                     )
 
                       
-                    //- Desde recepción confirmo que el paciente llegó.
-                    //- No marco el turno como atendido.
+                    //- Desde recepción confirmo que el paciente llegó a la clínica.
+                    //- Esto no marca el turno como atendido clínicamente todavía.
 
                     if !turno.presentadoEn
                       form(
@@ -626,8 +635,8 @@ block content
 
 
             //- ====================================================
-            //- AUDITORÍA
-            //- Solo administración y recepción.
+            //- HISTORIAL DE AUDITORÍA
+            //- (Visible únicamente para perfiles con privilegios de gestión)
             //- ====================================================
 
             if puedeGestionar
@@ -748,8 +757,8 @@ block content
 
 
               //- ==================================================
-              //- INFORMACIÓN DE CREACIÓN LEGACY
-              //- Para turnos anteriores al nuevo sistema.
+              //- DATOS DE CREACIÓN LEGACY
+              //- (Fallback para registros previos al módulo de auditoría)
               //- ==================================================
 
               if auditoriaLista.length === 0 && turno && turno.createdAt

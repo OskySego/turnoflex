@@ -1,6 +1,17 @@
+//- ============================================================
+//- VISTA DE MANEJO DE ERRORES - TURNOFLEX
+//- ============================================================
+//- Plantilla Pug que captura códigos de error HTTP (400, 401, 403, 404, 409, 500+)
+//- y renderiza una vista limpia con mensajes institucionales, ayudas contextuales
+//- y opciones de navegación para volver a un estado seguro.
+
 extends layout
 
 block content
+
+  //- ============================================================
+  //- 1. LÓGICA Y ASIGNACIÓN DINÁMICA DE TEXTOS SEGÚN CÓDIGO DE ERROR
+  //- ============================================================
 
   - const codigoError = (typeof statusCode !== 'undefined' && statusCode) ? statusCode : 500
   - const textoError = (typeof error !== 'undefined' && error) ? error : ((typeof mensaje !== 'undefined' && mensaje) ? mensaje : 'No fue posible completar la operación.')
@@ -38,6 +49,10 @@ block content
     - descripcionError = 'El sistema no pudo completar esta operación en este momento.'
     - iconoError = '⚙'
 
+
+  //- ============================================================
+  //- 2. ESTILOS CSS EXCLUSIVOS PARA LA PÁGINA DE ERROR
+  //- ============================================================
 
   style.
     .tf-error-page {
@@ -431,13 +446,17 @@ block content
     }
 
 
+  //- ============================================================
+  //- 3. ESTRUCTURA PRINCIPAL DE LA VISTA
+  //- ============================================================
+
   .tf-error-page.tfu-page
 
     .tf-error-card.tfu-card
 
 
       //- ========================================================
-      //- CABECERA
+      //- CABECERA VISUAL (HERO) CON CÓDIGO Y TÍTULO
       //- ========================================================
 
       .tf-error-header.tfu-hero
@@ -456,7 +475,7 @@ block content
 
 
       //- ========================================================
-      //- CUERPO
+      //- CUERPO DE LA TARJETA DE ERROR
       //- ========================================================
 
       .tf-error-body
@@ -477,7 +496,7 @@ block content
 
 
         //- ======================================================
-        //- AYUDA SEGÚN ERROR
+        //- AYUDA CONTEXTUAL SEGÚN EL CÓDIGO HTTP
         //- ======================================================
 
         if codigoError === 403
@@ -520,7 +539,7 @@ block content
 
 
         //- ======================================================
-        //- ACCIONES
+        //- ACCIONES Y BOTONES DE NAVEGACIÓN
         //- ======================================================
 
         .tf-error-actions
@@ -556,6 +575,10 @@ block content
           )
             | ← Volver atrás
 
+
+        //- ======================================================
+        //- PIE DE PÁGINA INSTITUCIONAL
+        //- ======================================================
 
         .tf-error-footer
           | TurnoFlex · Plataforma de Gestión Médica

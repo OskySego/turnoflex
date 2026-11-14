@@ -1,12 +1,28 @@
+//- ============================================================
+//- VISTA DE EDICIÓN DE PROFESIONAL - TURNOFLEX
+//- ============================================================
+//- Plantilla Pug que renderiza el formulario completo para actualizar
+//- los datos personales, regulatorios, agenda regular, sobreturnos
+//- y configuración de telemedicina de un profesional de la salud.
 
 extends layout
 
 block content
+
+  //- ============================================================
+  //- EXTRACCIÓN DE DATOS Y ARREGLOS AUXILIARES
+  //- ============================================================
+
   - const p = profesional
   - const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
   - const regulares = Array.isArray(p.diasAtencion) ? p.diasAtencion : []
   - const sobreturnos = Array.isArray(p.diasSobreturnos) ? p.diasSobreturnos : []
   - const telemedicina = Array.isArray(p.diasTelemedicina) ? p.diasTelemedicina : []
+
+
+  //- ============================================================
+  //- ESTILOS CSS ESPECÍFICOS PARA LA EDICIÓN DE PROFESIONALES
+  //- ============================================================
 
   style.
     .editar-prof-page {
@@ -84,6 +100,11 @@ block content
       color: white;
     }
 
+
+  //- ============================================================
+  //- CONTENEDOR PRINCIPAL Y CABECERA (HERO)
+  //- ============================================================
+
   .container.py-4.editar-prof-page.tfu-page
 
     .editar-prof-hero.tfu-hero
@@ -103,11 +124,17 @@ block content
         )
           | Volver a profesionales
 
+
+    //- ============================================================
+    //- FORMULARIO DE EDICIÓN DEL PROFESIONAL
+    //- ============================================================
+
     form#formEditarProfesional(
       method="POST"
       action="/profesionales/" + p._id + "/editar"
     )
 
+      //- Protección CSRF condicional
       if typeof csrfToken !== 'undefined' && csrfToken
         input(
           type="hidden"
@@ -115,9 +142,9 @@ block content
           value=csrfToken
         )
 
-      //- ===========================================
-      //- 1. IDENTIFICACION
-      //- ===========================================
+      //- ============================================================
+      //- SECCIÓN 1: IDENTIFICACIÓN Y CONTACTO
+      //- ============================================================
 
       .card.border-0.shadow-sm.editar-prof-section.tfu-card
 
@@ -171,9 +198,9 @@ block content
               required
             )
 
-      //- ===========================================
-      //- 2. INFORMACION PROFESIONAL
-      //- ===========================================
+      //- ============================================================
+      //- SECCIÓN 2: INFORMACIÓN PROFESIONAL Y REGULATORIA
+      //- ============================================================
 
       .card.border-0.shadow-sm.editar-prof-section.tfu-card
 
@@ -246,9 +273,9 @@ block content
               )
                 | Solo Obra Social / Prepaga
 
-      //- ===========================================
-      //- 3. AGENDA REGULAR
-      //- ===========================================
+      //- ============================================================
+      //- SECCIÓN 3: AGENDA REGULAR Y HORARIOS
+      //- ============================================================
 
       .card.border-0.shadow-sm.editar-prof-section.tfu-card
 
@@ -334,9 +361,9 @@ block content
               required
             )
 
-      //- ===========================================
-      //- 4. SOBRETURNOS
-      //- ===========================================
+      //- ============================================================
+      //- SECCIÓN 4: CONFIGURACIÓN DE SOBRETURNOS
+      //- ============================================================
 
       .card.border-0.shadow-sm.editar-prof-section.tfu-card
 
@@ -419,9 +446,9 @@ block content
                 value=p.cantidadMaximaSobreturnos || 4
               )
 
-      //- ===========================================
-      //- 5. TELEMEDICINA
-      //- ===========================================
+      //- ============================================================
+      //- SECCIÓN 5: CONFIGURACIÓN DE TELEMEDICINA
+      //- ============================================================
 
       .card.border-0.shadow-sm.editar-prof-section.tfu-card
 
@@ -493,9 +520,9 @@ block content
                 value=p.horaFinTelemedicina || ''
               )
 
-      //- ===========================================
-      //- BOTONES
-      //- ===========================================
+      //- ============================================================
+      //- BOTONES DE ACCIÓN (CANCELAR Y GUARDAR)
+      //- ============================================================
 
       .d-flex.justify-content-end.flex-wrap.gap-3.mb-4
 
@@ -508,6 +535,11 @@ block content
           type="submit"
         )
           | ✓ Guardar todos los cambios
+
+
+  //- ============================================================
+  //- SCRIPT CLIENT-SIDE: TOGGLES Y VALIDACIÓN DE FORMULARIO
+  //- ============================================================
 
   script.
     document.addEventListener('DOMContentLoaded', function () {

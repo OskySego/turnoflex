@@ -1,9 +1,16 @@
+//- ============================================================
+//- VISTA DE PERFIL DEL PACIENTE - TURNOFLEX
+//- ============================================================
+//- Plantilla Pug que renderiza el espacio personal del paciente[cite: 28],
+//- permitiendo consultar y editar datos de contacto, cobertura médica 
+//- y la gestión de su grupo familiar.
+
 extends layout
 
 block content
 
   //- ============================================================
-  //- DATOS
+  //- EXTRACCIÓN Y PREPARACIÓN DE DATOS DEL PACIENTE
   //- ============================================================
 
   - const paciente = (typeof cliente !== 'undefined' && cliente) ? cliente : {}
@@ -15,16 +22,13 @@ block content
 
 
   //- ============================================================
-  //- ESTILOS
-  //- ============================================================
-
-  //- ============================================================
-  //- CONTENIDO
+  //- ESTILOS Y CONTENIDO PRINCIPAL
   //- ============================================================
 
   .my-profile.tfu-page
 
 
+    //- Alerta condicional para mensajes de éxito tras guardar cambios
     if mensajeExito
 
       .profile-success
@@ -32,7 +36,7 @@ block content
 
 
     //- ==========================================================
-    //- HERO
+    //- SECCIÓN: HERO / BIENVENIDA AL PERFIL
     //- ==========================================================
 
     .profile-hero.tfu-hero
@@ -58,7 +62,7 @@ block content
                   = nombrePaciente
 
                 p.profile-subtitle
-                  | DNI #{paciente.dni || 'N/D'} · #{paciente.email || 'Sin correo'}
+                  | DNI #{paciente.dni || 'N/D'} · #{paciente.email || 'Sin correo'}[cite: 28]
 
 
           .col-lg-4
@@ -80,7 +84,7 @@ block content
 
 
     //- ==========================================================
-    //- DATOS PERSONALES
+    //- SECCIÓN: DATOS PERSONALES Y EDITABLES DE CONTACTO
     //- ==========================================================
 
     .profile-section
@@ -103,6 +107,7 @@ block content
         | Para modificarlos, comunicate con recepción.
 
 
+      //- Formulario para actualizar teléfono y datos de cobertura médica
       form(
         action="/clientes/mi-perfil/editar"
         method="POST"
@@ -230,7 +235,7 @@ block content
 
 
     //- ==========================================================
-    //- GRUPO FAMILIAR
+    //- SECCIÓN: GESTIÓN DEL GRUPO FAMILIAR
     //- ==========================================================
 
     .profile-section
@@ -255,6 +260,7 @@ block content
     .family-panel
 
 
+      //- Listado dinámico de familiares registrados
       if familiares.length > 0
 
         .row.g-3
@@ -307,7 +313,7 @@ block content
 
 
       //- ========================================================
-      //- AGREGAR FAMILIAR
+      //- FORMULARIO PARA AGREGAR NUEVO FAMILIAR
       //- ========================================================
 
       form.family-form(
@@ -401,7 +407,7 @@ block content
 
 
     //- ==========================================================
-    //- PIE
+    //- PIE DE PÁGINA DEL PERFIL Y METADATOS DE ACTUALIZACIÓN
     //- ==========================================================
 
     .profile-footer

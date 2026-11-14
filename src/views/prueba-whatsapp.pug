@@ -1,7 +1,19 @@
+//- ============================================================
+//- VISTA DE PRUEBA DE RECORDATORIOS POR WHATSAPP - TURNOFLEX
+//- ============================================================
+//- Plantilla Pug exclusiva para administradores.
+//- Acá permito enviar un mensaje de prueba a un número propio o
+//- autorizado para verificar la integración de WhatsApp sin tocar
+//- ni modificar turnos reales del sistema.
 
 extends layout
 
 block content
+
+  //- ============================================================
+  //- 1. CONTENEDOR PRINCIPAL Y CABECERA
+  //- ============================================================
+
   .container.py-4(style="max-width: 660px")
     a.btn.btn-outline-secondary.mb-3(href="/") Volver al panel
 
@@ -12,17 +24,31 @@ block content
       |  Envía un recordatorio ficticio a un número
       |  propio o autorizado, sin modificar turnos.
 
+
+    //- ==========================================================
+    //- 2. ALERTAS DE RESULTADO (ERROR O CONFIRMACIÓN)
+    //- ==========================================================
+
+    //- Muestro el detalle del error si falló el envío de prueba
     if error
       .alert.alert-danger(role="alert")= error
 
+    //- Muestro la confirmación cuando el mensaje salió correctamente
     if exito
       .alert.alert-success(role="status")= exito
+
+
+    //- ==========================================================
+    //- 3. FORMULARIO DE ENVÍO DE RECORDATORIO DE PRUEBA
+    //- ==========================================================
 
     .card.shadow-sm
       .card-body.p-4
         form(action="/admin/prueba-whatsapp" method="POST")
+          //- Incluyo el token CSRF para validar la petición en el servidor
           input(type="hidden" name="_csrf" value=csrfToken)
 
+          //- Campo numérico con formato internacional argentino (549 + 10 dígitos)
           .mb-3
             label.form-label(for="telefono") Número de prueba
 
@@ -41,6 +67,7 @@ block content
               | Usá un número propio o autorizado.
               |  No ingreses el de un paciente.
 
+          //- Vista previa de los datos ficticios que va a recibir el teléfono
           .alert.alert-info
             strong Contenido de la prueba
             p.mb-0

@@ -1,12 +1,19 @@
-/**
- * TURNOFLEX | MIGRACIÓN Y POBLACIÓN DE BASE DE DATOS
- *
- * Versión 3.0 | Tercera versión de la base de datos.
- * Se modificaron los precios de las especialidades, se optimizó el esquema de pagos
- * y se incluyeron registros de historias clínicas reales para los pacientes.
- */
+// ============================================================
+// SCRIPT DE MIGRACIÓN Y POBLACIÓN DE BASE DE DATOS - TURNOFLEX
+// ============================================================
+// Versión 3.0 de la base de datos.
+// Acá defino los lotes iniciales de usuarios, pacientes, profesionales,
+// especialidades con aranceles actualizados, turnos atendidos e historias
+// clínicas con sus notas de evolución, permitiendo correr primero una
+// vista previa antes de aplicar los cambios en MongoDB.
+
 import mongoose from 'mongoose';
 import 'dotenv/config';
+
+// ============================================================
+// 1. IMPORTACIÓN DE MODELOS DE MONGOOSE
+// ============================================================
+
 import { Cliente } from './src/models/Cliente.js';
 import { Profesional } from './src/models/Profesional.js';
 import { Turno } from './src/models/Turno.js';
@@ -14,54 +21,62 @@ import { Usuario } from './src/models/Usuario.js';
 import { HistoriaClinica } from './src/models/HistoriaClinica.js';
 import { Especialidad } from './src/models/Especialidad.js';
 
+
+// ============================================================
+// 2. DATOS BASE PARA LA POBLACIÓN INICIAL
+// ============================================================
+
+// Cuentas de acceso institucionales y de pacientes para probar todos los roles
 const usuariosBase = [
-      { nombre: 'Oscar Segovia', email: 'segoviainfo2012@gmail.com', password: 'password123', rol: 'admin' },
-      { nombre: 'Neuyin Rosana Herrera', email: 'neuyin.herrera.sun@gmail.com', password: 'password123', rol: 'admin' },
-      { nombre: 'Maximiliano Carlos Ratti', email: 'telcom.web@gmail.com', password: 'password123', rol: 'admin' },
-      { nombre: 'Karina Ajhuacho Choque', email: 'Kariajh11@gmail.com', password: 'password123', rol: 'admin' },
-      { nombre: 'Mariana Recepción', email: 'secretaria1@turnoflex.com', password: 'password123', rol: 'personal' },
-      { nombre: 'Claudia Secretaría', email: 'secretaria2@turnoflex.com', password: 'password123', rol: 'personal' },
-      { nombre: 'Dra. María Gómez', email: 'maria.gomez@turnoflex.com', password: 'password123', rol: 'profesional' },
-      { nombre: 'Dr. Roberto Sánchez', email: 'roberto.sanchez@turnoflex.com', password: 'password123', rol: 'profesional' },
-      { nombre: 'Dr. Carlos Pérez', email: 'carlos.perez@turnoflex.com', password: 'password123', rol: 'profesional' },
-      { nombre: 'Dra. Lucía Fernández', email: 'lucia.fernandez@turnoflex.com', password: 'password123', rol: 'profesional' },
-      { nombre: 'Dr. Esteban Quito', email: 'esteban.quito@turnoflex.com', password: 'password123', rol: 'profesional' },
-      { nombre: 'Dra. Sofía Benítez', email: 'sofia.benitez@turnoflex.com', password: 'password123', rol: 'profesional' },
-      { nombre: 'Dr. Martín Varela', email: 'martin.varela@turnoflex.com', password: 'password123', rol: 'profesional' },
-      { nombre: 'Dra. Jimena Torres', email: 'jimena.torres@turnoflex.com', password: 'password123', rol: 'profesional' },
-      { nombre: 'Oscar Segovia', email: 'oscar@ejemplo.com', password: 'password123', rol: 'cliente' },
-      { nombre: 'Valeria Román', email: 'valeria@ejemplo.com', password: 'password123', rol: 'cliente' },
-      { nombre: 'Martín Pérez', email: 'martin@ejemplo.com', password: 'password123', rol: 'cliente' },
-      { nombre: 'Carla Ruiz', email: 'carla.ruiz@ejemplo.com', password: 'password123', rol: 'cliente' },
-      { nombre: 'Lucas Giménez', email: 'lucas.gimenez@ejemplo.com', password: 'password123', rol: 'cliente' },
-      { nombre: 'Ana Gómez', email: 'ana.gomez@ejemplo.com', password: 'password123', rol: 'cliente' },
-      { nombre: 'Diego Torres', email: 'diego.torres@ejemplo.com', password: 'password123', rol: 'cliente' },
-      { nombre: 'Florencia Sosa', email: 'florencia.sosa@ejemplo.com', password: 'password123', rol: 'cliente' }
+  { nombre: 'Oscar Segovia', email: 'segoviainfo2012@gmail.com', password: 'password123', rol: 'admin' },
+  { nombre: 'Neuyin Rosana Herrera', email: 'neuyin.herrera.sun@gmail.com', password: 'password123', rol: 'admin' },
+  { nombre: 'Maximiliano Carlos Ratti', email: 'telcom.web@gmail.com', password: 'password123', rol: 'admin' },
+  { nombre: 'Karina Ajhuacho Choque', email: 'Kariajh11@gmail.com', password: 'password123', rol: 'admin' },
+  { nombre: 'Mariana Recepción', email: 'secretaria1@turnoflex.com', password: 'password123', rol: 'personal' },
+  { nombre: 'Claudia Secretaría', email: 'secretaria2@turnoflex.com', password: 'password123', rol: 'personal' },
+  { nombre: 'Dra. María Gómez', email: 'maria.gomez@turnoflex.com', password: 'password123', rol: 'profesional' },
+  { nombre: 'Dr. Roberto Sánchez', email: 'roberto.sanchez@turnoflex.com', password: 'password123', rol: 'profesional' },
+  { nombre: 'Dr. Carlos Pérez', email: 'carlos.perez@turnoflex.com', password: 'password123', rol: 'profesional' },
+  { nombre: 'Dra. Lucía Fernández', email: 'lucia.fernandez@turnoflex.com', password: 'password123', rol: 'profesional' },
+  { nombre: 'Dr. Esteban Quito', email: 'esteban.quito@turnoflex.com', password: 'password123', rol: 'profesional' },
+  { nombre: 'Dra. Sofía Benítez', email: 'sofia.benitez@turnoflex.com', password: 'password123', rol: 'profesional' },
+  { nombre: 'Dr. Martín Varela', email: 'martin.varela@turnoflex.com', password: 'password123', rol: 'profesional' },
+  { nombre: 'Dra. Jimena Torres', email: 'jimena.torres@turnoflex.com', password: 'password123', rol: 'profesional' },
+  { nombre: 'Oscar Segovia', email: 'oscar@ejemplo.com', password: 'password123', rol: 'cliente' },
+  { nombre: 'Valeria Román', email: 'valeria@ejemplo.com', password: 'password123', rol: 'cliente' },
+  { nombre: 'Martín Pérez', email: 'martin@ejemplo.com', password: 'password123', rol: 'cliente' },
+  { nombre: 'Carla Ruiz', email: 'carla.ruiz@ejemplo.com', password: 'password123', rol: 'cliente' },
+  { nombre: 'Lucas Giménez', email: 'lucas.gimenez@ejemplo.com', password: 'password123', rol: 'cliente' },
+  { nombre: 'Ana Gómez', email: 'ana.gomez@ejemplo.com', password: 'password123', rol: 'cliente' },
+  { nombre: 'Diego Torres', email: 'diego.torres@ejemplo.com', password: 'password123', rol: 'cliente' },
+  { nombre: 'Florencia Sosa', email: 'florencia.sosa@ejemplo.com', password: 'password123', rol: 'cliente' }
 ];
 
+// Fichas de pacientes con cobertura médica y pacientes particulares
 const pacientesBase = [
-      { nombre: 'Oscar Segovia', dni: '33444555', fechaNacimiento: new Date('1989-01-06'), genero: 'Masculino', email: 'oscar@ejemplo.com', telefono: '1155443322', domicilio: { calle: 'Av. Rivadavia', numero: '1234', localidad: 'Morón', provincia: 'Buenos Aires' }, obraSocial: { empresa: 'OSDE', numeroAfiliado: '12345678', plan: '310' } },
-      { nombre: 'Valeria Román', dni: '35666777', fechaNacimiento: new Date('1992-05-14'), genero: 'Femenino', email: 'valeria@ejemplo.com', telefono: '1122334455', domicilio: { calle: 'San Martín', numero: '456', localidad: 'La Matanza', provincia: 'Buenos Aires' }, obraSocial: { empresa: '', numeroAfiliado: '', plan: '' } },
-      { nombre: 'Martín Pérez', dni: '28999888', fechaNacimiento: new Date('1980-11-20'), genero: 'Masculino', email: 'martin@ejemplo.com', telefono: '1199887766', domicilio: { calle: 'Belgrano', numero: '789', localidad: 'Morón', provincia: 'Buenos Aires' }, obraSocial: { empresa: 'Swiss Medical', numeroAfiliado: '98765432', plan: 'SM20' } },
-      { nombre: 'Carla Ruiz', dni: '40111222', fechaNacimiento: new Date('1995-03-10'), genero: 'Femenino', email: 'carla.ruiz@ejemplo.com', telefono: '1166778899', domicilio: { calle: 'Mitre', numero: '321', localidad: 'San Justo', provincia: 'Buenos Aires' }, obraSocial: { empresa: 'Galeno', numeroAfiliado: '456123', plan: '220' } },
-      { nombre: 'Lucas Giménez', dni: '33222111', fechaNacimiento: new Date('1988-07-25'), genero: 'Masculino', email: 'lucas.gimenez@ejemplo.com', telefono: '1133221100', domicilio: { calle: 'Roca', numero: '654', localidad: 'Haedo', provincia: 'Buenos Aires' }, obraSocial: { empresa: 'OSDE', numeroAfiliado: '789456', plan: '210' } },
-      { nombre: 'Ana Gómez', dni: '37444555', fechaNacimiento: new Date('1991-09-12'), genero: 'Femenino', email: 'ana.gomez@ejemplo.com', telefono: '1144332211', domicilio: { calle: 'Av. Santa Fe', numero: '1500', localidad: 'Capital Federal', provincia: 'Buenos Aires' }, obraSocial: { empresa: 'Medicus', numeroAfiliado: '963852', plan: 'Azul' } },
-      { nombre: 'Diego Torres', dni: '29888777', fechaNacimiento: new Date('1983-12-05'), genero: 'Masculino', email: 'diego.torres@ejemplo.com', telefono: '1188990011', domicilio: { calle: 'Güemes', numero: '852', localidad: 'Ramos Mejía', provincia: 'Buenos Aires' }, obraSocial: { empresa: 'Swiss Medical', numeroAfiliado: '147852', plan: 'SM30' } },
-      { nombre: 'Florencia Sosa', dni: '42333444', fechaNacimiento: new Date('1998-04-18'), genero: 'Femenino', email: 'florencia.sosa@ejemplo.com', telefono: '1177665544', domicilio: { calle: 'Rawson', numero: '963', localidad: 'Castelar', provincia: 'Buenos Aires' }, obraSocial: { empresa: '', numeroAfiliado: '', plan: '' } }
+  { nombre: 'Oscar Segovia', dni: '33444555', fechaNacimiento: new Date('1989-01-06'), genero: 'Masculino', email: 'oscar@ejemplo.com', telefono: '1155443322', domicilio: { calle: 'Av. Rivadavia', numero: '1234', localidad: 'Morón', provincia: 'Buenos Aires' }, obraSocial: { empresa: 'OSDE', numeroAfiliado: '12345678', plan: '310' } },
+  { nombre: 'Valeria Román', dni: '35666777', fechaNacimiento: new Date('1992-05-14'), genero: 'Femenino', email: 'valeria@ejemplo.com', telefono: '1122334455', domicilio: { calle: 'San Martín', numero: '456', localidad: 'La Matanza', provincia: 'Buenos Aires' }, obraSocial: { empresa: '', numeroAfiliado: '', plan: '' } },
+  { nombre: 'Martín Pérez', dni: '28999888', fechaNacimiento: new Date('1980-11-20'), genero: 'Masculino', email: 'martin@ejemplo.com', telefono: '1199887766', domicilio: { calle: 'Belgrano', numero: '789', localidad: 'Morón', provincia: 'Buenos Aires' }, obraSocial: { empresa: 'Swiss Medical', numeroAfiliado: '98765432', plan: 'SM20' } },
+  { nombre: 'Carla Ruiz', dni: '40111222', fechaNacimiento: new Date('1995-03-10'), genero: 'Femenino', email: 'carla.ruiz@ejemplo.com', telefono: '1166778899', domicilio: { calle: 'Mitre', numero: '321', localidad: 'San Justo', provincia: 'Buenos Aires' }, obraSocial: { empresa: 'Galeno', numeroAfiliado: '456123', plan: '220' } },
+  { nombre: 'Lucas Giménez', dni: '33222111', fechaNacimiento: new Date('1988-07-25'), genero: 'Masculino', email: 'lucas.gimenez@ejemplo.com', telefono: '1133221100', domicilio: { calle: 'Roca', numero: '654', localidad: 'Haedo', provincia: 'Buenos Aires' }, obraSocial: { empresa: 'OSDE', numeroAfiliado: '789456', plan: '210' } },
+  { nombre: 'Ana Gómez', dni: '37444555', fechaNacimiento: new Date('1991-09-12'), genero: 'Femenino', email: 'ana.gomez@ejemplo.com', telefono: '1144332211', domicilio: { calle: 'Av. Santa Fe', numero: '1500', localidad: 'Capital Federal', provincia: 'Buenos Aires' }, obraSocial: { empresa: 'Medicus', numeroAfiliado: '963852', plan: 'Azul' } },
+  { nombre: 'Diego Torres', dni: '29888777', fechaNacimiento: new Date('1983-12-05'), genero: 'Masculino', email: 'diego.torres@ejemplo.com', telefono: '1188990011', domicilio: { calle: 'Güemes', numero: '852', localidad: 'Ramos Mejía', provincia: 'Buenos Aires' }, obraSocial: { empresa: 'Swiss Medical', numeroAfiliado: '147852', plan: 'SM30' } },
+  { nombre: 'Florencia Sosa', dni: '42333444', fechaNacimiento: new Date('1998-04-18'), genero: 'Femenino', email: 'florencia.sosa@ejemplo.com', telefono: '1177665544', domicilio: { calle: 'Rawson', numero: '963', localidad: 'Castelar', provincia: 'Buenos Aires' }, obraSocial: { empresa: '', numeroAfiliado: '', plan: '' } }
 ];
 
+// Staff médico con distintas especialidades, agendas regulares, sobreturnos y telemedicina
 const profesionalesBase = [
-      { nombre: "Dra. María Gómez", dni: "25412365", genero: "Femenino", email: "maria.gomez@turnoflex.com", telefono: "1144556677", matricula: "MN 45892", especialidad: "Clínica Médica", subespecialidad: "Medicina Preventiva", tipoCobertura: "obra_social", sede: "Sede Central - Consultorio 2", diasAtencion: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'], horaInicio: "08:00", horaFin: "14:00", duracionTurnoMinutos: 30, modalidad: "presencial", permiteSobreturnos: false, ofreceTelemedicina: false },
-      { nombre: "Dr. Roberto Sánchez", dni: "20111222", genero: "Masculino", email: "roberto.sanchez@turnoflex.com", telefono: "1166778899", matricula: "MN 55412", especialidad: "Clínica Médica", subespecialidad: "Geriatría", tipoCobertura: "ambas", sede: "Sede Central - Consultorio 5", diasAtencion: ['Lunes', 'Miércoles', 'Viernes'], horaInicio: "09:00", horaFin: "15:00", duracionTurnoMinutos: 30, modalidad: "ambas", permiteSobreturnos: true, diasSobreturnos: ['Lunes', 'Miércoles'], horaInicioSobreturnos: "14:00", horaFinSobreturnos: "15:00", ofreceTelemedicina: true, diasTelemedicina: ['Viernes'], horaInicioTelemedicina: "16:00", horaFinTelemedicina: "18:00" },
-      { nombre: "Dr. Carlos Pérez", dni: "22896321", genero: "Masculino", email: "carlos.perez@turnoflex.com", telefono: "1199887766", matricula: "MN 78910", especialidad: "Cardiología", subespecialidad: "Electrocardiografía", tipoCobertura: "particular", sede: "Sede Norte - Consultorio 4", diasAtencion: ['Martes', 'Jueves'], horaInicio: "10:00", horaFin: "16:00", duracionTurnoMinutos: 20, modalidad: "presencial", permiteSobreturnos: true, diasSobreturnos: ['Martes'], horaInicioSobreturnos: "15:00", horaFinSobreturnos: "16:00", ofreceTelemedicina: false },
-      { nombre: "Dra. Lucía Fernández", dni: "27333444", genero: "Femenino", email: "lucia.fernandez@turnoflex.com", telefono: "1122334455", matricula: "MN 99887", especialidad: "Pediatría", subespecialidad: "Puericultura", tipoCobertura: "ambas", sede: "Sede Oeste - Consultorio 1", diasAtencion: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'], horaInicio: "08:30", horaFin: "13:30", duracionTurnoMinutos: 30, modalidad: "presencial", permiteSobreturnos: true, diasSobreturnos: ['Miércoles'], horaInicioSobreturnos: "13:00", horaFinSobreturnos: "13:30", ofreceTelemedicina: true, diasTelemedicina: ['Martes', 'Jueves'], horaInicioTelemedicina: "14:00", horaFinTelemedicina: "16:00" },
-      { nombre: "Dr. Esteban Quito", dni: "29555666", genero: "Masculino", email: "esteban.quito@turnoflex.com", telefono: "1177889900", matricula: "MN 33221", especialidad: "Dermatología", subespecialidad: "Estética", tipoCobertura: "particular", sede: "Sede Sur - Consultorio 3", diasAtencion: ['Miércoles', 'Jueves', 'Viernes'], horaInicio: "13:00", horaFin: "19:00", duracionTurnoMinutos: 30, modalidad: "ambas", permiteSobreturnos: false, ofreceTelemedicina: false },
-      { nombre: "Dra. Sofía Benítez", dni: "31444555", genero: "Femenino", email: "sofia.benitez@turnoflex.com", telefono: "1122113344", matricula: "MN 44112", especialidad: "Oftalmología", subespecialidad: "Cirugía Refractiva", tipoCobertura: "ambas", sede: "Sede Central - Consultorio 6", diasAtencion: ['Lunes', 'Miércoles', 'Viernes'], horaInicio: "09:00", horaFin: "17:00", duracionTurnoMinutos: 30, modalidad: "presencial", permiteSobreturnos: false, ofreceTelemedicina: false },
-      { nombre: "Dr. Martín Varela", dni: "28777666", genero: "Masculino", email: "martin.varela@turnoflex.com", telefono: "1166554433", matricula: "MN 66789", especialidad: "Traumatología", subespecialidad: "Medicina Deportiva", tipoCobertura: "ambas", sede: "Sede Norte - Consultorio 2", diasAtencion: ['Martes', 'Jueves', 'Sábados'], horaInicio: "08:00", horaFin: "12:00", duracionTurnoMinutos: 30, modalidad: "ambas", permiteSobreturnos: true, ofreceTelemedicina: false },
-      { nombre: "Dra. Jimena Torres", dni: "32555444", genero: "Femenino", email: "jimena.torres@turnoflex.com", telefono: "1155443311", matricula: "MN 11223", especialidad: "Neurología", subespecialidad: "Trastornos del Sueño", tipoCobertura: "particular", sede: "Sede Oeste - Consultorio 5", diasAtencion: ['Lunes', 'Jueves'], horaInicio: "14:00", horaFin: "19:00", duracionTurnoMinutos: 45, modalidad: "ambas", permiteSobreturnos: false, ofreceTelemedicina: true }
+  { nombre: "Dra. María Gómez", dni: "25412365", genero: "Femenino", email: "maria.gomez@turnoflex.com", telefono: "1144556677", matricula: "MN 45892", especialidad: "Clínica Médica", subespecialidad: "Medicina Preventiva", tipoCobertura: "obra_social", sede: "Sede Central - Consultorio 2", diasAtencion: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'], horaInicio: "08:00", horaFin: "14:00", duracionTurnoMinutos: 30, modalidad: "presencial", permiteSobreturnos: false, ofreceTelemedicina: false },
+  { nombre: "Dr. Roberto Sánchez", dni: "20111222", genero: "Masculino", email: "roberto.sanchez@turnoflex.com", telefono: "1166778899", matricula: "MN 55412", especialidad: "Clínica Médica", subespecialidad: "Geriatría", tipoCobertura: "ambas", sede: "Sede Central - Consultorio 5", diasAtencion: ['Lunes', 'Miércoles', 'Viernes'], horaInicio: "09:00", horaFin: "15:00", duracionTurnoMinutos: 30, modalidad: "ambas", permiteSobreturnos: true, diasSobreturnos: ['Lunes', 'Miércoles'], horaInicioSobreturnos: "14:00", horaFinSobreturnos: "15:00", ofreceTelemedicina: true, diasTelemedicina: ['Viernes'], horaInicioTelemedicina: "16:00", horaFinTelemedicina: "18:00" },
+  { nombre: "Dr. Carlos Pérez", dni: "22896321", genero: "Masculino", email: "carlos.perez@turnoflex.com", telefono: "1199887766", matricula: "MN 78910", especialidad: "Cardiología", subespecialidad: "Electrocardiografía", tipoCobertura: "particular", sede: "Sede Norte - Consultorio 4", diasAtencion: ['Martes', 'Jueves'], horaInicio: "10:00", horaFin: "16:00", duracionTurnoMinutos: 20, modalidad: "presencial", permiteSobreturnos: true, diasSobreturnos: ['Martes'], horaInicioSobreturnos: "15:00", horaFinSobreturnos: "16:00", ofreceTelemedicina: false },
+  { nombre: "Dra. Lucía Fernández", dni: "27333444", genero: "Femenino", email: "lucia.fernandez@turnoflex.com", telefono: "1122334455", matricula: "MN 99887", especialidad: "Pediatría", subespecialidad: "Puericultura", tipoCobertura: "ambas", sede: "Sede Oeste - Consultorio 1", diasAtencion: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'], horaInicio: "08:30", horaFin: "13:30", duracionTurnoMinutos: 30, modalidad: "presencial", permiteSobreturnos: true, diasSobreturnos: ['Miércoles'], horaInicioSobreturnos: "13:00", horaFinSobreturnos: "13:30", ofreceTelemedicina: true, diasTelemedicina: ['Martes', 'Jueves'], horaInicioTelemedicina: "14:00", horaFinTelemedicina: "16:00" },
+  { nombre: "Dr. Esteban Quito", dni: "29555666", genero: "Masculino", email: "esteban.quito@turnoflex.com", telefono: "1177889900", matricula: "MN 33221", especialidad: "Dermatología", subespecialidad: "Estética", tipoCobertura: "particular", sede: "Sede Sur - Consultorio 3", diasAtencion: ['Miércoles', 'Jueves', 'Viernes'], horaInicio: "13:00", horaFin: "19:00", duracionTurnoMinutos: 30, modalidad: "ambas", permiteSobreturnos: false, ofreceTelemedicina: false },
+  { nombre: "Dra. Sofía Benítez", dni: "31444555", genero: "Femenino", email: "sofia.benitez@turnoflex.com", telefono: "1122113344", matricula: "MN 44112", especialidad: "Oftalmología", subespecialidad: "Cirugía Refractiva", tipoCobertura: "ambas", sede: "Sede Central - Consultorio 6", diasAtencion: ['Lunes', 'Miércoles', 'Viernes'], horaInicio: "09:00", horaFin: "17:00", duracionTurnoMinutos: 30, modalidad: "presencial", permiteSobreturnos: false, ofreceTelemedicina: false },
+  { nombre: "Dr. Martín Varela", dni: "28777666", genero: "Masculino", email: "martin.varela@turnoflex.com", telefono: "1166554433", matricula: "MN 66789", especialidad: "Traumatología", subespecialidad: "Medicina Deportiva", tipoCobertura: "ambas", sede: "Sede Norte - Consultorio 2", diasAtencion: ['Martes', 'Jueves', 'Sábados'], horaInicio: "08:00", horaFin: "12:00", duracionTurnoMinutos: 30, modalidad: "ambas", permiteSobreturnos: true, ofreceTelemedicina: false },
+  { nombre: "Dra. Jimena Torres", dni: "32555444", genero: "Femenino", email: "jimena.torres@turnoflex.com", telefono: "1155443311", matricula: "MN 11223", especialidad: "Neurología", subespecialidad: "Trastornos del Sueño", tipoCobertura: "particular", sede: "Sede Oeste - Consultorio 5", diasAtencion: ['Lunes', 'Jueves'], horaInicio: "14:00", horaFin: "19:00", duracionTurnoMinutos: 45, modalidad: "ambas", permiteSobreturnos: false, ofreceTelemedicina: true }
 ];
 
-// Precios modificados y actualizados para la Versión 3.0
+// Catálogo de especialidades con los aranceles particulares, copagos y señas actualizados a v3.0
 const especialidadesBase = [
   { nombre: 'Clínica Médica', precioParticular: 25000, copagoObraSocial: 8000, montoSena: 8000, activa: true },
   { nombre: 'Cardiología', precioParticular: 30000, copagoObraSocial: 10000, montoSena: 10000, activa: true },
@@ -80,7 +95,7 @@ const especialidadesBase = [
   { nombre: 'Urología', precioParticular: 40000, copagoObraSocial: 15000, montoSena: 15000, activa: true }
 ];
 
-// Historias clínicas reales y detalladas para probar el módulo de pacientes
+// Registros clínicos base para poblar el historial de cada paciente atendido
 const historialesClinicos = [
   { motivo: "Control cardiológico anual", evolucion: "Paciente asintomático. Refiere buena tolerancia al ejercicio. Tensión arterial 120/80 mmHg. Frecuencia cardíaca 72 lpm. Se solicita ECG y laboratorio de control.", diagnostico: "Paciente sano en seguimiento preventivo." },
   { motivo: "Dolor abdominal agudo", evolucion: "Paciente refiere dolor en fosa ilíaca derecha de 24hs de evolución, acompañado de náuseas. Abdomen blando, depresible, muy doloroso a la palpación profunda. Blumberg positivo.", diagnostico: "Cuadro compatible con apendicitis aguda. Se deriva de urgencia a guardia quirúrgica." },
@@ -92,6 +107,7 @@ const historialesClinicos = [
   { motivo: "Cefalea tensional", evolucion: "Episodios de cefalea opresiva bitemporal vespertina, asociada a estrés laboral. Examen neurológico sin particularidades, reflejos conservados.", diagnostico: "Cefalea tensional episódica. Se ajusta analgesia y se recomienda descanso." }
 ];
 
+// Evoluciones médicas estructuradas para el módulo /clinica
 const notasEvolucion = [
   { anamnesis: "Refiere buen descanso. Sin dolor precordial en las últimas semanas.", examen: "CV: R1 y R2 normofonéticos, sin soplos. Pulsos periféricos presentes y simétricos.", diagnostico: "Normotenso.", indicaciones: "Continuar con dieta hiposódica y actividad física aeróbica 3 veces por semana." },
   { anamnesis: "Dolor abdominal intenso post ingesta copiosa.", examen: "Abdomen distendido, ruidos hidroaéreos conservados, doloroso a palpación profunda en epigastrio.", diagnostico: "Dispepsia biliar.", indicaciones: "Omeprazol 20mg en ayunas por 14 días. Dieta hepatoprotectora." },
@@ -103,6 +119,7 @@ const notasEvolucion = [
   { anamnesis: "Dolor de cabeza focalizado en la región occipital al finalizar el día.", examen: "Examen neurológico completo conservado. Sin signos de foco motor ni sensitivo.", diagnostico: "Cefalea tensional.", indicaciones: "Higiene del sueño, manejo del estrés y Paracetamol 1g ante episodios agudos." }
 ];
 
+// Turnos ya atendidos que vinculan a cada paciente y profesional de prueba
 const citasBase = [
   { paciente: 0, profesional: 0, fecha: '2026-11-05', hora: '09:30', estado: 'atendido', origen: 'migracion v3' },
   { paciente: 1, profesional: 1, fecha: '2026-11-12', hora: '14:00', estado: 'atendido', origen: 'migracion v3' },
@@ -114,23 +131,42 @@ const citasBase = [
   { paciente: 7, profesional: 7, fecha: '2026-11-23', hora: '15:30', estado: 'atendido', origen: 'migracion v3' }
 ];
 
+
+// ============================================================
+// 3. UTILIDADES, CONTADORES Y VALIDACIÓN DE ESQUEMAS
+// ============================================================
+
+// Construyo una expresión regular exacta e insensible a mayúsculas para evitar duplicados
 function patronExacto(valor) {
   const escapado = String(valor).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return new RegExp(`^${escapado}$`, 'i');
 }
+
 const iguales = (a, b) => String(a?._id || a || '') === String(b?._id || b || '');
+
+// Registro el balance de documentos creados, existentes y omitidos por colección
 const resumen = Object.fromEntries(
   ['usuarios', 'pacientes', 'profesionales', 'especialidades', 'turnos', 'historiasClinicas', 'notasEvolucion']
     .map(tipo => [tipo, { nuevos: 0, existentes: 0, omitidos: 0 }])
 );
-const contar = (tipo, accion) => { resumen[tipo][accion] += 1; };
 
+const contar = (tipo, accion) => {
+  resumen[tipo][accion] += 1;
+};
+
+// Verifico antes de tocar la base que el esquema de Turno tenga todos los campos requeridos
 function validarModelos() {
   const camposTurno = ['cliente_id', 'profesional_id', 'fecha', 'hora', 'estado', 'metodoPago', 'estadoPago', 'montoSena'];
   const faltantesTurno = camposTurno.filter(campo => !Turno.schema.path(campo));
   if (faltantesTurno.length) throw new Error(`Turno.js: faltan ${faltantesTurno.join(', ')}`);
 }
 
+
+// ============================================================
+// 4. FUNCIONES DE CARGA Y VINCULACIÓN EN MONGODB
+// ============================================================
+
+// Inserto los usuarios base sin duplicar correos ya registrados
 async function crearUsuarios() {
   const r = [];
   for (const datos of usuariosBase) {
@@ -146,6 +182,7 @@ async function crearUsuarios() {
   return r;
 }
 
+// Cargo las fichas de pacientes verificando por DNI
 async function crearPacientes() {
   const r = [];
   for (const datos of pacientesBase) {
@@ -161,6 +198,7 @@ async function crearPacientes() {
   return r;
 }
 
+// Cargo el plantel médico verificando por número de matrícula
 async function crearProfesionales() {
   const r = [];
   for (const datos of profesionalesBase) {
@@ -176,12 +214,15 @@ async function crearProfesionales() {
   return r;
 }
 
+// Creo las especialidades nuevas o actualizo los importes de las que ya existen a v3.0
 async function crearEspecialidades() {
   for (const datos of especialidadesBase) {
     const existe = await Especialidad.findOne({ nombre: datos.nombre });
     if (existe) {
-      // Actualiza los precios a la versión 3.0
-      await Especialidad.updateOne({ nombre: datos.nombre }, { $set: { precioParticular: datos.precioParticular, copagoObraSocial: datos.copagoObraSocial, montoSena: datos.montoSena } });
+      await Especialidad.updateOne(
+        { nombre: datos.nombre },
+        { $set: { precioParticular: datos.precioParticular, copagoObraSocial: datos.copagoObraSocial, montoSena: datos.montoSena } }
+      );
       contar('especialidades', 'existentes');
     } else {
       await Especialidad.create(datos);
@@ -190,6 +231,7 @@ async function crearEspecialidades() {
   }
 }
 
+// Genero los turnos base calculando si corresponde copago o tarifa particular
 async function crearTurnos(pacientes, profesionales) {
   const r = [];
   for (const cita of citasBase) {
@@ -198,7 +240,7 @@ async function crearTurnos(pacientes, profesionales) {
     if (!paciente || !profesional) continue;
 
     let turno = await Turno.findOne({ profesional_id: profesional._id, fecha: cita.fecha, hora: cita.hora });
-    
+
     if (!turno) {
       const especialidad = await Especialidad.findOne({ nombre: profesional.especialidad });
       const conCobertura = Boolean(String(paciente.obraSocial?.empresa || '').trim());
@@ -206,15 +248,15 @@ async function crearTurnos(pacientes, profesionales) {
       const precio = conCobertura && admiteObraSocial ? Number(especialidad.copagoObraSocial) : Number(especialidad.precioParticular);
 
       turno = await Turno.create({
-        cliente_id: paciente._id, 
+        cliente_id: paciente._id,
         profesional_id: profesional._id,
-        fecha: cita.fecha, 
-        hora: cita.hora, 
-        estado: cita.estado, 
+        fecha: cita.fecha,
+        hora: cita.hora,
+        estado: cita.estado,
         modalidad: 'presencial',
-        metodoPago: 'efectivo', 
+        metodoPago: 'efectivo',
         estadoPago: precio > 0 ? 'total_pagado' : 'sin_cargo',
-        montoSena: especialidad.montoSena || 5000, 
+        montoSena: especialidad.montoSena || 5000,
       });
       contar('turnos', 'nuevos');
     } else {
@@ -225,6 +267,7 @@ async function crearTurnos(pacientes, profesionales) {
   return r;
 }
 
+// Enlazo cada cuenta de Usuario con su ficha de Cliente o Profesional si aún no tiene referencia
 async function vincularCuentas(usuarios, pacientes, profesionales) {
   const enlaces = [
     ...pacientes.map((item, i) => ({ tipo: 'cliente_id', ficha: item, usuario: usuariosBase.findIndex(u => u.rol === 'cliente' && u.email === pacientesBase[i].email) })),
@@ -236,19 +279,20 @@ async function vincularCuentas(usuarios, pacientes, profesionales) {
   }
 }
 
+// Registro las historias clínicas asociadas a los turnos ya atendidos
 async function crearHistorias(pacientes, profesionales, usuarios, turnos) {
   for (let p = 0; p < pacientes.length; p++) {
     const paciente = pacientes[p];
     const usuarioProfesional = usuarios.find(u => u?.rol === 'profesional' && u.email === profesionalesBase[p]?.email);
     const turno = turnos[p];
-    
+
     if (!paciente || !usuarioProfesional || !turno || turno.estado !== 'atendido') continue;
 
     const historiaDatos = historialesClinicos[p] || historialesClinicos[0];
-    
+
     const datos = {
-      cliente_id: paciente._id, 
-      profesional_id: usuarioProfesional._id, 
+      cliente_id: paciente._id,
+      profesional_id: usuarioProfesional._id,
       turno_id: turno._id,
       fecha: new Date(`${turno.fecha}T${turno.hora}:00-03:00`),
       motivoConsulta: historiaDatos.motivo,
@@ -256,43 +300,50 @@ async function crearHistorias(pacientes, profesionales, usuarios, turnos) {
       diagnostico: historiaDatos.diagnostico,
       archivosAdjuntos: []
     };
-    
+
     const existe = await HistoriaClinica.findOne({ cliente_id: paciente._id, motivoConsulta: datos.motivoConsulta });
-    if (existe) { contar('historiasClinicas', 'existentes'); continue; }
-    
+    if (existe) {
+      contar('historiasClinicas', 'existentes');
+      continue;
+    }
+
     await HistoriaClinica.create(datos);
     contar('historiasClinicas', 'nuevos');
   }
 }
 
+// Cargo las notas de evolución clínica si el modelo NotaClinica está disponible en el proyecto
 async function crearNotasClinicas(pacientes, profesionales, usuarios, turnos) {
   let TFNotaClinica;
   try {
     ({ default: TFNotaClinica } = await import('./src/models/NotaClinica.js'));
   } catch (e) {
-    return; // Si el módulo no existe, se ignora
+    return;
   }
   if (!TFNotaClinica) return;
-  
+
   for (let p = 0; p < pacientes.length; p++) {
     const paciente = pacientes[p];
     const profesional = profesionales[p];
     const usuarioProfesional = usuarios.find(u => u?.rol === 'profesional' && u.email === profesionalesBase[p]?.email);
     const turno = turnos[p];
-    
+
     if (!paciente || !profesional || !usuarioProfesional || !turno || turno.estado !== 'atendido') continue;
 
     const notaDatos = notasEvolucion[p] || notasEvolucion[0];
     const motivoBase = historialesClinicos[p]?.motivo || "Control general";
 
     const existe = await TFNotaClinica.findOne({ pacienteId: paciente._id, motivoConsulta: motivoBase });
-    if (existe) { contar('notasEvolucion', 'existentes'); continue; }
-    
+    if (existe) {
+      contar('notasEvolucion', 'existentes');
+      continue;
+    }
+
     await TFNotaClinica.create({
-      pacienteId: paciente._id, 
-      turnoId: turno._id, 
+      pacienteId: paciente._id,
+      turnoId: turno._id,
       profesionalId: profesional._id,
-      usuarioAutorId: usuarioProfesional._id, 
+      usuarioAutorId: usuarioProfesional._id,
       tipo: 'evolucion',
       registradoEn: new Date(new Date(`${turno.fecha}T${turno.hora}:00-03:00`).getTime() + 1800000),
       motivoConsulta: motivoBase,
@@ -305,6 +356,12 @@ async function crearNotasClinicas(pacientes, profesionales, usuarios, turnos) {
   }
 }
 
+
+// ============================================================
+// 5. VISTA PREVIA Y EJECUCIÓN PRINCIPAL DE LA MIGRACIÓN
+// ============================================================
+
+// Muestro un informe informativo por consola cuando corro el script sin --aplicar
 async function vistaPrevia() {
   const actuales = await Promise.all([
     Usuario.countDocuments(), Cliente.countDocuments(), Profesional.countDocuments(),
@@ -317,26 +374,27 @@ async function vistaPrevia() {
   console.log('Para confirmar la migración ejecutá: node seed.js --aplicar');
 }
 
+// Orquesto la conexión, validación, carga secuencial y desconexión limpia de MongoDB
 async function ejecutar() {
   const aplicar = process.argv.includes('--aplicar');
   validarModelos();
   if (!process.env.MONGO_URI) throw new Error('Falta MONGO_URI en .env.');
-  
+
   await mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 8000 });
   try {
     if (!aplicar) return await vistaPrevia();
     console.log('Iniciando migración v3.0 e inyección de datos clínicos...');
-    
+
     const usuarios = await crearUsuarios();
     const pacientes = await crearPacientes();
     const profesionales = await crearProfesionales();
     await crearEspecialidades();
     const turnos = await crearTurnos(pacientes, profesionales);
-    
+
     await vincularCuentas(usuarios, pacientes, profesionales);
     await crearHistorias(pacientes, profesionales, usuarios, turnos);
     await crearNotasClinicas(pacientes, profesionales, usuarios, turnos);
-    
+
     console.log('MIGRACIÓN COMPLETADA. RESUMEN:', JSON.stringify(resumen, null, 2));
   } finally {
     await mongoose.disconnect();

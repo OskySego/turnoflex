@@ -1,6 +1,18 @@
+//- ============================================================
+//- LAYOUT PRINCIPAL - TURNOFLEX
+//- ============================================================
+//- Plantilla base de toda la aplicación. Acá defino la estructura HTML
+//- global, cargo Bootstrap y mis hojas de estilo, armo la barra de
+//- navegación dinámica según el rol del usuario y dejo listos el contenedor
+//- de notificaciones y la escucha de eventos en tiempo real con Socket.IO.
+
 doctype html
 
 html(lang="es" data-bs-theme="dark")
+
+  //- ============================================================
+  //- 1. HEAD: METADATOS, SEGURIDAD Y RECURSOS ESTÁTICOS
+  //- ============================================================
 
   head
     meta(charset="UTF-8")
@@ -22,30 +34,32 @@ html(lang="es" data-bs-theme="dark")
 
     title= (typeof tituloPage !== 'undefined' && tituloPage) ? tituloPage + ' | TurnoFlex' : 'TurnoFlex - Gestión Médica'
 
-    //- Token disponible únicamente si el servidor lo proporciona.
+    //- Inyecto el token CSRF en un meta tag solo si el servidor lo manda
     if typeof csrfToken !== 'undefined' && csrfToken
       meta(name='csrf-token' content=csrfToken)
 
-    //- UNICO CSS Y UNICO JS de TurnoFlex (el JS establece el tema antes de pintar).
+    //- Cargo mi JS principal antes de pintar el DOM para aplicar el tema sin parpadeos
     script(src='/js/turnoflex.js?v=1')
 
 
     //- ==========================================================
-    //- BOOTSTRAP
+    //- HOJAS DE ESTILO (BOOTSTRAP + ICONOS + CSS PROPIO)
     //- ==========================================================
 
     link(
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
     )
-    //- Iconografia compartida con la bienvenida.
+
+    //- Iconografía compartida con la pantalla de bienvenida
     link(rel='stylesheet' href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css')
-    //- La hoja local siempre se carga DESPUES de Bootstrap.
+
+    //- Dejo mi hoja local siempre después de Bootstrap para poder pisar reglas si hace falta
     link(rel='stylesheet' href='/css/turnoflex.css?v=unificado-1')
 
 
     //- ==========================================================
-    //- PWA
+    //- CONFIGURACIÓN PWA
     //- ==========================================================
 
     link(
@@ -54,19 +68,21 @@ html(lang="es" data-bs-theme="dark")
     )
 
 
+  //- ============================================================
+  //- 2. BODY: ESTRUCTURA GENERAL DE LA INTERFAZ
+  //- ============================================================
+
   body
 
-    //- ==========================================================
-    //- NOTIFICACIONES GLOBALES TURNOFLEX
-    //- ==========================================================
-
+    //- Contenedor flotante donde apilo las notificaciones globales (toasts)
     #tfToastStack.tf-toast-stack(
       aria-live="polite"
       aria-atomic="true"
     )
 
+
     //- ==========================================================
-    //- NAVEGACIÓN
+    //- BARRA DE NAVEGACIÓN PRINCIPAL
     //- ==========================================================
 
     nav.navbar.navbar-expand-lg.navbar-dark.tf-navbar
@@ -75,14 +91,11 @@ html(lang="es" data-bs-theme="dark")
 
 
         //- ======================================================
-        //- MARCA
+        //- MARCA INSTITUCIONAL Y BOTÓN RESPONSIVE
         //- ======================================================
 
         - const tfBrandHref = '/'
         include partials/brand
-        //- ======================================================
-        //- BOTÓN MÓVIL
-        //- ======================================================
 
         button.navbar-toggler(
           type="button"
@@ -97,25 +110,19 @@ html(lang="es" data-bs-theme="dark")
 
 
         //- ======================================================
-        //- CONTENIDO MENÚ
+        //- MENÚ COLAPSABLE Y ENLACES DINÁMICOS POR ROL
         //- ======================================================
 
         .collapse.navbar-collapse.tf-navbar-collapse#tfMainNavigation
 
-
-          //- ====================================================
-          //- ENLACES SEGÚN ROL
-          //- ====================================================
-
           ul.navbar-nav.me-auto.mb-2.mb-lg-0.ms-lg-3.tf-nav-list
-
 
             if user
 
 
-              //- =================================================
-              //- ADMINISTRADOR
-              //- =================================================
+              //- --------------------------------------------------
+              //- MENÚ: ADMINISTRADOR
+              //- --------------------------------------------------
 
               if user.rol === 'admin'
 
@@ -184,9 +191,9 @@ html(lang="es" data-bs-theme="dark")
                       | Intelligence
 
 
-              //- =================================================
-              //- RECEPCIÓN
-              //- =================================================
+              //- --------------------------------------------------
+              //- MENÚ: RECEPCIÓN (PERSONAL)
+              //- --------------------------------------------------
 
               else if user.rol === 'personal'
 
@@ -255,9 +262,9 @@ html(lang="es" data-bs-theme="dark")
                       | Profesionales
 
 
-              //- =================================================
-              //- PROFESIONAL
-              //- =================================================
+              //- --------------------------------------------------
+              //- MENÚ: PROFESIONAL MÉDICO
+              //- --------------------------------------------------
 
               else if user.rol === 'profesional'
 
@@ -274,9 +281,9 @@ html(lang="es" data-bs-theme="dark")
                       | Mi agenda
 
 
-              //- =================================================
-              //- PACIENTE
-              //- =================================================
+              //- --------------------------------------------------
+              //- MENÚ: PACIENTE (CLIENTE)
+              //- --------------------------------------------------
 
               else if user.rol === 'cliente'
 
@@ -333,12 +340,12 @@ html(lang="es" data-bs-theme="dark")
 
 
           //- ====================================================
-          //- USUARIO / TEMA / SALIDA
+          //- ZONA DE USUARIO, SELECTOR DE TEMA Y SESIÓN
           //- ====================================================
 
           .tf-user-zone.ms-lg-auto
 
-
+            //- Si hay sesión activa muestro los datos del usuario, el switch de tema y salir
             if user
 
               .tf-user
@@ -387,6 +394,7 @@ html(lang="es" data-bs-theme="dark")
                 | ↗
 
 
+            //- Si es visitante sin sesión muestro acceso, registro y cambio de tema
             else
 
               a.tf-login-btn(
@@ -410,7 +418,7 @@ html(lang="es" data-bs-theme="dark")
 
 
     //- ==========================================================
-    //- CONTENIDO PRINCIPAL
+    //- CONTENIDO DINÁMICO DE CADA VISTA
     //- ==========================================================
 
     main.tf-main
@@ -421,26 +429,24 @@ html(lang="es" data-bs-theme="dark")
 
 
     //- ==========================================================
-    //- FOOTER PREMIUM TURNOFLEX
+    //- FOOTER GLOBAL Y SCRIPTS DE CLIENTE
     //- ==========================================================
 
     include partials/footer
-    //- ==========================================================
-    //- BOOTSTRAP JS
-    //- ==========================================================
 
-        //- BOOTSTRAP JAVASCRIPT LOCAL
+    //- Cargo el bundle local de Bootstrap JS
     script(
       src="/vendor/bootstrap/js/bootstrap.bundle.min.js"
     )
 
+    //- Escucho eventos de agenda por Socket.IO para disparar alertas visuales en pantalla
     script.
       document.addEventListener('DOMContentLoaded', () => {
         if (typeof io !== 'function') return;
         const socket = io();
 
         socket.on('actualizacion_agenda', (data) => {
-          // Verificamos si hay un contenedor de alertas, si no, lo creamos dinámicamente
+          // Si no encuentro el contenedor de alertas en el DOM, lo creo al vuelo
           let stack = document.querySelector('.tf-toast-stack');
           if (!stack) {
             stack = document.createElement('div');
@@ -464,7 +470,7 @@ html(lang="es" data-bs-theme="dark")
 
           stack.appendChild(toast);
 
-          // Desaparece automáticamente a los 5 segundos
+          // Cierro y elimino la notificación automáticamente a los 5 segundos
           setTimeout(() => {
             toast.classList.add('tf-toast-exit');
             setTimeout(() => toast.remove(), 250);

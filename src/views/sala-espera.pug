@@ -1,10 +1,23 @@
+//- ============================================================
+//- VISTA DE SALA DE ESPERA EN VIVO - TURNOFLEX
+//- ============================================================
+//- Pantalla pública independiente para proyectar en sala de espera.
+//- Acá muestro el reloj en tiempo real de Buenos Aires, el llamado activo
+//- a consultorio con efecto visual, la cola de próximos turnos pendientes
+//- y el historial reciente sincronizado por Socket.IO y API REST.
 
 doctype html
 html(lang="es")
+
+  //- ============================================================
+  //- 1. HEAD: METADATOS, BOOTSTRAP Y ESTILOS DE PANTALLA
+  //- ============================================================
+
   head
     meta(charset="UTF-8")
     meta(name="viewport" content="width=device-width, initial-scale=1")
     title Sala de Espera en Vivo - TurnoFlex
+
     link(rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css")
     link(rel="stylesheet" href="/css/turnoflex.css")
 
@@ -18,6 +31,10 @@ html(lang="es")
         padding: 2rem 1rem;
       }
 
+      /* ==========================================================
+         CONTENEDORES PRINCIPALES Y RELOJ
+         ========================================================== */
+
       .sala-panel, .sala-hero-inner, .sala-clock-card {
         background: #37465d;
         border: 1px solid #4a5c78;
@@ -26,11 +43,34 @@ html(lang="es")
         box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
       }
 
-      .sala-hero-inner { margin-bottom: 1.5rem; }
-      .sala-kicker { color: #38bdf8; font-weight: 700; font-size: .85rem; }
-      .sala-clock-card { text-align: right; }
-      .sala-clock { color: #38bdf8; font-size: 2.5rem; font-weight: 800; }
-      .sala-clock-date { color: #cbd5e1; font-size: .9rem; }
+      .sala-hero-inner {
+        margin-bottom: 1.5rem;
+      }
+
+      .sala-kicker {
+        color: #38bdf8;
+        font-weight: 700;
+        font-size: .85rem;
+      }
+
+      .sala-clock-card {
+        text-align: right;
+      }
+
+      .sala-clock {
+        color: #38bdf8;
+        font-size: 2.5rem;
+        font-weight: 800;
+      }
+
+      .sala-clock-date {
+        color: #cbd5e1;
+        font-size: .9rem;
+      }
+
+      /* ==========================================================
+         PANEL DE LLAMADO ACTIVO Y COLA DE ESPERA
+         ========================================================== */
 
       .sala-badge {
         background: #475569;
@@ -41,7 +81,9 @@ html(lang="es")
         font-weight: 700;
       }
 
-      .sala-badge.activo { background: #059669; }
+      .sala-badge.activo {
+        background: #059669;
+      }
 
       .sala-current-name {
         color: #38bdf8;
@@ -50,18 +92,36 @@ html(lang="es")
         margin-top: 1rem;
       }
 
-      .sala-current-spec { color: #cbd5e1; font-size: 1.1rem; }
-      .sala-item-fila { border-bottom: 1px solid #4a5c78; padding: 12px 0; }
-      .sala-destello { animation: destacar .7s ease 3; }
+      .sala-current-spec {
+        color: #cbd5e1;
+        font-size: 1.1rem;
+      }
+
+      .sala-item-fila {
+        border-bottom: 1px solid #4a5c78;
+        padding: 12px 0;
+      }
+
+      .sala-destello {
+        animation: destacar .7s ease 3;
+      }
 
       @keyframes destacar {
         0%, 100% { opacity: 1; }
         50% { opacity: .35; }
       }
 
+
+  //- ============================================================
+  //- 2. CUERPO PRINCIPAL DE LA SALA DE ESPERA
+  //- ============================================================
+
   body
     .container-fluid.px-4
 
+      //- --------------------------------------------------------
+      //- CABECERA (HERO) Y RELOJ LOCAL DE BUENOS AIRES
+      //- --------------------------------------------------------
       section.sala-hero-inner
         .row.align-items-center.g-4
           .col-lg-8
@@ -75,8 +135,12 @@ html(lang="es")
               .sala-clock#salaClock --:--
               .sala-clock-date#salaDate Cargando fecha...
 
+      //- --------------------------------------------------------
+      //- PANELES DE LLAMADO EN CURSO Y FILA DE PRÓXIMOS TURNOS
+      //- --------------------------------------------------------
       .row.g-4
 
+        //- Tarjeta principal: paciente convocado actualmente a consultorio
         .col-lg-7
           .sala-panel.h-100
             .d-flex.justify-content-between.align-items-center.mb-3
@@ -88,6 +152,7 @@ html(lang="es")
               .sala-current-name#pacienteActual Aguardando próximo llamado...
               .sala-current-spec#profesionalActual Los pacientes serán convocados por su profesional.
 
+        //- Tarjeta lateral: turnos pendientes en sala de espera
         .col-lg-5
           .sala-panel.h-100
             .d-flex.justify-content-between.align-items-center.mb-3
@@ -97,13 +162,22 @@ html(lang="es")
             .sala-list.mt-3#listaEspera
               .text-light.opacity-75 Consultando turnos pendientes...
 
+
+    //- ============================================================
+    //- 3. HISTORIAL DE LLAMADOS Y SCRIPTS DE TIEMPO REAL
+    //- ============================================================
+
+    //- Incluyo el parcial con el historial de últimos llamados realizados
     include includes/salaEsperaHistorial.pug
+
+    //- Cliente de Socket.IO para recibir eventos instantáneos desde el servidor
     script(src="/socket.io/socket.io.js")
 
     script.
       document.addEventListener('DOMContentLoaded', function () {
         'use strict';
 
+        // Capturo las referencias del DOM y defino variables de control de estado
         const zona = 'America/Argentina/Buenos_Aires';
         const reloj = document.getElementById('salaClock');
         const fecha = document.getElementById('salaDate');
@@ -115,7 +189,10 @@ html(lang="es")
         let ultimoTurnoLlamado = null;
         let versionRecuperacion = 0;
 
-        // RELOJ DE BUENOS AIRES
+        // ========================================================
+        // RELOJ Y FECHA LOCAL DE BUENOS AIRES
+        // ========================================================
+
         function actualizarReloj() {
           const ahora = new Date();
 
@@ -139,7 +216,10 @@ html(lang="es")
           }
         }
 
-        // LISTA DE TURNOS PENDIENTES
+        // ========================================================
+        // CONSULTA Y RENDERIZADO DE TURNOS PENDIENTES EN ESPERA
+        // ========================================================
+
         async function cargarSala() {
           try {
             const respuesta = await fetch('/api/sala-espera/activos', {
@@ -157,33 +237,22 @@ html(lang="es")
               throw new Error('Formato de turnos inválido.');
             }
 
-            // Un turno reservado NO es un llamado.
+            // Filtro los turnos pendientes y excluyo el que está siendo llamado en este momento
             const enEspera = turnos.filter(function (t) {
-              const valor = String(t.estado || '')
-                .toLowerCase()
-                .trim();
-
-              const pendiente =
-                valor === 'reservado' ||
-                valor === 'en espera';
-
-              return pendiente &&
-                String(t._id) !== ultimoTurnoLlamado;
+              const valor = String(t.estado || '').toLowerCase().trim();
+              const pendiente = valor === 'reservado' || valor === 'en espera';
+              return pendiente && String(t._id) !== ultimoTurnoLlamado;
             });
 
             lista.replaceChildren();
 
+            // Renderizo cada turno en fila mostrando horario y código corto sin exponer datos sensibles
             enEspera.forEach(function (t) {
               const fila = document.createElement('div');
               fila.className = 'sala-item-fila';
 
-              const codigo = String(t._id || '')
-                .slice(-6)
-                .toUpperCase();
-
-              fila.textContent =
-                String(t.hora || '--:--') +
-                ' hs — Turno #' + codigo;
+              const codigo = String(t._id || '').slice(-6).toUpperCase();
+              fila.textContent = String(t.hora || '--:--') + ' hs — Turno #' + codigo;
 
               lista.appendChild(fila);
             });
@@ -201,97 +270,76 @@ html(lang="es")
             console.error('Error en sala de espera:', error);
 
             if (lista) {
-              lista.textContent =
-                'No se pudo actualizar la lista de espera.';
+              lista.textContent = 'No se pudo actualizar la lista de espera.';
             }
           }
         }
 
-        // LLAMADO REAL DEL MÉDICO
+        // ========================================================
+        // PRESENTACIÓN VISUAL DEL LLAMADO DEL PROFESIONAL
+        // ========================================================
+
         function mostrarLlamado(datos) {
           if (!datos || !datos.paciente) return;
           versionRecuperacion++;
 
-          const sedeOConsultorio = String(
-            datos.consultorio || ''
-          ).trim();
+          const sedeOConsultorio = String(datos.consultorio || '').trim();
 
-          // "Sede Central - Consultorio 6" -> "Consultorio 6"
-          const coincidencia = sedeOConsultorio.match(
-            /consultorio\s*[-#:]?\s*[\w]+/i
-          );
-
+          // Extraigo solo el número o nombre de consultorio (ej. "Sede Central - Consultorio 6" -> "Consultorio 6")
+          const coincidencia = sedeOConsultorio.match(/consultorio\s*[-#:]?\s*[\w]+/i);
           const consultorio = coincidencia
-            ? coincidencia[0].replace(
-                /^consultorio/i,
-                'Consultorio'
-              )
+            ? coincidencia[0].replace(/^consultorio/i, 'Consultorio')
             : sedeOConsultorio || 'Consultorio no asignado';
 
           paciente.textContent = String(datos.paciente);
-
           profesional.textContent =
             'Diríjase al ' + consultorio +
-            (
-              datos.profesional
-                ? ' — ' + String(datos.profesional)
-                : ''
-            );
+            (datos.profesional ? ' — ' + String(datos.profesional) : '');
 
           estado.textContent = '📢 Llamando ahora';
           estado.classList.add('activo');
 
+          // Reinicio la animación de destello forzando un reflow del nodo
           paciente.classList.remove('sala-destello');
           void paciente.offsetWidth;
           paciente.classList.add('sala-destello');
 
           ultimoTurnoLlamado = String(datos.turnoId || '');
-
           cargarSala();
         }
-        
 
-        // ================================================
-        // RECUPERAR ÚLTIMO LLAMADO DESDE MONGODB
-        // ================================================
+        // ========================================================
+        // SINCRONIZACIÓN Y RECUPERACIÓN DEL ÚLTIMO LLAMADO
+        // ========================================================
 
+        // Vuelvo el panel principal al estado inicial cuando no hay llamados activos
         function limpiarLlamado() {
           ultimoTurnoLlamado = null;
-
-          paciente.textContent =
-            'Aguardando próximo llamado...';
-
-          profesional.textContent =
-            'Los pacientes serán convocados por su profesional.';
-
+          paciente.textContent = 'Aguardando próximo llamado...';
+          profesional.textContent = 'Los pacientes serán convocados por su profesional.';
           estado.textContent = 'Aguardando llamado';
           estado.classList.remove('activo');
         }
 
+        // Consulto en el backend el último llamado vigente al cargar o reconectar
         async function recuperarUltimoLlamado() {
           const version = ++versionRecuperacion;
 
           try {
-            const respuesta = await fetch(
-              '/api/sala-espera/ultimo-llamado',
-              {
-                headers: {
-                  Accept: 'application/json'
-                },
-                cache: 'no-store'
-              }
-            );
+            const respuesta = await fetch('/api/sala-espera/ultimo-llamado', {
+              headers: {
+                Accept: 'application/json'
+              },
+              cache: 'no-store'
+            });
 
             if (!respuesta.ok) {
-              throw new Error(
-                'No se pudo recuperar el último llamado.'
-              );
+              throw new Error('No se pudo recuperar el último llamado.');
             }
 
             const datos = await respuesta.json();
 
-            // Evitar que una respuesta atrasada
-            // sobrescriba un llamado recibido en vivo.
+            // Descarto respuestas viejas si ya entró un llamado nuevo en vivo mientras esperaba el fetch
             if (version !== versionRecuperacion) {
               return;
             }
@@ -303,14 +351,14 @@ html(lang="es")
             }
 
           } catch (error) {
-            console.error(
-              'Error recuperando el llamado:',
-              error
-            );
+            console.error('Error recuperando el llamado:', error);
           }
         }
 
-        // INICIALIZAR LA PANTALLA
+        // ========================================================
+        // INICIALIZACIÓN Y SUSCRIPCIÓN A EVENTOS EN TIEMPO REAL
+        // ========================================================
+
         actualizarReloj();
         setInterval(actualizarReloj, 1000);
 
@@ -318,11 +366,10 @@ html(lang="es")
         recuperarUltimoLlamado();
         setInterval(cargarSala, 30000);
 
-        // CONEXIÓN EN TIEMPO REAL
+        // Conecto Socket.IO para refrescar la sala y disparar llamados al instante
         if (typeof io === 'function') {
           const socket = io();
 
-          
           socket.on('connect', () => {
             cargarSala();
             recuperarUltimoLlamado();
@@ -333,14 +380,9 @@ html(lang="es")
             recuperarUltimoLlamado();
           });
 
-          socket.on(
-            'llamado_paciente',
-            mostrarLlamado
-          );
+          socket.on('llamado_paciente', mostrarLlamado);
 
         } else {
-          console.error(
-            'Socket.IO no está disponible en la sala de espera.'
-          );
+          console.error('Socket.IO no está disponible en la sala de espera.');
         }
       });

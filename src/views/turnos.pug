@@ -1,8 +1,24 @@
+//- ============================================================
+//- VISTA DE GESTIÓN DE TURNOS - TURNOFLEX
+//- ============================================================
+//- Plantilla Pug que renderiza el panel general de turnos.
+//- Acá organizo la cabecera operativa, los filtros rápidos por estado,
+//- la grilla de tarjetas con datos de cita, pago y auditoría, la
+//- paginación y la actualización en tiempo real mediante Socket.IO.
+
 extends layout
 
 block content
 
+  //- ============================================================
+  //- 1. ESTILOS CSS EXCLUSIVOS DE LA VISTA
+  //- ============================================================
+
   style.
+    /* ==========================================================
+       CABECERA Y FILTROS RÁPIDOS
+       ========================================================== */
+
     .tf-turnos-header {
       background: linear-gradient(135deg, #0D1B3E 0%, #172554 65%, #312E81 100%);
       border-radius: 22px;
@@ -21,6 +37,10 @@ block content
       font-weight: 700;
       padding: 7px 13px;
     }
+
+    /* ==========================================================
+       TARJETAS DE TURNOS, PAGOS Y AUDITORÍA
+       ========================================================== */
 
     .tf-turno-card {
       transition: transform .2s ease, box-shadow .2s ease;
@@ -63,146 +83,100 @@ block content
       background: rgba(13,27,62,.035);
     }
 
-    [data-bs-theme="dark"] .tf-payment-box,
-    [data-bs-theme="dark"] .tf-info-box {
-      background: rgba(255,255,255,.04);
-    }
-
     .tf-audit-badge {
       background: rgba(139,92,246,.10);
       color: #7c3aed;
       border: 1px solid rgba(139,92,246,.18);
     }
 
+    /* ==========================================================
+       ADAPTACIÓN A MODO OSCURO
+       ========================================================== */
+
+    [data-bs-theme="dark"] .tf-payment-box,
+    [data-bs-theme="dark"] .tf-info-box {
+      background: rgba(255,255,255,.04);
+    }
+
     [data-bs-theme="dark"] .tf-audit-badge {
       color: #c4b5fd;
     }
 
+
   //- ============================================================
-  //- CABECERA
+  //- 2. CABECERA OPERATIVA Y FILTROS RÁPIDOS
   //- ============================================================
 
+  //- Cabecera con contador total de turnos y accesos directos
   .tf-turnos-header.tfu-hero
-
     .d-flex.justify-content-between.align-items-center.flex-wrap.gap-3
-
       div
         small.text-uppercase.fw-bold(style="color:#c4b5fd;")
           | Centro Operativo
-
         h2.mb-1.fw-bold
           | Gestión de Turnos
-
         p.mb-0
           | Seguimiento de citas, cobros y estados en tiempo real
 
-
       .d-flex.flex-wrap.align-items-center.gap-2
-
-        span.badge.rounded-pill.px-3.py-2(
-          style="background:rgba(255,255,255,.12);"
-        )
+        span.badge.rounded-pill.px-3.py-2(style="background:rgba(255,255,255,.12);")
           | #{turnos ? turnos.length : 0} turnos
 
-        a.btn.btn-light.rounded-3(
-          href="/"
-        )
+        a.btn.btn-light.rounded-3(href="/")
           | Inicio
 
-        a.btn.rounded-3.text-white(
-          href="/turnos/nuevo"
-          style="background:#8B5CF6;"
-        )
+        a.btn.rounded-3.text-white(href="/turnos/nuevo" style="background:#8B5CF6;")
           | + Nuevo turno
 
-
-  //- ============================================================
-  //- FILTROS RÁPIDOS
-  //- ============================================================
-
+  //- Barra de filtros instantáneos por estado (solo si hay turnos cargados)
   if turnos && turnos.length > 0
-
     .card.border-0.shadow-sm.rounded-4.mb-4.tfu-card
-
       .card-body.p-3
-
         .d-flex.flex-wrap.align-items-center.gap-2
-
           span.small.fw-bold.text-muted.me-1
             | Mostrar:
 
-          button.btn.btn-primary.tf-filter-btn(
-            type="button"
-            data-filter="todos"
-          )
+          button.btn.btn-primary.tf-filter-btn(type="button" data-filter="todos")
             | Todos
 
-          button.btn.btn-outline-primary.tf-filter-btn(
-            type="button"
-            data-filter="reservado"
-          )
+          button.btn.btn-outline-primary.tf-filter-btn(type="button" data-filter="reservado")
             | Reservados
 
-          button.btn.btn-outline-warning.tf-filter-btn(
-            type="button"
-            data-filter="pendiente_pago"
-          )
+          button.btn.btn-outline-warning.tf-filter-btn(type="button" data-filter="pendiente_pago")
             | Pendiente pago
 
-          button.btn.btn-outline-info.tf-filter-btn(
-            type="button"
-            data-filter="En Espera"
-          )
+          button.btn.btn-outline-info.tf-filter-btn(type="button" data-filter="En Espera")
             | En espera
 
-          button.btn.btn-outline-success.tf-filter-btn(
-            type="button"
-            data-filter="atendido"
-          )
+          button.btn.btn-outline-success.tf-filter-btn(type="button" data-filter="atendido")
             | Atendidos
 
-          button.btn.btn-outline-danger.tf-filter-btn(
-            type="button"
-            data-filter="cancelado"
-          )
+          button.btn.btn-outline-danger.tf-filter-btn(type="button" data-filter="cancelado")
             | Cancelados
 
 
   //- ============================================================
-  //- SIN TURNOS
+  //- 3. LISTADO DE TURNOS, ESTADO VACÍO Y PAGINACIÓN
   //- ============================================================
 
+  //- Si todavía no hay turnos registrados, muestro el estado vacío
   if !turnos || turnos.length === 0
-
     .card.border-0.shadow-sm.rounded-4.tfu-card
-
       .card-body.text-center.p-5
-
         .display-6.mb-3
           | ◇
-
         h5.fw-bold
           | No hay turnos registrados
-
         p.text-muted.mb-4
           | Cuando se registre una nueva cita aparecerá en este panel.
-
-        a.btn.btn-primary.rounded-3.px-4(
-          href="/turnos/nuevo"
-        )
+        a.btn.btn-primary.rounded-3.px-4(href="/turnos/nuevo")
           | Crear primer turno
 
-
-  //- ============================================================
-  //- GRILLA DE TURNOS
-  //- ============================================================
-
+  //- Si existen turnos, renderizo la grilla dinámica de tarjetas
   else
-
     #turnosGrid.row.g-4
-
       each turno in turnos
-
+        //- Normalizo los nombres, el código corto de reserva y el conteo de auditoría
         - const turnoId = turno._id || turno.id
         - const clienteNombre = turno.cliente_id && turno.cliente_id.nombre ? turno.cliente_id.nombre : (turno.cliente && turno.cliente.nombre ? turno.cliente.nombre : 'Sin asignar')
         - const profesionalNombre = turno.profesional_id && turno.profesional_id.nombre ? turno.profesional_id.nombre : (turno.profesional && turno.profesional.nombre ? turno.profesional.nombre : 'Sin asignar')
@@ -212,244 +186,133 @@ block content
         - const idCorto = turnoId ? turnoId.toString().slice(-4).toUpperCase() : '0000'
         - const codigoReserva = prefijo + '-' + idCorto
 
-        .col-xl-4.col-lg-6.turno-card-wrapper(
-          data-estado=turno.estado || 'reservado'
-        )
-
+        .col-xl-4.col-lg-6.turno-card-wrapper(data-estado=turno.estado || 'reservado')
           .card.tf-turno-card.border-0.rounded-4.shadow-sm.h-100.overflow-hidden.tfu-card
 
-            //- ==================================================
-            //- CABECERA DE TARJETA
-            //- ==================================================
-
+            //- ----------------------------------------------------
+            //- CABECERA DE TARJETA: CÓDIGO Y ESTADO DEL TURNO
+            //- ----------------------------------------------------
             .card-header.bg-transparent.py-3.px-4.border-bottom
-
               .d-flex.justify-content-between.align-items-center.gap-2
-
                 div
-
                   small.text-muted.d-block
                     | Reserva
-
                   h5.mb-0.fw-bold
                     = codigoReserva
 
-
                 div
-
                   if turno.estado === 'cancelado'
-
-                    span.badge.bg-danger(
-                      id=`estado-turno-${turnoId}`
-                    )
+                    span.badge.bg-danger(id=`estado-turno-${turnoId}`)
                       | CANCELADO
-
                   else if turno.estado === 'atendido'
-
-                    span.badge.bg-success(
-                      id=`estado-turno-${turnoId}`
-                    )
+                    span.badge.bg-success(id=`estado-turno-${turnoId}`)
                       | ATENDIDO
-
                   else if turno.estado === 'pendiente_pago'
-
-                    span.badge.bg-warning.text-dark(
-                      id=`estado-turno-${turnoId}`
-                    )
+                    span.badge.bg-warning.text-dark(id=`estado-turno-${turnoId}`)
                       | PENDIENTE PAGO
-
                   else if turno.estado === 'En Espera'
-
-                    span.badge.bg-info.text-dark(
-                      id=`estado-turno-${turnoId}`
-                    )
+                    span.badge.bg-info.text-dark(id=`estado-turno-${turnoId}`)
                       | EN ESPERA
-
                   else
-
-                    span.badge.bg-primary(
-                      id=`estado-turno-${turnoId}`
-                    )
+                    span.badge.bg-primary(id=`estado-turno-${turnoId}`)
                       | RESERVADO
 
-
-            //- ==================================================
-            //- CUERPO
-            //- ==================================================
-
+            //- ----------------------------------------------------
+            //- CUERPO: FECHA, HORA, PACIENTE, PROFESIONAL Y PAGO
+            //- ----------------------------------------------------
             .card-body.p-4.d-flex.flex-column
 
-              //- FECHA Y HORA
-
+              //- Bloque de fecha y horario del turno
               .row.g-2.mb-3
-
                 .col-7
-
                   .tf-info-box.h-100
-
                     span.tf-mini-label
                       | Fecha
-
                     strong
                       = turno.fecha || 'N/D'
 
-
                 .col-5
-
                   .tf-info-box.h-100
-
                     span.tf-mini-label
                       | Hora
-
                     strong
                       = turno.hora ? turno.hora + ' hs' : 'N/D'
 
-
-              //- PACIENTE
-
+              //- Datos del paciente asignado
               .tf-person-row
-
                 span.tf-mini-label
                   | Paciente
-
                 strong.small
                   = clienteNombre
 
-
-              //- PROFESIONAL
-
+              //- Datos del profesional y especialidad
               .tf-person-row.mb-3
-
                 span.tf-mini-label
                   | Profesional
-
                 strong.small
                   = profesionalNombre
-
                 small.text-muted.d-block.mt-1
                   = especialidad
 
-
-              //- ==================================================
-              //- PAGO
-              //- ==================================================
-
+              //- Bloque informativo de medio y estado de pago
               .tf-payment-box.mb-3
-
                 .d-flex.justify-content-between.align-items-center.flex-wrap.gap-2
-
                   div
-
                     span.tf-mini-label
                       | Método
-
                     if turno.metodoPago === 'mercadopago'
-
                       span.badge.bg-primary
                         | 💳 Mercado Pago
-
                     else if turno.metodoPago === 'efectivo'
-
                       span.badge.bg-success
                         | 💵 Efectivo
-
                     else
-
                       span.badge.bg-secondary
                         | Sin definir
 
-
                   div.text-end
-
                     span.tf-mini-label
                       | Pago
-
                     if turno.estadoPago === 'total_pagado'
-
-                      span.badge.bg-success(
-                        id=`pago-turno-${turnoId}`
-                      )
+                      span.badge.bg-success(id=`pago-turno-${turnoId}`)
                         | TOTAL PAGADO
-
                     else if turno.estadoPago === 'sena_pagada'
-
-                      span.badge.bg-info.text-dark(
-                        id=`pago-turno-${turnoId}`
-                      )
+                      span.badge.bg-info.text-dark(id=`pago-turno-${turnoId}`)
                         | SEÑA PAGADA
-
                     else
-
-                      span.badge.bg-warning.text-dark(
-                        id=`pago-turno-${turnoId}`
-                      )
+                      span.badge.bg-warning.text-dark(id=`pago-turno-${turnoId}`)
                         | PENDIENTE
 
-
-              //- ==================================================
-              //- AUDITORÍA
-              //- ==================================================
-
+              //- Muestro el contador de auditoría únicamente a administración y recepción
               if user && (user.rol === 'admin' || user.rol === 'personal')
-
                 .mb-3
-
                   span.badge.tf-audit-badge.rounded-pill.px-3.py-2
                     | ◉ #{eventosAuditoria} eventos de auditoría
 
-
-              //- ==================================================
-              //- BOTÓN DETALLE
-              //- ==================================================
-
+              //- Acceso a la vista de detalle y gestión individual del turno
               .mt-auto.pt-2
-
-                a.btn.btn-outline-primary.w-100.rounded-3.fw-bold(
-                  href=`/turnos/${turnoId}`
-                )
+                a.btn.btn-outline-primary.w-100.rounded-3.fw-bold(href=`/turnos/${turnoId}`)
                   | Ver detalle y gestión
 
+  //- Controles de paginación cuando existe más de una página de resultados
+  if paginacion && paginacion.totalPaginas > 1
+    nav.mt-4(aria-label="Paginación de turnos")
+      ul.pagination.justify-content-center
+        li.page-item(class=!paginacion.tieneAnterior ? 'disabled' : '')
+          a.page-link(href=`/turnos?page=${paginacion.paginaActual - 1}`)
+            | Anterior
 
-    //- ==========================================================
-    //- PAGINACIÓN
-    //- ==========================================================
+        li.page-item.disabled
+          span.page-link
+            | Página #{paginacion.paginaActual} de #{paginacion.totalPaginas}
 
-    if paginacion && paginacion.totalPaginas > 1
-
-      nav.mt-4(
-        aria-label="Paginación de turnos"
-      )
-
-        ul.pagination.justify-content-center
-
-          li.page-item(
-            class=!paginacion.tieneAnterior ? 'disabled' : ''
-          )
-
-            a.page-link(
-              href=`/turnos?page=${paginacion.paginaActual - 1}`
-            )
-              | Anterior
-
-
-          li.page-item.disabled
-
-            span.page-link
-              | Página #{paginacion.paginaActual} de #{paginacion.totalPaginas}
-
-
-          li.page-item(
-            class=!paginacion.tieneSiguiente ? 'disabled' : ''
-          )
-
-            a.page-link(
-              href=`/turnos?page=${paginacion.paginaActual + 1}`
-            )
-              | Siguiente
+        li.page-item(class=!paginacion.tieneSiguiente ? 'disabled' : '')
+          a.page-link(href=`/turnos?page=${paginacion.paginaActual + 1}`)
+            | Siguiente
 
 
   //- ============================================================
-  //- SOCKET.IO + FILTROS
+  //- 4. SCRIPTS DE FILTRADO VISUAL Y SOCKET.IO EN TIEMPO REAL
   //- ============================================================
 
   script(src="/socket.io/socket.io.js")
@@ -458,28 +321,19 @@ block content
     document.addEventListener('DOMContentLoaded', function () {
 
       // ========================================================
-      // FILTROS VISUALES
+      // FILTROS RÁPIDOS POR ESTADO EN EL CLIENTE
       // ========================================================
 
-      const botonesFiltro =
-        document.querySelectorAll('[data-filter]');
+      const botonesFiltro = document.querySelectorAll('[data-filter]');
+      const tarjetas = document.querySelectorAll('.turno-card-wrapper');
 
-      const tarjetas =
-        document.querySelectorAll('.turno-card-wrapper');
-
-
+      // Actualizo estilos de los botones y muestro solo las tarjetas que coinciden
       botonesFiltro.forEach(function (boton) {
-
         boton.addEventListener('click', function () {
-
-          const filtro =
-            boton.dataset.filter;
-
+          const filtro = boton.dataset.filter;
 
           botonesFiltro.forEach(function (btn) {
-
             btn.classList.remove('btn-primary');
-
             btn.classList.add(
               btn.dataset.filter === 'cancelado'
                 ? 'btn-outline-danger'
@@ -491,182 +345,84 @@ block content
                       ? 'btn-outline-info'
                       : 'btn-outline-primary'
             );
-
           });
 
-
-          boton.className =
-            'btn btn-primary tf-filter-btn';
-
+          boton.className = 'btn btn-primary tf-filter-btn';
 
           tarjetas.forEach(function (tarjeta) {
+            const estado = tarjeta.dataset.estado;
 
-            const estado =
-              tarjeta.dataset.estado;
-
-
-            if (
-              filtro === 'todos' ||
-              estado === filtro
-            ) {
-
+            if (filtro === 'todos' || estado === filtro) {
               tarjeta.style.display = '';
-
             } else {
-
               tarjeta.style.display = 'none';
-
             }
-
           });
-
         });
-
       });
 
-
       // ========================================================
-      // SOCKET.IO
+      // ACTUALIZACIÓN EN TIEMPO REAL CON SOCKET.IO
       // ========================================================
 
-      const socket =
-        io();
+      const socket = io();
 
+      socket.on('actualizacion_agenda', function (data) {
 
-      socket.on(
-        'actualizacion_agenda',
-        function (data) {
+        // ------------------------------------------------------
+        // ACTUALIZACIÓN DINÁMICA DE BADGE AL CAMBIAR ESTADO
+        // ------------------------------------------------------
 
-          // ----------------------------------------------------
-          // CAMBIO DE ESTADO
-          // ----------------------------------------------------
+        if (data.tipo === 'ESTADO' && data.id) {
+          const badge = document.getElementById('estado-turno-' + data.id);
 
-          if (
-            data.tipo === 'ESTADO' &&
-            data.id
-          ) {
+          if (badge) {
+            const estado = data.nuevoEstado;
 
-            const badge =
-              document.getElementById(
-                'estado-turno-' + data.id
-              );
-
-
-            if (badge) {
-
-              const estado =
-                data.nuevoEstado;
-
-
-              if (
-                estado === 'atendido'
-              ) {
-
-                badge.textContent =
-                  'ATENDIDO';
-
-                badge.className =
-                  'badge bg-success';
-
-              } else if (
-                estado === 'cancelado'
-              ) {
-
-                badge.textContent =
-                  'CANCELADO';
-
-                badge.className =
-                  'badge bg-danger';
-
-              } else if (
-                estado === 'pendiente_pago'
-              ) {
-
-                badge.textContent =
-                  'PENDIENTE PAGO';
-
-                badge.className =
-                  'badge bg-warning text-dark';
-
-              } else if (
-                estado === 'En Espera'
-              ) {
-
-                badge.textContent =
-                  'EN ESPERA';
-
-                badge.className =
-                  'badge bg-info text-dark';
-
-              } else {
-
-                badge.textContent =
-                  'RESERVADO';
-
-                badge.className =
-                  'badge bg-primary';
-
-              }
-
-
-              const tarjeta =
-                badge.closest(
-                  '.turno-card-wrapper'
-                );
-
-
-              if (tarjeta) {
-
-                tarjeta.dataset.estado =
-                  estado;
-
-              }
-
-
-              badge.style.transition =
-                'transform .2s ease';
-
-
-              badge.style.transform =
-                'scale(1.15)';
-
-
-              setTimeout(
-                function () {
-
-                  badge.style.transform =
-                    'scale(1)';
-
-                },
-                300
-              );
-
+            if (estado === 'atendido') {
+              badge.textContent = 'ATENDIDO';
+              badge.className = 'badge bg-success';
+            } else if (estado === 'cancelado') {
+              badge.textContent = 'CANCELADO';
+              badge.className = 'badge bg-danger';
+            } else if (estado === 'pendiente_pago') {
+              badge.textContent = 'PENDIENTE PAGO';
+              badge.className = 'badge bg-warning text-dark';
+            } else if (estado === 'En Espera') {
+              badge.textContent = 'EN ESPERA';
+              badge.className = 'badge bg-info text-dark';
+            } else {
+              badge.textContent = 'RESERVADO';
+              badge.className = 'badge bg-primary';
             }
 
+            // Sincronizo el atributo data-estado de la tarjeta para mantener coherencia con los filtros
+            const tarjeta = badge.closest('.turno-card-wrapper');
+            if (tarjeta) {
+              tarjeta.dataset.estado = estado;
+            }
+
+            // Aplico un breve pulso visual para destacar el cambio de estado en pantalla
+            badge.style.transition = 'transform .2s ease';
+            badge.style.transform = 'scale(1.15)';
+
+            setTimeout(function () {
+              badge.style.transform = 'scale(1)';
+            }, 300);
           }
-
-
-          // ----------------------------------------------------
-          // NUEVO TURNO / PAGOS
-          //
-          // Recargamos para reflejar:
-          // - estadoPago
-          // - método de pago
-          // - auditoría
-          // - nueva reserva
-          // ----------------------------------------------------
-
-          if (
-            data.tipo === 'NUEVO' ||
-            data.tipo === 'PAGO' ||
-            data.tipo === 'PAGO_MP_CONFIRMADO'
-          ) {
-
-            window.location.reload();
-
-          }
-
         }
-      );
 
+        // ------------------------------------------------------
+        // RECARGA ANTE NUEVAS RESERVAS O CONFIRMACIONES DE PAGO
+        // ------------------------------------------------------
+
+        // Recargo la vista para reflejar nuevos turnos, estadoPago, método de pago y auditoría
+        if (
+          data.tipo === 'NUEVO' ||
+          data.tipo === 'PAGO' ||
+          data.tipo === 'PAGO_MP_CONFIRMADO'
+        ) {
+          window.location.reload();
+        }
+      });
     });

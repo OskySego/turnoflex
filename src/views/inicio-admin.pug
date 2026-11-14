@@ -1,18 +1,44 @@
+//- ============================================================
+//- CENTRO DE OPERACIONES - TURNOFLEX (DASHBOARD ADMINISTRADOR)
+//- ============================================================
+//- Plantilla Pug que renderiza el panel central del administrador,
+//- incorporando saludo personalizado, reloj en tiempo real, barra de
+//- búsqueda interactiva para filtrado de módulos, accesos rápidos y
+//- el flujo de trabajo operativo diario.
+
 extends layout
 
 block content
+
+  //- ============================================================
+  //- 1. VARIABLES Y DATOS DEL ADMINISTRADOR
+  //- ============================================================
+
   - const nombreAdmin = user && user.nombre ? user.nombre : 'Administrador'
 
+
+  //- ============================================================
+  //- 2. CONTENEDOR PRINCIPAL DEL CENTRO DE OPERACIONES
+  //- ============================================================
+
   .tf-office.tfu-page
+
+
+    //- ==========================================================
+    //- SECCIÓN: HERO / BIENVENIDA Y RELOJ EN TIEMPO REAL
+    //- ==========================================================
+
     section.office-top.tfu-hero(aria-label="Bienvenida al centro de operaciones")
       .office-layer
         .row.g-4.align-items-center
+
           .col-lg-8
             .office-kicker ◈ Centro de operaciones · TurnoFlex
             h1.office-hello Hola, #{nombreAdmin}
             p.office-description
               | Todo tu centro médico, organizado en un solo lugar. Gestioná turnos,
               |  pacientes y profesionales con acceso rápido a cada herramienta.
+            
             .d-flex.flex-wrap.gap-2.mt-4
               a.office-primary-btn(href="/turnos/nuevo")
                 span(aria-hidden="true") ＋
@@ -20,6 +46,7 @@ block content
               a.office-secondary-btn(href="/dashboard")
                 span(aria-hidden="true") ◈
                 span Ver panel gerencial
+
           .col-lg-4
             .office-clock-card
               .office-clock-label Hoy en tu consultorio
@@ -29,7 +56,12 @@ block content
                 span.office-live-dot(aria-hidden="true")
                 span Sesión de administrador
 
-    //- Barra de búsqueda: filtra accesos sin consultar pacientes ni datos privados.
+
+    //- ==========================================================
+    //- SECCIÓN: BARRA DE BÚSQUEDA Y FILTRADO DE MÓDULOS
+    //- ==========================================================
+
+    //- Barra de búsqueda local: filtra accesos sin consultar pacientes ni datos privados.
     .office-toolbar
       .office-search-wrap
         label.visually-hidden(for="officeSearch") Buscar sección de TurnoFlex
@@ -38,11 +70,17 @@ block content
       .office-hint Presioná #[kbd /] para buscar
       span.office-hint#officeSearchCount(role="status" aria-live="polite") 4 secciones disponibles
 
+
+    //- ==========================================================
+    //- SECCIÓN: ACCIONES RÁPIDAS
+    //- ==========================================================
+
     section(aria-labelledby="officeQuickTitle")
       .office-section
         .office-eyebrow Tu trabajo, más simple
         h2#officeQuickTitle Acciones rápidas
         p Lo que más usás, a un clic de distancia.
+
       .row.g-3
         .col-md-4
           a.office-action.tfu-card(href="/turnos/nuevo" style="--color-main:#4e75ee;--color-soft:rgba(78,117,238,.12)")
@@ -63,11 +101,17 @@ block content
               span.office-action-title Nuevo profesional
               span.office-action-description Incorporar al equipo médico
 
+
+    //- ==========================================================
+    //- SECCIÓN: ÁREAS DE TRABAJO Y MÓDULOS PRINCIPALES
+    //- ==========================================================
+
     section(aria-labelledby="officeModulesTitle")
       .office-section
         .office-eyebrow Áreas de trabajo
         h2#officeModulesTitle ¿Qué necesitás gestionar?
         p Elegí un módulo o buscá directamente por nombre.
+
       .row.g-4#officeModules
         .col-md-6.col-xl-3.office-searchable(data-label="turnos agenda reservas pagos cancelaciones")
           a.office-card.tfu-card(href="/turnos" style="--color-main:#4e75ee;--color-soft:rgba(78,117,238,.12)")
@@ -93,15 +137,22 @@ block content
             h3 Estadísticas
             p Visualizá la información gerencial y el rendimiento de TurnoFlex.
             span.office-card-link Explorar reportes →
+
       .office-empty#officeSearchEmpty(role="status")
         strong No encontramos esa sección.
         p.mb-0.mt-1 Probá con “turnos”, “pacientes”, “profesionales” o “reportes”.
+
+
+    //- ==========================================================
+    //- SECCIÓN: FLUJO DE TRABAJO Y ASISTENTE GERENCIAL
+    //- ==========================================================
 
     section(aria-labelledby="officeWorkflowTitle")
       .office-section
         .office-eyebrow Trabajo organizado
         h2#officeWorkflowTitle Una jornada más ordenada
         p Un flujo simple para atender cada día.
+
       .row.g-4
         .col-lg-5
           .office-note.tfu-card
@@ -120,6 +171,7 @@ block content
               div
                 strong Analizar resultados
                 p Consultá el panel gerencial para tomar decisiones.
+
         .col-lg-7
           .office-promo
             div
@@ -133,9 +185,19 @@ block content
                 span Ir al panel de estadísticas
                 span(aria-hidden="true") →
 
+
+    //- ==========================================================
+    //- PIE DE PÁGINA INSTITUCIONAL
+    //- ==========================================================
+
     .office-foot.d-flex.justify-content-between.flex-wrap.gap-2
       span TurnoFlex · Gestión Médica Inteligente
       span Centro de operaciones · Administrador
+
+
+  //- ============================================================
+  //- SCRIPT CLIENT-SIDE: RELOJ EN VIVO Y FILTRADO POR BÚSQUEDA
+  //- ============================================================
 
   script.
     (() => {

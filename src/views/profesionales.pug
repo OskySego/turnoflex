@@ -1,16 +1,38 @@
+//- ============================================================
+//- VISTA DE LISTADO DE PROFESIONALES - TURNOFLEX
+//- ============================================================
+//- Plantilla Pug que renderiza el directorio del equipo médico.
+//- Acá configuro los permisos de gestión según el rol, el panel de
+//- recuperación de correos huérfanos para administración, el buscador
+//- instantáneo, los filtros por modalidad y las acciones de cada tarjeta.
 
 extends layout
 
 block content
+
+  //- ============================================================
+  //- 1. VARIABLES DE CONTROL Y PERMISOS DE ROL
+  //- ============================================================
+
+  //- Normalizo el listado y determino qué acciones administrativas habilito en pantalla
   - const listaProfesionales = Array.isArray(profesionales) ? profesionales : []
   - const puedeGestionar = typeof user !== 'undefined' && user && ['admin', 'personal'].includes(user.rol)
   - const esAdmin = typeof user !== 'undefined' && user && user.rol === 'admin'
+
+
+  //- ============================================================
+  //- 2. ESTILOS CSS EXCLUSIVOS DEL LISTADO DE PROFESIONALES
+  //- ============================================================
 
   style.
     .tf-page--profesionales {
       --prof-violet: #8B5CF6;
       --prof-blue: #2563eb;
     }
+
+    /* ==========================================================
+       CABECERA Y TARJETAS DE PROFESIONALES
+       ========================================================== */
 
     .tf-prof-header {
       padding: 30px;
@@ -66,6 +88,10 @@ block content
       border: 1px solid rgba(148,163,184,.18);
       background: rgba(148,163,184,.06);
     }
+
+    /* ==========================================================
+       ETIQUETAS DE MODALIDAD, BOTONES Y MODO OSCURO
+       ========================================================== */
 
     .tf-feature {
       display: inline-block;
@@ -128,48 +154,44 @@ block content
       }
     }
 
+
+  //- ============================================================
+  //- 3. ESTRUCTURA PRINCIPAL DE LA PÁGINA
+  //- ============================================================
+
   .tf-page--profesionales.tfu-page
 
-    //- ==============================================
-    //- CABECERA
-    //- ==============================================
+    //- ----------------------------------------------------------
+    //- CABECERA (HERO) Y ACCIONES SUPERIORES
+    //- ----------------------------------------------------------
 
     .tf-prof-header.tfu-hero
-
       .d-flex.justify-content-between.align-items-center.flex-wrap.gap-3
-
         div
-          small.text-uppercase.fw-bold(
-            style="color:#c4b5fd;"
-          )
+          small.text-uppercase.fw-bold(style="color:#c4b5fd;")
             | Equipo Médico
-
           h2.mb-1.fw-bold Profesionales
-
           p.mb-0
             | Especialidades, agendas y modalidades de atención
 
         .d-flex.flex-wrap.align-items-center.gap-2
-
-          span.badge.rounded-pill.px-3.py-2(
-            style="background:rgba(255,255,255,.12);"
-          )
+          span.badge.rounded-pill.px-3.py-2(style="background:rgba(255,255,255,.12);")
             | #{listaProfesionales.length} profesionales
 
           a.btn.btn-light.rounded-3(href="/")
             | Inicio
 
+          //- Habilito el botón de alta únicamente para administración y recepción
           if puedeGestionar
-            a.btn.text-white.rounded-3(
-              href="/profesionales/nuevo"
-              style="background:#8B5CF6;"
-            )
+            a.btn.text-white.rounded-3(href="/profesionales/nuevo" style="background:#8B5CF6;")
               | + Nuevo profesional
 
-    //- ==============================================
-    //- RECUPERACIÓN SEGURA DE UN CORREO HUÉRFANO
-    //- Solo muestra el formulario al administrador.
-    //- ==============================================
+
+    //- ----------------------------------------------------------
+    //- HERRAMIENTA DE RECUPERACIÓN DE CORREOS HUÉRFANOS (ADMIN)
+    //- ----------------------------------------------------------
+
+    //- Muestro este desplegable solo al administrador para liberar correos de prueba bloqueados
     if esAdmin
       details.card.border-0.shadow-sm.rounded-4.mb-4.tfu-card
         summary.card-body.p-3.fw-bold
@@ -179,103 +201,67 @@ block content
             | Si el perfil ya no existe y no hay historial, elimina la cuenta
             | huérfana. Si hay historial, archiva la cuenta y libera el correo
             | sin borrar turnos ni auditorías.
-          form.form-liberar-correo-huerfano.row.g-2.align-items-end(
-            method='POST'
-            action='/profesionales/cuentas-huerfanas/liberar'
-          )
+          form.form-liberar-correo-huerfano.row.g-2.align-items-end(method='POST' action='/profesionales/cuentas-huerfanas/liberar')
             if typeof csrfToken !== 'undefined' && csrfToken
               input(type='hidden' name='_csrf' value=csrfToken)
             input(type='hidden' name='confirmar' value='LIBERAR')
             .col-md-8
               label.form-label(for='correoHuerfano') Correo particular
-              input#correoHuerfano.form-control(
-                type='email'
-                name='email'
-                required
-                placeholder='profesional-de-prueba@gmail.com'
-              )
+              input#correoHuerfano.form-control(type='email' name='email' required placeholder='profesional-de-prueba@gmail.com')
             .col-md-4
               button.btn.btn-outline-danger.w-100(type='submit')
                 | Liberar correo
 
-    //- ==============================================
-    //- BUSCADOR Y FILTROS
-    //- ==============================================
+
+    //- ----------------------------------------------------------
+    //- BARRA DE BÚSQUEDA Y FILTROS POR MODALIDAD
+    //- ----------------------------------------------------------
 
     if listaProfesionales.length > 0
-
       .card.border-0.shadow-sm.rounded-4.mb-4.tfu-card
         .card-body.p-3.p-md-4
-
           .row.g-3.align-items-center
-
             .col-lg-6
-              input.form-control(
-                id="buscarProfesional"
-                type="search"
-                placeholder="Buscar por nombre, especialidad, matrícula o sede..."
-                autocomplete="off"
-              )
+              input.form-control(id="buscarProfesional" type="search" placeholder="Buscar por nombre, especialidad, matrícula o sede..." autocomplete="off")
 
             .col-lg-6
               .d-flex.flex-wrap.gap-2.justify-content-lg-end
-
-                button.btn.btn-primary.tf-filter-btn(
-                  type="button"
-                  data-modalidad="todos"
-                )
+                button.btn.btn-primary.tf-filter-btn(type="button" data-modalidad="todos")
                   | Todos
-
-                button.btn.btn-outline-primary.tf-filter-btn(
-                  type="button"
-                  data-modalidad="presencial"
-                )
+                button.btn.btn-outline-primary.tf-filter-btn(type="button" data-modalidad="presencial")
                   | Presencial
-
-                button.btn.btn-outline-info.tf-filter-btn(
-                  type="button"
-                  data-modalidad="telemedicina"
-                )
+                button.btn.btn-outline-info.tf-filter-btn(type="button" data-modalidad="telemedicina")
                   | Telemedicina
-
-                button.btn.btn-outline-secondary.tf-filter-btn(
-                  type="button"
-                  data-modalidad="ambas"
-                )
+                button.btn.btn-outline-secondary.tf-filter-btn(type="button" data-modalidad="ambas")
                   | Ambas
 
-    //- ==============================================
-    //- SIN PROFESIONALES
-    //- ==============================================
+
+    //- ----------------------------------------------------------
+    //- ESTADO VACÍO (SIN PROFESIONALES CARGADOS)
+    //- ----------------------------------------------------------
 
     if listaProfesionales.length === 0
-
       .card.border-0.shadow-sm.rounded-4.tfu-card
         .card-body.text-center.p-5
-
           .display-6.mb-3 ✚
-
           h5.fw-bold No hay profesionales registrados
-
           p.text-muted.mb-4
             | Los profesionales incorporados aparecerán en este panel.
 
           if puedeGestionar
-            a.btn.btn-primary.rounded-3.px-4(
-              href="/profesionales/nuevo"
-            )
+            a.btn.btn-primary.rounded-3.px-4(href="/profesionales/nuevo")
               | Registrar profesional
 
-    //- ==============================================
-    //- GRILLA DE PROFESIONALES
-    //- ==============================================
+
+    //- ----------------------------------------------------------
+    //- GRILLA DINÁMICA DE TARJETAS DE PROFESIONALES
+    //- ----------------------------------------------------------
 
     else
-
       #profesionalesGrid.row.g-4
 
         each prof in listaProfesionales
-
+          //- Preparo las iniciales, el código corto y la cadena indexada para el buscador
           - const profId = String(prof._id || prof.id || '')
           - const nombre = prof.nombre || 'Profesional'
           - const estaActivo = prof.activo !== false
@@ -287,299 +273,186 @@ block content
           - const codigo = 'PRO-' + profId.slice(-5).toUpperCase()
           - const busqueda = [nombre, prof.especialidad, prof.subespecialidad, prof.matricula, prof.sede, prof.email].filter(Boolean).join(' ').toLowerCase()
 
-          .col-xl-4.col-lg-6.profesional-wrapper(
-            data-modalidad=modalidad
-            data-search=busqueda
-          )
-
+          .col-xl-4.col-lg-6.profesional-wrapper(data-modalidad=modalidad data-search=busqueda)
             .card.tf-prof-card.border-0.rounded-4.shadow-sm.h-100.tfu-card
-
               .card-body.p-4.d-flex.flex-column
 
-                //- ===================================
-                //- IDENTIDAD
-                //- ===================================
-
+                //- Bloque: Identidad, estado activo y especialidad
                 .d-flex.align-items-center.gap-3.mb-4
-
                   .tf-prof-avatar= iniciales
-
                   .flex-grow-1
-
                     span.tf-prof-code= codigo
-
                     h5.fw-bold.mb-1= nombre
                     if !estaActivo
                       span.badge.bg-secondary.mt-1 Inactivo
-
                     p.text-muted.small.mb-0
                       = prof.especialidad || 'Especialidad no especificada'
-
                     if prof.subespecialidad
                       small.text-muted= prof.subespecialidad
 
-                //- ===================================
-                //- MATRÍCULA Y SEDE
-                //- ===================================
-
+                //- Bloque: Matrícula y sede de atención
                 .row.g-2.mb-3
-
                   .col-6
                     .tf-info-box.h-100
                       span.tf-label Matrícula
                       strong.small= prof.matricula || 'N/D'
-
                   .col-6
                     .tf-info-box.h-100
                       span.tf-label Sede
                       strong.small= prof.sede || 'Sede Central'
 
-                //- ===================================
-                //- AGENDA REGULAR
-                //- ===================================
-
+                //- Bloque: Días, franja horaria y duración de turnos regulares
                 .tf-days-box.mb-3
-
                   span.tf-label Agenda regular
-
                   if dias.length > 0
                     strong.small.d-block.mb-1= dias.join(' · ')
                   else
                     strong.small.d-block.mb-1
                       | Días no definidos
-
                   small.text-muted.d-block
                     | #{prof.horaInicio || '08:00'} a #{prof.horaFin || '18:00'} hs
-
                   small.text-muted.d-block
                     | Turnos de #{prof.duracionTurnoMinutos || 30} minutos
 
-                //- ===================================
-                //- COBERTURA
-                //- ===================================
-
+                //- Bloque: Cobertura médica aceptada
                 .mb-3
-
                   span.tf-label.mb-2 Tipo de atención
-
                   if cobertura === 'particular'
                     span.badge.bg-info.text-dark Particular
-
                   else if cobertura === 'obra_social'
                     span.badge.bg-primary Obra social / Prepaga
-
                   else
                     span.badge.bg-primary
                       | Particular + Obra social
 
-                //- ===================================
-                //- MODALIDADES
-                //- ===================================
-
+                //- Bloque: Badges de modalidades habilitadas
                 .d-flex.flex-wrap.gap-2.mb-3
-
                   if modalidad === 'presencial' || modalidad === 'ambas'
                     span.tf-feature.tf-feature-purple
                       | ● Presencial
-
                   if modalidad === 'telemedicina' || modalidad === 'ambas'
                     span.tf-feature.tf-feature-blue
                       | ◉ Telemedicina
-
                   if prof.permiteSobreturnos
                     span.tf-feature.tf-feature-orange
                       | + Sobreturnos
-
                   if prof.ofreceTelemedicina && modalidad === 'presencial'
                     span.tf-feature.tf-feature-blue
                       | ◉ Telemedicina disponible
 
-                //- ===================================
-                //- CONTACTO
-                //- ===================================
-
+                //- Bloque: Datos de contacto
                 .mb-3
-
                   span.tf-label Contacto
-
                   small.text-muted.d-block
                     = prof.telefono || 'Teléfono no registrado'
-
                   small.text-muted.d-block
                     = prof.email || 'Email no registrado'
 
-                //- ===================================
-                //- BOTONES DE ACCIÓN
-                //- ===================================
-
+                //- Bloque: Botones de ficha y gestión administrativa
                 .mt-auto.pt-2
-
-                  a.btn.btn-outline-primary.w-100.rounded-3.fw-bold.mb-2(
-                    href='/profesionales/' + profId
-                  )
+                  a.btn.btn-outline-primary.w-100.rounded-3.fw-bold.mb-2(href='/profesionales/' + profId)
                     | Ver ficha y agenda
 
-                  //- SOLO ADMINISTRACIÓN Y RECEPCIÓN
-
+                  //- Controles de edición, desactivación y borrado según permisos
                   if puedeGestionar
-
                     .tf-prof-actions
-
-                      //- EDICIÓN Y DESACTIVACIÓN
+                      //- Si está activo permito editar o desactivar; si está inactivo, el admin puede reactivarlo
                       if estaActivo
-                        a.btn.btn-outline-primary(
-                          href='/profesionales/' + profId + '/editar'
-                          aria-label='Editar profesional ' + nombre
-                        )
+                        a.btn.btn-outline-primary(href='/profesionales/' + profId + '/editar' aria-label='Editar profesional ' + nombre)
                           | ✏️ Editar
 
-                        form.form-eliminar-profesional(
-                          method='POST'
-                          action='/profesionales/' + profId + '/eliminar'
-                          data-nombre=nombre
-                        )
+                        form.form-eliminar-profesional(method='POST' action='/profesionales/' + profId + '/eliminar' data-nombre=nombre)
                           if typeof csrfToken !== 'undefined' && csrfToken
                             input(type='hidden' name='_csrf' value=csrfToken)
-                          button.btn.btn-outline-warning(
-                            type='submit'
-                            aria-label='Desactivar profesional ' + nombre
-                          )
+                          button.btn.btn-outline-warning(type='submit' aria-label='Desactivar profesional ' + nombre)
                             | Desactivar
                       else
                         if esAdmin
-                          form.form-reactivar-profesional(
-                            method='POST'
-                            action='/profesionales/' + profId + '/reactivar'
-                            data-nombre=nombre
-                          )
+                          form.form-reactivar-profesional(method='POST' action='/profesionales/' + profId + '/reactivar' data-nombre=nombre)
                             if typeof csrfToken !== 'undefined' && csrfToken
                               input(type='hidden' name='_csrf' value=csrfToken)
                             button.btn.btn-outline-success(type='submit') Reactivar
 
-                      //- BORRADO FÍSICO SOLO PARA ADMINISTRADOR
+                      //- El borrado físico definitivo queda restringido exclusivamente al administrador
                       if esAdmin
-                        form.form-borrar-definitivamente(
-                          method='POST'
-                          action='/profesionales/' + profId + '/eliminar-definitivamente'
-                          data-nombre=nombre
-                        )
+                        form.form-borrar-definitivamente(method='POST' action='/profesionales/' + profId + '/eliminar-definitivamente' data-nombre=nombre)
                           if typeof csrfToken !== 'undefined' && csrfToken
                             input(type='hidden' name='_csrf' value=csrfToken)
                           input(type='hidden' name='confirmar' value='ELIMINAR')
                           button.btn.btn-outline-danger(type='submit')
                             | Eliminar definitivamente
 
-      //- ==============================================
-      //- SIN RESULTADOS
-      //- ==============================================
-
+      //- Mensaje cuando el filtro o la búsqueda no arrojan coincidencias
       #sinResultadosProfesionales.tf-empty-search
-
         .display-6.mb-2 ⌕
-
         h5.fw-bold No encontramos profesionales
-
         p.text-muted.mb-0
           | Probá con otro nombre, especialidad, matrícula o sede.
 
-    //- ==============================================
-    //- JAVASCRIPT
-    //- ==============================================
+
+    //- ==========================================================
+    //- 4. LÓGICA JAVASCRIPT: FILTRADO Y CONFIRMACIONES
+    //- ==========================================================
 
     script.
       document.addEventListener('DOMContentLoaded', function () {
-
+        // Capturo las referencias del buscador, tarjetas y botones de modalidad
         const buscador = document.getElementById('buscarProfesional');
-
-        const tarjetas = Array.from(
-          document.querySelectorAll('.profesional-wrapper')
-        );
-
-        const botones = Array.from(
-          document.querySelectorAll('.tf-filter-btn')
-        );
-
-        const sinResultados = document.getElementById(
-          'sinResultadosProfesionales'
-        );
+        const tarjetas = Array.from(document.querySelectorAll('.profesional-wrapper'));
+        const botones = Array.from(document.querySelectorAll('.tf-filter-btn'));
+        const sinResultados = document.getElementById('sinResultadosProfesionales');
 
         let modalidadActiva = 'todos';
 
+        // ======================================================
+        // FILTRADO EN TIEMPO REAL POR TEXTO Y MODALIDAD
+        // ======================================================
+
         function aplicarFiltros() {
-
-          const texto = buscador
-            ? buscador.value.toLowerCase().trim()
-            : '';
-
+          const texto = buscador ? buscador.value.toLowerCase().trim() : '';
           let visibles = 0;
 
           tarjetas.forEach(function (tarjeta) {
-
             const contenido = tarjeta.dataset.search || '';
-
             const modalidad = tarjeta.dataset.modalidad || 'presencial';
-
             const coincideTexto = !texto || contenido.includes(texto);
 
+            // Si un profesional atiende en 'ambas', lo incluyo tanto en presencial como en telemedicina
             const coincideModalidad =
               modalidadActiva === 'todos' ||
               modalidad === modalidadActiva ||
-              (
-                modalidadActiva === 'presencial' &&
-                modalidad === 'ambas'
-              ) ||
-              (
-                modalidadActiva === 'telemedicina' &&
-                modalidad === 'ambas'
-              );
+              (modalidadActiva === 'presencial' && modalidad === 'ambas') ||
+              (modalidadActiva === 'telemedicina' && modalidad === 'ambas');
 
             const mostrar = coincideTexto && coincideModalidad;
-
             tarjeta.style.display = mostrar ? '' : 'none';
-
             if (mostrar) visibles++;
           });
 
           if (sinResultados) {
-            sinResultados.style.display =
-              visibles === 0 && tarjetas.length > 0
-                ? 'block'
-                : 'none';
+            sinResultados.style.display = visibles === 0 && tarjetas.length > 0 ? 'block' : 'none';
           }
         }
 
+        // Actualizo estilos de los botones de filtro al seleccionarlos
         botones.forEach(function (boton) {
-
           boton.addEventListener('click', function () {
-
             modalidadActiva = boton.dataset.modalidad;
 
             botones.forEach(function (btn) {
-
-              btn.classList.remove('btn-primary');
-              btn.classList.remove('btn-outline-primary');
-              btn.classList.remove('btn-outline-info');
-              btn.classList.remove('btn-outline-secondary');
-
+              btn.classList.remove('btn-primary', 'btn-outline-primary', 'btn-outline-info', 'btn-outline-secondary');
               btn.classList.add('btn');
 
               if (btn.dataset.modalidad === 'telemedicina') {
                 btn.classList.add('btn-outline-info');
-
               } else if (btn.dataset.modalidad === 'ambas') {
                 btn.classList.add('btn-outline-secondary');
-
               } else {
                 btn.classList.add('btn-outline-primary');
               }
             });
 
-            boton.classList.remove(
-              'btn-outline-primary',
-              'btn-outline-info',
-              'btn-outline-secondary'
-            );
-
+            boton.classList.remove('btn-outline-primary', 'btn-outline-info', 'btn-outline-secondary');
             boton.classList.add('btn-primary');
 
             aplicarFiltros();
@@ -590,7 +463,11 @@ block content
           buscador.addEventListener('input', aplicarFiltros);
         }
 
-        // Confirmaciones independientes; no se cambian los filtros.
+        // ======================================================
+        // CONFIRMACIONES DE ACCIONES CRÍTICAS
+        // ======================================================
+
+        // Engancho diálogos de confirmación y bloqueo el botón al enviar para evitar dobles envíos
         function prepararConfirmacion(selector, construirMensaje) {
           document.querySelectorAll(selector).forEach(function (form) {
             form.addEventListener('submit', function (event) {

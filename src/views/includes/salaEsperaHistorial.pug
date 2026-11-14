@@ -1,21 +1,34 @@
+//- ============================================================
+//- SECCIÓN: ÚLTIMOS LLAMADOS A SALA DE ESPERA - TURNOFLEX
+//- ============================================================
+//- Componente visual que muestra el historial reciente de pacientes
+//- llamados a consultorio durante la jornada diaria[cite: 21].
 
 section.sala-panel.mt-4(
   aria-labelledby="tituloUltimosLlamados"
 )
+  //- ========================================================
+  //- CABECERA DEL PANEL (TÍTULO Y CONTADOR)
+  //- ========================================================
   .d-flex.justify-content-between.align-items-center.mb-3
     h4#tituloUltimosLlamados.text-white.mb-0
-      | Últimos llamados
+      | Últimos llamados[cite: 21]
 
     span#contadorUltimosLlamados.badge.bg-secondary
-      | 0 de 5
+      | 0 de 5[cite: 21]
 
+  //- Descripción breve de la funcionalidad del panel[cite: 21]
   p.text-light.opacity-75.small
-    | Historial de pacientes llamados durante el día.
+    | Historial de pacientes llamados durante el día.[cite: 21]
 
+  //- ========================================================
+  //- LISTADO DINÁMICO DE LLAMADOS (ACCESIBILIDAD ARIA-LIVE)
+  //- ========================================================
   ul#listaUltimosLlamados.list-unstyled.mb-0(
     aria-live="polite"
   )
     li.text-light.opacity-75
-      | Consultando últimos llamados...
+      | Consultando últimos llamados...[cite: 21]
 
-script(src="/js/sala-espera-historial.js" defer)
+//- Script específico para la gestión y actualización en tiempo real del historial[cite: 21]
+script(src="/js/sala-espera-historial.js" defer)[cite: 21]

@@ -1,10 +1,17 @@
+//- ============================================================
+//- VISTA DE DETALLE E HISTORIAL DEL PROFESIONAL - TURNOFLEX
+//- ============================================================
+//- Plantilla Pug que renderiza la ficha gerencial y médica del profesional,
+//- incorporando datos regulatorios, contacto, sedes, agenda regular, 
+//- sobreturnos, telemedicina y opciones de administración.
+
 extends layout
 
 block content
   .tf-page--detalle-profesional
 
     //- ============================================================
-    //- FUNCIONES AUXILIARES
+    //- FUNCIONES AUXILIARES Y HELPERS
     //- ============================================================
 
     - const iniciales = (nombre) => nombre ? nombre.split(' ').filter(Boolean).slice(0, 2).map(function(n) { return n[0].toUpperCase(); }).join('') : 'DR'
@@ -14,7 +21,7 @@ block content
 
 
     //- ============================================================
-    //- ERROR
+    //- VALIDACIÓN DE ERRORES Y EXISTENCIA DEL PROFESIONAL
     //- ============================================================
 
     if error
@@ -59,7 +66,7 @@ block content
 
 
             //- ====================================================
-            //- CABECERA
+            //- CABECERA DE LA FICHA DEL PROFESIONAL
             //- ====================================================
 
             .tf-prof-header.tfu-hero
@@ -113,14 +120,14 @@ block content
 
 
             //- ====================================================
-            //- CUERPO
+            //- CUERPO PRINCIPAL DE DATOS
             //- ====================================================
 
             .card-body.p-4.p-md-5
 
 
               //- ==================================================
-              //- 1. DATOS PROFESIONALES
+              //- 1. DATOS PROFESIONALES Y REGULATORIOS
               //- ==================================================
 
               .tf-section-card.tf-left-purple.tfu-card
@@ -300,7 +307,7 @@ block content
 
 
               //- ==================================================
-              //- 4. SOBRETURNOS
+              //- 4. AGENDA DE SOBRETURNOS
               //- ==================================================
 
               .tf-section-card.tf-left-warning.tfu-card
@@ -378,7 +385,7 @@ block content
 
 
               //- ==================================================
-              //- 5. TELEMEDICINA
+              //- 5. AGENDA DE TELEMEDICINA
               //- ==================================================
 
               .tf-section-card.tf-left-info.tfu-card
@@ -445,7 +452,7 @@ block content
 
 
               //- ==================================================
-              //- BOTONES
+              //- BARRA DE BOTONES Y ACCIONES INFERIORES
               //- ==================================================
 
               .d-flex.justify-content-between.align-items-center.flex-wrap.gap-3.mt-4
@@ -462,8 +469,9 @@ block content
                     style="background:#8B5CF6;"
                   )
                     | + Gestionar nuevo turno+
+
               //- ============================================================
-              //- 6. ELIMINAR PROFESIONAL
+              //- 6. ELIMINAR PROFESIONAL (ACCIÓN DESTRUCTORA)
               //- ============================================================
               form(action=`/profesionales/${profesional._id}/eliminar` method="POST" onsubmit="return confirm('¿Eliminar profesional definitivamente?');")
   

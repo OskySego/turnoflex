@@ -1,9 +1,16 @@
+//- ============================================================
+//- VISTA DEL PANEL DE INTELIGENCIA GERENCIAL - TURNOFLEX
+//- ============================================================
+//- Plantilla Pug que renderiza el centro de inteligencia gerencial,
+//- incorporando métricas estratégicas, gráficos dinámicos con Chart.js,
+//- análisis operativo, financiero y herramientas de control ejecutivo.
+
 extends layout
 
 block content
 
   //- ============================================================
-  //- DATOS DEL DASHBOARD
+  //- EXTRACCIÓN Y PREPARACIÓN DE DATOS DEL DASHBOARD
   //- ============================================================
 
   - const m = (typeof metricas !== 'undefined' && metricas) ? metricas : {}
@@ -41,14 +48,14 @@ block content
 
 
   //- ============================================================
-  //- CHART.JS
+  //- IMPORTACIÓN DE LIBRERÍA EXTERNA: CHART.JS
   //- ============================================================
 
   script(src="https://cdn.jsdelivr.net/npm/chart.js")
 
 
   //- ============================================================
-  //- ESTILOS
+  //- ESTILOS CSS PERSONALIZADOS PARA EL DASHBOARD GERENCIAL
   //- ============================================================
 
   style.
@@ -80,7 +87,7 @@ block content
 
 
     /* ==========================================================
-       HERO
+       HERO PRINCIPAL
        ========================================================== */
 
     .tf-hero {
@@ -184,7 +191,7 @@ block content
 
 
     /* ==========================================================
-       SECCIONES
+       CABECERAS DE SECCIÓN
        ========================================================== */
 
     .tf-section-header {
@@ -216,7 +223,7 @@ block content
 
 
     /* ==========================================================
-       KPI
+       TARJETAS KPI (INDICADORES CLAVE)
        ========================================================== */
 
     .tf-kpi {
@@ -301,7 +308,7 @@ block content
 
 
     /* ==========================================================
-       PANELES
+       PANELES Y CONTENEDORES DE GRÁFICOS
        ========================================================== */
 
     .tf-panel {
@@ -347,7 +354,7 @@ block content
 
 
     /* ==========================================================
-       RANKING
+       TABLA DE RANKING PROFESIONAL
        ========================================================== */
 
     .tf-ranking-table {
@@ -420,7 +427,7 @@ block content
 
 
     /* ==========================================================
-       INSIGHTS
+       TARJETAS DE INSIGHTS Y ANÁLISIS
        ========================================================== */
 
     .tf-insight {
@@ -463,7 +470,7 @@ block content
 
 
     /* ==========================================================
-       DIAGNÓSTICO
+       DIAGNÓSTICO Y RESALTE FINANCIERO
        ========================================================== */
 
     .tf-diagnosis {
@@ -488,7 +495,7 @@ block content
 
 
     /* ==========================================================
-       ACCIONES
+       ACCIONES RÁPIDAS Y ENLACES DE GESTIÓN
        ========================================================== */
 
     .tf-action {
@@ -538,6 +545,10 @@ block content
     }
 
 
+    /* ==========================================================
+       MEDIA QUERIES PARA DISPOSITIVOS MÓVILES
+       ========================================================== */
+
     @media (max-width: 767px) {
 
       .tf-hero {
@@ -556,14 +567,14 @@ block content
 
 
   //- ============================================================
-  //- CONTENIDO
+  //- CONTENIDO PRINCIPAL DEL DASHBOARD
   //- ============================================================
 
   .tf-dashboard.tfu-page
 
 
     //- ==========================================================
-    //- HERO
+    //- SECCIÓN: HERO / BIENVENIDA AL CENTRO DE INTELIGENCIA
     //- ==========================================================
 
     .tf-hero.mb-4.tfu-hero
@@ -595,7 +606,7 @@ block content
 
 
     //- ==========================================================
-    //- PULSO OPERATIVO
+    //- SECCIÓN: PULSO OPERATIVO (INDICADORES CLAVE)
     //- ==========================================================
 
     .tf-section-header
@@ -729,7 +740,7 @@ block content
 
 
     //- ==========================================================
-    //- ANÁLISIS OPERATIVO
+    //- SECCIÓN: ANÁLISIS OPERATIVO (GRÁFICOS DE DEMANDA)
     //- ==========================================================
 
     .tf-section-header
@@ -780,7 +791,7 @@ block content
 
 
     //- ==========================================================
-    //- STAFF + RADAR
+    //- SECCIÓN: RANKING DE STAFF Y RADAR ESTRATÉGICO DE INSIGHTS
     //- ==========================================================
 
     .row.g-4.mb-4
@@ -928,7 +939,7 @@ block content
 
 
     //- ==========================================================
-    //- FINANZAS
+    //- SECCIÓN: INTELIGENCIA FINANCIERA Y COBRANZAS
     //- ==========================================================
 
     .tf-section-header
@@ -1051,7 +1062,7 @@ block content
 
 
     //- ==========================================================
-    //- TENDENCIAS
+    //- SECCIÓN: TENDENCIAS Y COMPORTAMIENTO (EVOLUCIÓN Y ESPECIALIDADES)
     //- ==========================================================
 
     .tf-section-header
@@ -1104,7 +1115,7 @@ block content
 
 
     //- ==========================================================
-    //- DIAGNÓSTICO FINANCIERO
+    //- SECCIÓN: DIAGNÓSTICO FINANCIERO AUTOMÁTICO
     //- ==========================================================
 
     .tf-section-header
@@ -1188,7 +1199,7 @@ block content
 
 
     //- ==========================================================
-    //- ACCIONES
+    //- SECCIÓN: ACCESOS Y ACCIONES ESTRATÉGICAS
     //- ==========================================================
 
     .tf-section-header
@@ -1234,7 +1245,7 @@ block content
 
 
   //- ============================================================
-  //- JAVASCRIPT
+  //- SCRIPT JAVASCRIPT: LÓGICA DE UI, CONTADORES Y CHART.JS
   //- ============================================================
 
   script.
@@ -1247,7 +1258,7 @@ block content
 
 
       // =========================================================
-      // HORA
+      // OBTENCIÓN Y MOSTRADO DE HORA ACTUAL EN PANEL
       // =========================================================
 
       const horaPanel =
@@ -1266,7 +1277,7 @@ block content
 
 
       // =========================================================
-      // ACTUALIZAR
+      // BOTÓN DE ACTUALIZACIÓN DE DATOS
       // =========================================================
 
       const btnActualizar =
@@ -1284,7 +1295,7 @@ block content
 
 
       // =========================================================
-      // CONTADORES
+      // ANIMACIÓN DE CONTADORES NUMÉRICOS (KPIs)
       // =========================================================
 
       const counters =
@@ -1337,7 +1348,7 @@ block content
 
 
       // =========================================================
-      // CHART.JS
+      // VERIFICACIÓN DE DISPONIBILIDAD DE CHART.JS
       // =========================================================
 
       if (typeof Chart === 'undefined') {
@@ -1374,7 +1385,7 @@ block content
 
 
       // =========================================================
-      // PROFESIONALES
+      // GRÁFICO: PROFESIONALES MÁS SOLICITADOS
       // =========================================================
 
       const canvasProfesionales =
@@ -1507,7 +1518,7 @@ block content
 
 
       // =========================================================
-      // ESTADOS
+      // GRÁFICO: DISTRIBUCIÓN DE ESTADOS DE TURNOS
       // =========================================================
 
       const canvasEstados =
@@ -1613,7 +1624,7 @@ block content
 
 
       // =========================================================
-      // EVOLUCIÓN
+      // GRÁFICO: EVOLUCIÓN DE TURNOS (ÚLTIMOS 7 DÍAS)
       // =========================================================
 
       const canvasEvolucion =
@@ -1770,7 +1781,7 @@ block content
 
 
       // =========================================================
-      // ESPECIALIDADES
+      // GRÁFICO: ESPECIALIDADES MÁS SOLICITADAS
       // =========================================================
 
       const canvasEspecialidades =
@@ -1905,7 +1916,7 @@ block content
 
 
       // =========================================================
-      // CAMBIO DE TEMA
+      // OBSERVADOR DE CAMBIOS DE TEMA (CLARO / OSCURO)
       // =========================================================
 
       const observador =
