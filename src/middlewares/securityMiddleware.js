@@ -1,30 +1,30 @@
+/**
+ * Middleware de seguridad y limitación de peticiones (Rate Limiting) para TurnoFlex.
+ * Protege el endpoint de login contra ataques de fuerza bruta ajustando la tolerancia según el entorno.
+ */
 
 import rateLimit from 'express-rate-limit';
 
 // ============================================================
-// TURNOFLEX - PROTECCIÓN DE INICIO DE SESIÓN
+// CONFIGURACIÓN DE LÍMITES SEGÚN ENTORNO
 // ============================================================
 
-// En desarrollo permitimos más solicitudes para realizar
-// pruebas con diferentes usuarios y roles.
-//
-// En producción mantenemos un límite más estricto.
-
-const esProduccion =
-  process.env.NODE_ENV === 'production';
-
+// En desarrollo damos margen para testear distintos usuarios; en producción cerramos a 5 intentos
+const esProduccion = process.env.NODE_ENV === 'production';
 const limiteIntentos = esProduccion ? 5 : 20;
 
-export const loginLimiter = rateLimit({
+// ============================================================
+// LIMITADOR DE INTENTOS DE INICIO DE SESIÓN
+// ============================================================
 
-  // Ventana de 15 minutos.
+export const loginLimiter = rateLimit({
+  // Ventana de bloqueo de 15 minutos
   windowMs: 15 * 60 * 1000,
 
-  // Producción: 5 solicitudes.
-  // Desarrollo: 20 solicitudes.
+  // Máximo de solicitudes permitidas por IP dentro de la ventana
   max: limiteIntentos,
 
-  // Información estándar del límite HTTP.
+  // Enviamos cabeceras estándar RateLimit-* y desactivamos las legacy X-RateLimit-*
   standardHeaders: true,
   legacyHeaders: false,
 
@@ -32,29 +32,24 @@ export const loginLimiter = rateLimit({
     'Demasiados intentos de inicio de sesión. ' +
     'Intentá nuevamente más tarde.',
 
-  // Responder sin generar una excepción innecesaria.
+  // Manejador personalizado para devolver JSON o vista Pug sin tirar excepción no controlada
   handler: (req, res) => {
-
     const mensaje =
       'Se alcanzó el límite de intentos de inicio ' +
       'de sesión. Intentá nuevamente en unos minutos.';
 
-    // Respuesta para clientes que esperan JSON.
-    if (
-      req.accepts('json') &&
-      !req.accepts('html')
-    ) {
+    // Si la petición viene por fetch/API esperando JSON, respondemos con 429 estructurado
+    if (req.accepts('json') && !req.accepts('html')) {
       return res.status(429).json({
         status: 'error',
         message: mensaje
       });
     }
 
-    // Mostrar el mensaje en el formulario de login.
+    // Para navegación tradicional, volvemos a renderizar el login con el aviso de bloqueo
     return res.status(429).render('auth/login', {
       tituloPage: 'Iniciar Sesión - TurnoFlex',
       error: mensaje
     });
   }
-
 });

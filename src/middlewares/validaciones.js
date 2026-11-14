@@ -1,21 +1,34 @@
+/**
+ * Reglas y middlewares de validación con express-validator para TurnoFlex.
+ * Centraliza el chequeo de datos de entrada (registro, turnos y DNI) y delega fallos al errorHandler global.
+ */
+
 import { body, validationResult } from 'express-validator';
 
-// 1. Interceptor: Revisa si alguna validación falló y lo envía al Global Error Handler
+// ============================================================
+// INTERCEPTOR DE RESULTADOS DE VALIDACIÓN
+// ============================================================
+
 export const revisarErrores = (req, res, next) => {
   const errores = validationResult(req);
+
   if (!errores.isEmpty()) {
-    // Tomamos el primer error de la lista para mostrarlo al usuario
+    // Tomamos el primer error de la lista para devolver un mensaje claro al cliente
     const mensajeError = errores.array()[0].msg;
-    
-    // Aprovechamos el manejador de errores que creamos en el Punto 1
+
+    // Armamos un error HTTP 400 y se lo pasamos al manejador global
     const error = new Error(`Error de validación: ${mensajeError}`);
     error.statusCode = 400;
     return next(error);
   }
+
   next();
 };
 
-// 2. Reglas para Registro de Usuarios (Email y Contraseña > 8)
+// ============================================================
+// REGLAS PARA REGISTRO DE USUARIOS
+// ============================================================
+
 export const validarRegistro = [
   body('nombre').notEmpty().withMessage('El nombre es obligatorio.').trim(),
   body('email').isEmail().withMessage('Debe proporcionar un correo electrónico válido.').normalizeEmail(),
@@ -23,13 +36,16 @@ export const validarRegistro = [
   revisarErrores
 ];
 
-// 3. Reglas para Crear Turnos (Fechas no retroactivas)
+// ============================================================
+// REGLAS PARA ALTA Y GESTIÓN DE TURNOS
+// ============================================================
+
 export const validarTurno = [
   body('cliente_id').isMongoId().withMessage('El paciente seleccionado no es válido.'),
   body('profesional_id').isMongoId().withMessage('El profesional seleccionado no es válido.'),
   body('fecha').notEmpty().withMessage('La fecha es obligatoria.')
     .custom((value) => {
-      // Compara la fecha ingresada con la fecha actual de Argentina (YYYY-MM-DD)
+      // Comparamos contra la fecha actual en zona horaria Argentina (formato YYYY-MM-DD)
       const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' });
       if (value < hoy) {
         throw new Error('No se pueden solicitar turnos para fechas pasadas.');
@@ -40,7 +56,10 @@ export const validarTurno = [
   revisarErrores
 ];
 
-// 4. Reglas para Clientes / Profesionales (DNI Numérico)
+// ============================================================
+// REGLAS DE DOCUMENTO DE IDENTIDAD (DNI)
+// ============================================================
+
 export const validarDni = [
   body('dni')
     .isNumeric().withMessage('El DNI debe contener exclusivamente números.')
