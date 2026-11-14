@@ -2,7 +2,7 @@
 
 **TurnoFlex** es una plataforma web integral diseñada para la gestión inteligente de turnos, sala de espera en tiempo real, historiales clínicos y administración operativa de centros de salud o consultorios profesionales. Construida con enfoque en la escalabilidad, la seguridad por roles y una experiencia de usuario fluida.
 
-🌍 **Web en Producción:** [https://turnoflex-a7c0.onrender.com](https://turnoflex-a7c0.onrender.com)  
+🌍 **Web en Producción:** [https://turnoflex-j8xe.onrender.com/](https://turnoflex-j8xe.onrender.com/)  
 📂 **Repositorio Oficial:** [https://github.com/OskySego/turnoflex](https://github.com/OskySego/turnoflex)
 
 ---
