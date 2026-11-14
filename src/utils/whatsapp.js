@@ -1,3 +1,8 @@
+/**
+ * Servicio de mensajería y bot de WhatsApp para TurnoFlex (whatsapp-web.js).
+ * Gestiona el ciclo de vida del cliente, autenticación por código QR, sincronización vía WebSockets y envío de recordatorios.
+ */
+
 import pkg from 'whatsapp-web.js';
 import qrcode from 'qrcode';
 
@@ -13,7 +18,7 @@ let isReady = false;
 let pruebaEnviada = false;
 
 // ============================================================
-// INICIALIZAR WHATSAPP
+// INICIALIZACIÓN DEL CLIENTE DE WHATSAPP
 // ============================================================
 
 export const iniciarWhatsApp = (io) => {
@@ -38,7 +43,7 @@ export const iniciarWhatsApp = (io) => {
   });
 
   // ==========================================================
-  // GENERACION DEL CODIGO QR
+  // GENERACIÓN DEL CÓDIGO QR PARA VINCULACIÓN
   // ==========================================================
 
   client.on('qr', async (qr) => {
@@ -49,9 +54,10 @@ export const iniciarWhatsApp = (io) => {
     try {
       latestQr = await qrcode.toDataURL(qr);
 
+      // Emitimos el QR actualizado a través de Socket.io al panel de control
       io.emit('whatsapp_qr', latestQr);
 
-      console.log('✅ Codigo QR enviado al panel de TurnoFlex.');
+      console.log('✅ Código QR enviado al panel de TurnoFlex.');
 
     } catch (error) {
       console.error(
@@ -62,16 +68,16 @@ export const iniciarWhatsApp = (io) => {
   });
 
   // ==========================================================
-  // AUTENTICACION
+  // EVENTOS DE AUTENTICACIÓN
   // ==========================================================
 
   client.on('authenticated', () => {
-    console.log('✅ WhatsApp: autenticacion correcta.');
+    console.log('✅ WhatsApp: autenticación correcta.');
   });
 
   client.on('auth_failure', (mensaje) => {
     console.error(
-      '❌ WhatsApp: fallo de autenticacion:',
+      '❌ WhatsApp: fallo de autenticación:',
       mensaje
     );
 
@@ -79,7 +85,7 @@ export const iniciarWhatsApp = (io) => {
   });
 
   // ==========================================================
-  // PROGRESO DE CARGA
+  // PROGRESO DE CARGA DE SESIÓN
   // ==========================================================
 
   client.on('loading_screen', (porcentaje, mensaje) => {
@@ -89,7 +95,7 @@ export const iniciarWhatsApp = (io) => {
   });
 
   // ==========================================================
-  // CAMBIOS DE ESTADO
+  // CAMBIOS DE ESTADO DE LA CONEXIÓN
   // ==========================================================
 
   client.on('change_state', (estado) => {
@@ -97,7 +103,7 @@ export const iniciarWhatsApp = (io) => {
   });
 
   // ==========================================================
-  // WHATSAPP CONECTADO
+  // CLIENTE LISTO Y OPERATIVO
   // ==========================================================
 
   client.on('ready', async () => {
@@ -107,10 +113,10 @@ export const iniciarWhatsApp = (io) => {
     isReady = true;
     latestQr = null;
 
-    // Avisar al panel de secretaria
+    // Notificamos al panel de secretaría que el bot está operativo
     io.emit('whatsapp_ready');
 
-    // Ejecutar prueba solo si fue solicitada
+    // Ejecutamos mensaje de prueba opcional únicamente si fue configurado por entorno
     const numeroPrueba =
       process.env.TURNOFLEX_PRUEBA_WHATSAPP;
 
@@ -125,7 +131,7 @@ export const iniciarWhatsApp = (io) => {
 
       if (!/^549\d{10}$/.test(numero)) {
         console.error(
-          '❌ Numero de prueba invalido. Usar 549 + 10 digitos.'
+          '❌ Número de prueba inválido. Usar 549 + 10 dígitos.'
         );
         return;
       }
@@ -136,14 +142,14 @@ export const iniciarWhatsApp = (io) => {
 
       if (!destino) {
         console.error(
-          '❌ El numero de prueba no fue encontrado en WhatsApp.'
+          '❌ El número de prueba no fue encontrado en WhatsApp.'
         );
         return;
       }
 
       const mensaje =
         '✅ Prueba de TurnoFlex\n\n' +
-        'WhatsApp esta conectado correctamente.\n' +
+        'WhatsApp está conectado correctamente.\n' +
         'El sistema puede enviar mensajes.';
 
       await client.sendMessage(
@@ -164,7 +170,7 @@ export const iniciarWhatsApp = (io) => {
   });
 
   // ==========================================================
-  // DESCONEXION
+  // GESTIÓN DE DESCONEXIÓN
   // ==========================================================
 
   client.on('disconnected', (motivo) => {
@@ -179,7 +185,7 @@ export const iniciarWhatsApp = (io) => {
   });
 
   // ==========================================================
-  // SINCRONIZACION CON SOCKET.IO
+  // SINCRONIZACIÓN DE ESTADO CON NUEVAS CONEXIONES SOCKET.IO
   // ==========================================================
 
   io.on('connection', (socket) => {
@@ -196,7 +202,7 @@ export const iniciarWhatsApp = (io) => {
   });
 
   // ==========================================================
-  // INICIAR EL CLIENTE
+  // INICIO DE LA INSTANCIA DE CLIENTE
   // ==========================================================
 
   try {
@@ -222,8 +228,9 @@ export const iniciarWhatsApp = (io) => {
   }
 };
 
+
 // ============================================================
-// ENVIAR RECORDATORIOS DE TURNOS
+// ENVÍO DE RECORDATORIOS AUTOMÁTICOS DE TURNOS
 // ============================================================
 
 export const enviarWhatsApp = async (
@@ -237,7 +244,7 @@ export const enviarWhatsApp = async (
   if (!client || !isReady) {
 
     console.log(
-      '⚠️ WhatsApp no esta listo para enviar mensajes.'
+      '⚠️ WhatsApp no está listo para enviar mensajes.'
     );
 
     return false;
@@ -247,7 +254,7 @@ export const enviarWhatsApp = async (
 
     const numeroLimpio = String(numero).replace(/\D/g, '');
 
-    // Aceptar numeros argentinos con o sin prefijo 549
+    // Normalización de números telefónicos argentinos con o sin prefijo 549
     let telefono = numeroLimpio;
 
     if (telefono.startsWith('549')) {

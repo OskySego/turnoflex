@@ -1,9 +1,13 @@
+/**
+ * Corrección temporal para whatsapp-web.js 1.34.7.
+ * Gestiona el reintento ante errores transitorios de Puppeteer durante el registro de funciones en el navegador.
+ */
 
 'use strict';
 
-// Correccion temporal para whatsapp-web.js 1.34.7
-// Reintenta errores transitorios de Puppeteer
-// durante el registro de funciones del navegador.
+// ============================================================
+// VERIFICACIÓN Y EXPOSICIÓN DE FUNCIONES CON REINTENTO
+// ============================================================
 
 async function exposeFunctionIfAbsent(page, name, fn) {
     const exist = await page.evaluate((name) => {
@@ -51,6 +55,11 @@ async function exposeFunctionWithRetry(
 
     throw lastError;
 }
+
+
+// ============================================================
+// DETECCIÓN DE ERRORES TRANSITORIOS Y EXPORTACIÓN
+// ============================================================
 
 function isTransientExposeError(error) {
     const message =

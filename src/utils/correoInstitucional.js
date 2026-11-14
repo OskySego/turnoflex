@@ -1,3 +1,12 @@
+/**
+ * Utilidades para la validación de dominios, normalización de nombres y generación 
+ * de alias de correo institucional únicos para TurnoFlex.
+ */
+
+// ============================================================
+// VALIDACIÓN DE DOMINIOS
+// ============================================================
+
 function validarDominio(dominio) {
   const valor = String(dominio ?? '')
     .trim()
@@ -15,7 +24,12 @@ function validarDominio(dominio) {
   return valor;
 }
 
-// Normalizar el nombre del profesional.
+
+// ============================================================
+// NORMALIZACIÓN Y LIMPIEZA DE NOMBRES
+// ============================================================
+
+// Normaliza el nombre del profesional quitando títulos, acentos y caracteres especiales.
 function limpiarNombre(nombre) {
   const texto = String(nombre ?? '')
     .trim()
@@ -45,7 +59,12 @@ function limpiarNombre(nombre) {
   };
 }
 
-// Validar y normalizar el correo particular.
+
+// ============================================================
+// VALIDACIÓN DE CORREO PARTICULAR
+// ============================================================
+
+// Valida y normaliza el formato del correo personal real.
 export function normalizarCorreoParticular(correo) {
   const valor = String(correo ?? '')
     .trim()
@@ -63,7 +82,12 @@ export function normalizarCorreoParticular(correo) {
   return valor;
 }
 
-// Generar la primera dirección institucional.
+
+// ============================================================
+// GENERACIÓN DE CORREOS INSTITUCIONALES
+// ============================================================
+
+// Genera la primera dirección institucional base en formato nombre.apellido@dominio.
 export function generarCorreoInstitucional(
   nombreCompleto,
   dominio
@@ -77,10 +101,9 @@ export function generarCorreoInstitucional(
   );
 }
 
-// Buscar una dirección que no esté ocupada.
-//
-// existeCorreo debe comprobar tanto MongoDB como
-// el proveedor institucional antes de crear el buzón.
+// Busca una dirección institucional disponible que no se encuentre ocupada.
+// Nota: existeCorreo debe comprobar tanto en MongoDB como 
+// en el proveedor institucional antes de confirmar la disponibilidad del buzón.
 export async function generarCorreoInstitucionalDisponible({
   nombreCompleto,
   dominio,

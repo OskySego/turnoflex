@@ -1,12 +1,26 @@
+/**
+ * Servicio de envío de correos y recordatorios por SMTP (Nodemailer) para TurnoFlex.
+ * Configura el transporte de Gmail y genera las plantillas HTML para notificaciones a pacientes.
+ */
+
 import nodemailer from 'nodemailer';
+
+// ============================================================
+// CONFIGURACIÓN DEL TRANSPORTE SMTP (GMAIL)
+// ============================================================
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER, // Tu correo de Gmail
-    pass: process.env.EMAIL_PASS  // Tu "Contraseña de Aplicación" de Google
+    user: process.env.EMAIL_USER, // Correo de Gmail configurado en entorno
+    pass: process.env.EMAIL_PASS  // Contraseña de aplicación generada en Google
   }
 });
+
+
+// ============================================================
+// FUNCIÓN DE ENVÍO DE RECORDATORIOS DE TURNOS
+// ============================================================
 
 export const sendRecordatorio = async (emailDestino, nombreCliente, fecha, hora, profesional) => {
   const mailOptions = {
