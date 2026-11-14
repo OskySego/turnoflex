@@ -575,10 +575,36 @@ block content
                       style="margin:0;"
                     )
 
-                      button.btn.btn-success.rounded-3.px-3(
-                        type="submit"
+                      
+                    //- Desde recepción confirmo que el paciente llegó.
+                    //- No marco el turno como atendido.
+
+                    if !turno.presentadoEn
+                      form(
+                        action=`/turnos/${turnoId}/presencia/confirmar`
+                        method="POST"
+                        style="margin:0;"
                       )
-                        | ✓ Marcar atendido
+                        button.btn.btn-success.rounded-3.px-3(
+                          type="submit"
+                        )
+                          | ✓ Confirmar llegada
+
+                    else
+                      .d-flex.flex-wrap.align-items-center.gap-2
+                        span.badge.bg-success.p-2
+                          | ✓ Paciente presente
+
+                        if !turno.ultimoLlamadoSalaEn
+                          form(
+                            action=`/turnos/${turnoId}/presencia/anular`
+                            method="POST"
+                            style="margin:0;"
+                          )
+                            button.btn.btn-outline-secondary.btn-sm(
+                              type="submit"
+                            )
+                              | Deshacer confirmación
 
 
                     form(

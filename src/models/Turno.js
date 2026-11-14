@@ -104,6 +104,24 @@ const turnoSchema = new mongoose.Schema(
       type: String,
       required: true
     },
+    // Registro cuándo llega el paciente a la clínica.
+    // Esto no significa que ya recibió atención.
+    presentadoEn: {
+      type: Date,
+      default: null
+    },
+    // Guardo quién confirmó la llegada en recepción.
+    presentadoPor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Usuario',
+      default: null
+    },
+    // Conservo el último llamado para la sala de espera.
+    // No debo declarar este campo dos veces.
+    ultimoLlamadoSalaEn: {
+      type: Date,
+      default: null
+    },
     modalidad: {
       type: String,
       enum: [

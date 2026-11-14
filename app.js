@@ -254,6 +254,12 @@ io.on('connection', (socket) => {
     usuario?.rol
   );
 
+
+  // Conecto a los médicos con las novedades de recepción.
+  if (usuario?.rol === 'profesional') {
+    socket.join('agenda-medica');
+  }
+
   if (autorizado) {
     socket.join('sala-espera');
   }

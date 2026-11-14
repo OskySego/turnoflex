@@ -111,15 +111,22 @@ beforeEach(() => {
   // TURNO FICTICIO
   // ----------------------------------------------------------
 
+  
+  // Preparo un paciente que ya confirmó su llegada.
+  // Así puedo comprobar que el médico lo llame correctamente.
   turno = {
     _id: turnoId,
     profesional_id: profesionalId,
+
     cliente_id: {
       nombre: 'Lucas Giménez'
     },
+
     fecha: fechaHoy(),
     hora: '15:00',
-    estado: 'reservado'
+    estado: 'reservado',
+
+    presentadoEn: new Date()
   };
 
   // ----------------------------------------------------------

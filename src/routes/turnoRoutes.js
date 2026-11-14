@@ -23,6 +23,11 @@ import {
   catchAsync
 } from '../utils/catchAsync.js';
 
+import {
+  confirmarLlegada,
+  anularLlegada
+} from '../controllers/presenciaTurnoController.js';
+
 
 const router = Router();
 
@@ -170,7 +175,7 @@ router.post('/:id/transferencia/rechazar', asegurarAutenticacion,
 
 
 // ============================================================
-// 7. CAMBIOS DE ESTADO OPERATIVO (ATENCIÓN Y CANCELACIÓN)
+// 7. CAMBIOS DE ESTADO OPERATIVO (ATENCIÓN Y CANCELACIÓN, PRESENCIA)
 // Nota: El profesional maneja sus acciones desde su propio enrutador /medico
 // ============================================================
 
@@ -202,6 +207,23 @@ router.post(
   catchAsync(
     TurnoController.cancelarTurno
   )
+);
+
+
+// Permito que recepción confirme la llegada del paciente.
+router.post(
+  '/:id/presencia/confirmar',
+  asegurarAutenticacion,
+  verificarRol('admin', 'personal'),
+  catchAsync(confirmarLlegada)
+);
+
+// Permito corregir una llegada antes del primer llamado.
+router.post(
+  '/:id/presencia/anular',
+  asegurarAutenticacion,
+  verificarRol('admin', 'personal'),
+  catchAsync(anularLlegada)
 );
 
 

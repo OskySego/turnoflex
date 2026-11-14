@@ -1,24 +1,52 @@
+//- ============================================================
+//- VISTA DE FORMULARIO PARA ADJUNTAR ESTUDIOS - TURNOFLEX
+//- ============================================================
+//- Plantilla Pug que renderiza el formulario seguro para que la recepción
+//- cargue documentación médica en el expediente del paciente, con soporte 
+//- de subida multipart, tokens CSRF y restricciones de rol.
+
 extends ../layout
 
 block content
+  //- Contenedor principal con ancho máximo acotado
   .container.py-4(style='max-width:760px')
+    
+    //- ========================================================
+    //- CABECERA DE LA VISTA Y DATOS DEL PACIENTE
+    //- ========================================================
     p.text-primary.text-uppercase.small.fw-bold TurnoFlex · Recepción
     h1.h3 Adjuntar estudio del paciente
     p.text-body-secondary #{paciente.nombre} · DNI #{paciente.dni || 'No informado'}
+    
+    //- Alerta informativa sobre alcances de permisos de secretaría y recepción
     .alert.alert-info La recepción puede incorporar documentación, pero no consultar ni modificar diagnósticos o evoluciones médicas.
+
+    //- ========================================================
+    //- FORMULARIO DE CARGA DE ESTUDIOS (MULTIPART)
+    //- ========================================================
     form.card(method='POST' enctype='multipart/form-data' action=`/clinica/pacientes/${paciente._id}/estudios`)
       .card-body.p-4
+        
+        //- Tokens de protección CSRF (general y específico del módulo clínico)
         if typeof csrfToken !== 'undefined' && csrfToken
           input(type='hidden' name='_csrf' value=csrfToken)
         input(type='hidden' name='_tfClinicaCsrf' value=tfClinicaCsrf)
+
+        //- Campo: Tipo de estudio
         .mb-3
           label.form-label(for='tipoEstudio') Tipo de estudio *
           input.form-control#tipoEstudio(type='text' name='tipoEstudio' maxlength='120' placeholder='Ej.: Hemograma, radiografía, electrocardiograma' required)
+
+        //- Campo: Fecha del estudio
         .mb-3
           label.form-label(for='fechaEstudio') Fecha del estudio *
           input.form-control#fechaEstudio(type='date' name='fechaEstudio' required)
+
+        //- Campo: Archivo adjunto (PDF, PNG, JPG hasta 10 MB)
         .mb-4
           label.form-label(for='archivo') Archivo PDF, PNG o JPG (máx. 10 MB) *
           input.form-control#archivo(type='file' name='archivo' accept='.pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg' required)
+
+        //- Botones de envío y cancelación
         button.btn.btn-primary(type='submit') Incorporar estudio pendiente de revisión
         a.btn.btn-outline-secondary.ms-2(href='/clientes') Cancelar

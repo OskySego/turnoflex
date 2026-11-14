@@ -1247,6 +1247,14 @@ static async getFormNuevoTurno(req, res) {
         return responderError(404, 'No se encontró el paciente de este turno.');
       }
 
+      // Compruebo que recepción haya confirmado la llegada.
+      if (!turno.presentadoEn) {
+        return responderError(
+          409,
+          'El paciente todavía no tiene su llegada confirmada por recepción.'
+        );
+      }
+
       // El llamado va únicamente a la sala de espera de Socket.IO.
       const socketIo = req.app.get('socketio');
       if (!socketIo || typeof socketIo.to !== 'function') {
@@ -1876,22 +1884,73 @@ static async getFormNuevoTurno(req, res) {
     if (!actualizado) throw crearError('La transferencia ya fue procesada.', 409);
     return res.redirect(303, `/turnos/${turno.id}?info=Transferencia+no+acreditada`);
   }
-  // Endpoint para la API de la Sala de Espera
+  
+  // ============================================================
+  // CONSULTAR LOS TURNOS ACTIVOS DE LA SALA DE ESPERA
+  // ============================================================
+
   static async getTurnosSalaEspera(req, res) {
     try {
-      const hoy = new Date().toISOString().slice(0, 10); // Formato YYYY-MM-DD
-      const turnosActivos = await Turno.find({
+      // Uso la fecha de Buenos Aires.
+      const partes = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Argentina/Buenos_Aires',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).formatToParts(new Date());
+
+      const dato = tipo =>
+        partes.find(parte => parte.type === tipo)?.value || '';
+
+      const hoy =
+        `${dato('year')}-${dato('month')}-${dato('day')}`;
+
+      // Consulto únicamente los turnos activos de hoy.
+      const filtro = {
         fecha: hoy,
-        estado: { $in: ['reservado', 'En Espera'] }
-      })
-      .populate('cliente_id', 'nombre')
-      .populate('profesional_id', 'nombre especialidad')
-      .sort({ hora: 1 })
-      .lean();
-      return res.status(200).json(turnosActivos);
-     } catch (error) {
-        console.error(
-        '❌ Error real de API sala de espera:',
+        estado: {
+          $in: ['reservado', 'En Espera']
+        }
+      };
+
+      let consulta = Turno.find(filtro);
+
+      // En MongoDB real uso la consulta Mongoose.
+      // Si Jest devuelve directamente los datos simulados,
+      // evito ejecutar métodos que ese simulador no contiene.
+      if (typeof consulta?.select === 'function') {
+        consulta = consulta.select('_id hora estado');
+
+        if (typeof consulta.sort === 'function') {
+          consulta = consulta.sort({ hora: 1 });
+        }
+
+        if (typeof consulta.lean === 'function') {
+          consulta = consulta.lean();
+        }
+      }
+
+      const encontrados = await consulta;
+
+      // Devuelvo solamente los datos que utiliza la pantalla.
+      // No envío nombres, DNI, correo ni datos clínicos.
+      const turnosSeguros = (
+        Array.isArray(encontrados) ? encontrados : []
+      ).map(turno => ({
+        _id: String(turno._id),
+        hora: String(turno.hora || ''),
+        estado: String(turno.estado || '')
+      }));
+
+      turnosSeguros.sort((a, b) =>
+        a.hora.localeCompare(b.hora)
+      );
+
+      return res.status(200).json(turnosSeguros);
+
+    } catch (error) {
+      console.error(
+        'Error al consultar la sala de espera:',
         error
       );
 
@@ -1899,6 +1958,7 @@ static async getFormNuevoTurno(req, res) {
         error: 'Error al obtener datos de la sala de espera.'
       });
     }
-  } 
+  }
+
 }
 export default TurnoController;

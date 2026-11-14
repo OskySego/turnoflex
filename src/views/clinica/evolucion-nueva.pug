@@ -1,32 +1,65 @@
+//- ============================================================
+//- VISTA DE NUEVA EVOLUCIÓN CLÍNICA - TURNOFLEX
+//- ============================================================
+//- Plantilla Pug que renderiza el formulario seguro para que el médico autorizado
+//- registre la evolución clínica, anamnesis, examen físico, diagnóstico y plan terapéutico[cite: 28].
+
 extends ../layout
 
 block content
+  //- Contenedor principal con ancho máximo acotado para el historial clínico
   .container.py-4(style='max-width:900px')
-    p.text-uppercase.text-primary.small.fw-bold TurnoFlex · Médico autorizado
-    h1.h3.mb-2 Nueva evolución clínica
-    p.text-body-secondary Paciente: #{paciente.nombre} · DNI #{paciente.dni || 'No informado'}
-    .alert.alert-warning Esta etapa registra un asiento pendiente de firma digital. No equivale a una firma médica válida.
-    form.card(method='POST' action=`/clinica/pacientes/${paciente._id}/evoluciones`)
+    
+    //- ========================================================
+    //- CABECERA DE LA VISTA Y ADVERTENCIA DE FIRMA
+    //- ========================================================
+    p.text-uppercase.text-primary.small.fw-bold TurnoFlex · Médico autorizado[cite: 28]
+    h1.h3.mb-2 Nueva evolución clínica[cite: 28]
+    p.text-body-secondary Paciente: #{paciente.nombre} · DNI #{paciente.dni || 'No informado'}[cite: 28]
+    
+    //- Alerta institucional sobre el estatus transitorio del asiento clínico antes de su firma digital
+    .alert.alert-warning Esta etapa registra un asiento pendiente de firma digital. No equivale a una firma médica válida.[cite: 28]
+
+    //- ========================================================
+    //- FORMULARIO DE EVOLUCIÓN MÉDICA
+    //- ========================================================
+    form.card(method='POST' action=`/clinica/pacientes/${paciente._id}/evoluciones`)[cite: 28]
       .card-body.p-4
+        
+        //- Tokens de protección CSRF (general y específico del módulo clínico) junto al ID del turno
         if typeof csrfToken !== 'undefined' && csrfToken
-          input(type='hidden' name='_csrf' value=csrfToken)
-        input(type='hidden' name='_tfClinicaCsrf' value=tfClinicaCsrf)
-        input(type='hidden' name='turnoId' value=turnoId)
+          input(type='hidden' name='_csrf' value=csrfToken)[cite: 28]
+        input(type='hidden' name='_tfClinicaCsrf' value=tfClinicaCsrf)[cite: 28]
+        input(type='hidden' name='turnoId' value=turnoId)[cite: 28]
+
+        //- Campo: Motivo de consulta
         .mb-3
           label.form-label(for='motivoConsulta') Motivo de consulta *
-          textarea.form-control#motivoConsulta(name='motivoConsulta' rows='3' maxlength='2000' required)
+          textarea.form-control#motivoConsulta(name='motivoConsulta' rows='3' maxlength='2000' required)[cite: 28]
+
+        //- Campo: Anamnesis y antecedentes relevantes
         .mb-3
           label.form-label(for='anamnesis') Anamnesis y antecedentes relevantes
-          textarea.form-control#anamnesis(name='anamnesis' rows='4' maxlength='8000')
+          textarea.form-control#anamnesis(name='anamnesis' rows='4' maxlength='8000')[cite: 28]
+
+        //- Campo: Examen físico
         .mb-3
           label.form-label(for='examenFisico') Examen físico
-          textarea.form-control#examenFisico(name='examenFisico' rows='4' maxlength='8000')
+          textarea.form-control#examenFisico(name='examenFisico' rows='4' maxlength='8000')[cite: 28]
+
+        //- Campo: Diagnóstico clínico
         .mb-3
           label.form-label(for='diagnostico') Diagnóstico
-          textarea.form-control#diagnostico(name='diagnostico' rows='3' maxlength='4000')
+          textarea.form-control#diagnostico(name='diagnostico' rows='3' maxlength='4000')[cite: 28]
+
+        //- Campo: Plan terapéutico e indicaciones
         .mb-4
           label.form-label(for='indicaciones') Plan terapéutico e indicaciones
-          textarea.form-control#indicaciones(name='indicaciones' rows='4' maxlength='8000')
+          textarea.form-control#indicaciones(name='indicaciones' rows='4' maxlength='8000')[cite: 28]
+
+        //- ========================================================
+        //- BOTONES DE ACCIÓN (REGISTRAR O CANCELAR)
+        //- ========================================================
         .d-flex.flex-wrap.gap-2
-          button.btn.btn-primary(type='submit') Registrar asiento no firmado
-          a.btn.btn-outline-secondary(href=`/clinica/pacientes/${paciente._id}/historia`) Cancelar
+          button.btn.btn-primary(type='submit') Registrar asiento no firmado[cite: 28]
+          a.btn.btn-outline-secondary(href=`/clinica/pacientes/${paciente._id}/historia`) Cancelar[cite: 28]

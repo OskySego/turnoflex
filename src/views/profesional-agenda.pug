@@ -196,6 +196,7 @@ block content
             - const paciente = turno && turno.cliente_id ? turno.cliente_id : {}
             - const estado = turno && turno.estado ? turno.estado : 'reservado'
             - const nombrePaciente = paciente.nombre || 'Paciente sin nombre'
+            - const pacientePresente = Boolean(turno.presentadoEn)
             - const modalidad = turno && turno.modalidad ? turno.modalidad : 'regular'
             - const nombreEstado = estado === 'reservado' ? 'Reservado' : estado === 'atendido' ? 'Atendido' : estado === 'cancelado' ? 'Cancelado' : estado === 'pendiente_pago' ? 'Pendiente de pago' : estado === 'En Espera' ? 'En espera' : estado
             - const claseEstado = estado === 'reservado' ? 'md-badge-reservado' : estado === 'atendido' ? 'md-badge-atendido' : estado === 'cancelado' ? 'md-badge-cancelado' : 'md-badge-otro'
@@ -216,7 +217,17 @@ block content
                     | #{modalidad === 'telemedicina' ? 'Telemedicina' : modalidad === 'sobreturno' ? 'Sobreturno' : 'En consultorio'}
                 .mt-2
                   span.md-badge(class=claseEstado)
-                    = nombreEstado
+                    = nombreEstado  
+                  //- Distingo la llegada de la atención médica.
+                  if estado !== 'atendido' && estado !== 'cancelado'
+                    .mt-2
+                      if pacientePresente
+                        span.badge.bg-success
+                          | ✓ Presente en sala
+                      else
+                        span.badge.bg-secondary
+                          | ◷ Aún no llegó
+
               .md-controls
                 //- Enlaces visibles solo en turnos no cancelados, con paciente cargado.
                 //- Las rutas vuelven a validar identidad médica y asignación en MongoDB.
@@ -244,19 +255,49 @@ block content
                     button.md-btn-llamar(type="submit")
                       span.md-btn-llamar-icon(aria-hidden="true") 📢
                       span Llamar paciente
+                
                 if estado === 'reservado'
-                  form.medico-atendido(method='POST' action=`/medico/turnos/${turno._id}/atendido`)
-                    if typeof csrfToken !== "undefined" && csrfToken
+
+                  //- Llamo únicamente a pacientes con llegada confirmada.
+                  if pacientePresente && String(turno.fecha) === hoy
+                    form(
+                      method="POST"
+                      action=`/medico/turnos/${turno._id}/llamar`
+                    )
+                      if typeof csrfToken !== 'undefined' && csrfToken
+                        input(type="hidden" name="_csrf" value=csrfToken)
+
+                      button.md-btn.md-btn-clinica(type="submit")
+                        | 📢 Llamar paciente
+
+                  //- Registro la atención desde la agenda médica.
+                  if pacientePresente
+                    form.medico-atendido(
+                      method="POST"
+                      action=`/medico/turnos/${turno._id}/atendido`
+                    )
+                      if typeof csrfToken !== 'undefined' && csrfToken
+                        input(type="hidden" name="_csrf" value=csrfToken)
+
+                      button.md-btn.md-btn-yes(type="submit")
+                        | ✓ Atendido
+
+                  else
+                    span.md-muted(style="font-size:.76rem")
+                      | Esperando confirmación de recepción
+
+                  form.medico-cancelar(
+                    method="POST"
+                    action=`/medico/turnos/${turno._id}/cancelar`
+                  )
+                    if typeof csrfToken !== 'undefined' && csrfToken
                       input(type="hidden" name="_csrf" value=csrfToken)
-                    button.md-btn.md-btn-yes(type='submit' aria-label=`Marcar como atendido el turno de ${nombrePaciente}`)
-                      | ✓ Atendido
-                  form.medico-cancelar(method='POST' action=`/medico/turnos/${turno._id}/cancelar`)
-                    if typeof csrfToken !== "undefined" && csrfToken
-                      input(type="hidden" name="_csrf" value=csrfToken)
-                    button.md-btn.md-btn-no(type='submit' aria-label=`Cancelar turno de ${nombrePaciente}`)
+
+                    button.md-btn.md-btn-no(type="submit")
                       | Cancelar
+
                 else
-                  span.md-muted(style='font-size:.76rem')
+                  span.md-muted(style="font-size:.76rem")
                     | Sin acciones pendientes
 
         .md-empty#medicoSinResultados(style='display:none' role='status')
@@ -284,6 +325,28 @@ block content
       var vacio = document.getElementById('medicoSinResultados');
       var refrescar = document.getElementById('medicoActualizar');
       var modo = 'hoy';
+
+      // Actualizo la agenda cuando recepción confirma una llegada.
+      if (typeof window.io === 'function') {
+        const socket = window.io();
+
+        socket.on('presencia_actualizada', function (datos) {
+          if (datos?.fecha !== hoy) return;
+
+        // Si estoy escribiendo en un filtro, evito interrumpirme.
+        const activo = document.activeElement;
+        const editando = activo?.matches?.('input, select, textarea');
+
+        if (editando) {
+          if (refrescar) {
+            refrescar.textContent = '↻ Hay cambios · Actualizar agenda';
+          }
+          return;
+        }
+
+        window.location.reload();
+        });
+      }
 
       function ahoraAR() {
         var partes = new Intl.DateTimeFormat('en-US', { timeZone:'America/Argentina/Buenos_Aires', year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23' }).formatToParts(new Date());

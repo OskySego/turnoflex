@@ -200,6 +200,12 @@ export class ProfesionalDashboardController {
 
       }
 
+      // No permito finalizar una consulta sin una llegada registrada.
+      if (nuevoEstado === 'atendido' && !turno.presentadoEn) {
+        return res.status(409).send(
+          'El paciente todavía no tiene su llegada confirmada.'
+        );
+      }
 
       // Evito que se toquen turnos que ya se cobraron, se cancelaron, etc.
       // El médico solo puede accionar sobre turnos que están "reservados" (pendientes).

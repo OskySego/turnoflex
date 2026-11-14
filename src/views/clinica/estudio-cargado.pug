@@ -1,10 +1,25 @@
+//- ============================================================
+//- VISTA DE CONFIRMACIÓN DE ESTUDIO CARGADO - TURNOFLEX
+//- ============================================================
+//- Plantilla Pug que notifica el éxito en la incorporación de un estudio
+//- médico y muestra el resumen de los datos cargados para secretaría[cite: 27].
+
 extends ../layout
 
 block content
+  //- Contenedor principal con ancho máximo acotado para una lectura limpia
   .container.py-4(style='max-width:720px')
+    
+    //- ========================================================
+    //- ALERTA DE ÉXITO OPERATIVO
+    //- ========================================================
     .alert.alert-success(role='status')
       h1.h4.mb-1 Estudio incorporado
       p.mb-0 Se agregó al expediente del paciente. Quedó pendiente de revisión médica.
+
+    //- ========================================================
+    //- TARJETA DE RESUMEN DE METADATOS DEL ESTUDIO
+    //- ========================================================
     .card
       .card-body
         p.mb-1
@@ -19,5 +34,9 @@ block content
         p.mb-0
           strong Estado:
           |  Pendiente de revisión
+
+    //- ========================================================
+    //- BOTONES DE ACCIÓN Y NAVEGACIÓN
+    //- ========================================================
     a.btn.btn-primary.mt-3(href=`/clinica/pacientes/${paciente._id}/estudios/nuevo`) Adjuntar otro estudio
     a.btn.btn-outline-secondary.mt-3.ms-2(href='/clientes') Volver a pacientes

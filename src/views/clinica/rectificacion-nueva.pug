@@ -1,37 +1,77 @@
+//- ============================================================
+//- VISTA DE RECTIFICACIÓN DE EVOLUCIÓN CLÍNICA - TURNOFLEX
+//- ============================================================
+//- Plantilla Pug que renderiza el formulario seguro para que el médico autorizado
+//- rectifique un asiento clínico previo generando una nueva entrada de auditoría 
+//- sin alterar ni eliminar la evolución original[cite: 20].
+
 extends ../layout
 
 block content
+  //- Contenedor principal con ancho máximo acotado para el formulario clínico[cite: 20]
   .container.py-4(style='max-width:900px')
-    h1.h3 Rectificar evolución
-    p.text-body-secondary Paciente: #{paciente.nombre}
-    .alert.alert-info Se creará un asiento nuevo; la evolución original no se modifica ni se elimina.
+    
+    //- ========================================================
+    //- CABECERA DE LA VISTA Y DATOS DEL PACIENTE
+    //- ========================================================
+    h1.h3 Rectificar evolución[cite: 20]
+    p.text-body-secondary Paciente: #{paciente.nombre}[cite: 20]
+    
+    //- Alerta institucional aclarando que se crea un nuevo asiento y se preserva el original[cite: 20]
+    .alert.alert-info Se creará un asiento nuevo; la evolución original no se modifica ni se elimina.[cite: 20]
+
+    //- ========================================================
+    //- TARJETA DE REFERENCIA: REGISTRO ORIGINAL (SOLO LECTURA)
+    //- ========================================================
     .card.mb-3
       .card-body
-        p.mb-1.fw-bold Registro original (solo lectura)
-        p.mb-1= anterior.motivoConsulta
-        p.text-body-secondary.small ID: #{anterior._id}
-    form.card(method='POST' action=`/clinica/pacientes/${paciente._id}/evoluciones/${anterior._id}/rectificar`)
+        p.mb-1.fw-bold Registro original (solo lectura)[cite: 20]
+        p.mb-1= anterior.motivoConsulta[cite: 20]
+        p.text-body-secondary.small ID: #{anterior._id}[cite: 20]
+
+    //- ========================================================
+    //- FORMULARIO DE RECTIFICACIÓN CLÍNICA
+    //- ========================================================
+    form.card(method='POST' action=`/clinica/pacientes/${paciente._id}/evoluciones/${anterior._id}/rectificar`)[cite: 20]
       .card-body.p-4
+        
+        //- Tokens de protección CSRF (general y específico del módulo clínico)[cite: 20]
         if typeof csrfToken !== 'undefined' && csrfToken
-          input(type='hidden' name='_csrf' value=csrfToken)
-        input(type='hidden' name='_tfClinicaCsrf' value=tfClinicaCsrf)
+          input(type='hidden' name='_csrf' value=csrfToken)[cite: 20]
+        input(type='hidden' name='_tfClinicaCsrf' value=tfClinicaCsrf)[cite: 20]
+
+        //- Campo: Motivo de rectificación (obligatorio)[cite: 20]
         .mb-3
-          label.form-label(for='motivoRectificacion') Motivo de rectificación *
-          textarea.form-control#motivoRectificacion(name='motivoRectificacion' maxlength='1000' required)
+          label.form-label(for='motivoRectificacion') Motivo de rectificación *[cite: 20]
+          textarea.form-control#motivoRectificacion(name='motivoRectificacion' maxlength='1000' required)[cite: 20]
+
+        //- Campo: Motivo de consulta corregido (prellenado)[cite: 20]
         .mb-3
-          label.form-label(for='motivoConsulta') Motivo de consulta corregido *
-          textarea.form-control#motivoConsulta(name='motivoConsulta' maxlength='2000' required)= anterior.motivoConsulta
+          label.form-label(for='motivoConsulta') Motivo de consulta corregido *[cite: 20]
+          textarea.form-control#motivoConsulta(name='motivoConsulta' maxlength='2000' required)= anterior.motivoConsulta[cite: 20]
+
+        //- Campo: Anamnesis corregida[cite: 20]
         .mb-3
-          label.form-label(for='anamnesis') Anamnesis corregida
-          textarea.form-control#anamnesis(name='anamnesis' maxlength='8000')= anterior.anamnesis
+          label.form-label(for='anamnesis') Anamnesis corregida[cite: 20]
+          textarea.form-control#anamnesis(name='anamnesis' maxlength='8000')= anterior.anamnesis[cite: 20]
+
+        //- Campo: Examen físico corregido[cite: 20]
         .mb-3
-          label.form-label(for='examenFisico') Examen físico corregido
-          textarea.form-control#examenFisico(name='examenFisico' maxlength='8000')= anterior.examenFisico
+          label.form-label(for='examenFisico') Examen físico corregido[cite: 20]
+          textarea.form-control#examenFisico(name='examenFisico' maxlength='8000')= anterior.examenFisico[cite: 20]
+
+        //- Campo: Diagnóstico corregido[cite: 20]
         .mb-3
-          label.form-label(for='diagnostico') Diagnóstico corregido
-          textarea.form-control#diagnostico(name='diagnostico' maxlength='4000')= anterior.diagnostico
+          label.form-label(for='diagnostico') Diagnóstico corregido[cite: 20]
+          textarea.form-control#diagnostico(name='diagnostico' maxlength='4000')= anterior.diagnostico[cite: 20]
+
+        //- Campo: Indicaciones corregidas[cite: 20]
         .mb-3
-          label.form-label(for='indicaciones') Indicaciones corregidas
-          textarea.form-control#indicaciones(name='indicaciones' maxlength='8000')= anterior.indicaciones
-        button.btn.btn-primary(type='submit') Registrar rectificación no firmada
-        a.btn.btn-outline-secondary.ms-2(href=`/clinica/pacientes/${paciente._id}/historia`) Cancelar
+          label.form-label(for='indicaciones') Indicaciones corregidas[cite: 20]
+          textarea.form-control#indicaciones(name='indicaciones' maxlength='8000')= anterior.indicaciones[cite: 20]
+
+        //- ========================================================
+        //- BOTONES DE ACCIÓN (REGISTRAR O CANCELAR)
+        //- ========================================================
+        button.btn.btn-primary(type='submit') Registrar rectificación no firmada[cite: 20]
+        a.btn.btn-outline-secondary.ms-2(href=`/clinica/pacientes/${paciente._id}/historia`) Cancelar[cite: 20]
