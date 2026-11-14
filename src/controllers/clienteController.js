@@ -7,6 +7,7 @@ export class ClienteController {
   // 1. LISTAR CLIENTES
   // ============================================================
 
+  // Traigo todos los pacientes/clientes de la base de datos para mostrarlos en la grilla general.
   static async getClientes(req, res) {
 
     try {
@@ -19,6 +20,7 @@ export class ClienteController {
           });
 
 
+      // Soporto respuestas en JSON por si me toca consumir este listado desde un fetch o API externa
       if (
         req.accepts('json') &&
         !req.accepts('html')
@@ -68,6 +70,7 @@ export class ClienteController {
   // 2. DETALLE DE CLIENTE
   // ============================================================
 
+  // Busco la ficha completa de un cliente en particular usando su ID único de Mongo.
   static async getDetalleCliente(req, res) {
 
     try {
@@ -152,6 +155,8 @@ export class ClienteController {
   // 3. CREAR CLIENTE
   // ============================================================
 
+  // Doy de alta un nuevo cliente/paciente estructurando sus datos personales, 
+  // su domicilio y la información de su obra social.
   static async crearCliente(req, res) {
 
     try {
@@ -250,9 +255,11 @@ export class ClienteController {
 
 
   // ============================================================
-  // 4. MI PERFIL
+  // 4. MI PERFIL (Autogestión de pacientes)
   // ============================================================
 
+  // Si el usuario logueado es un paciente, uso su email de la sesión 
+  // para buscar y renderizar exclusivamente sus propios datos personales.
   static async miPerfil(req, res) {
 
     try {
@@ -323,6 +330,8 @@ export class ClienteController {
   // 5. ACTUALIZAR MI PERFIL
   // ============================================================
 
+  // Permito que el paciente actualice sus propios datos de contacto 
+  // y los datos de su cobertura médica sin pasar por la administración.
   static async actualizarMiPerfil(req, res) {
 
     try {
@@ -369,8 +378,8 @@ export class ClienteController {
 
 
       // --------------------------------------------------------
-      // COBERTURA
-      // Conservamos el objeto y actualizamos solo sus campos.
+      // COBERTURA MÉDICA
+      // Me aseguro de que el objeto exista y actualizo sus campos de forma limpia.
       // --------------------------------------------------------
 
       if (!cliente.obraSocial) {
@@ -427,6 +436,8 @@ export class ClienteController {
   // 6. AGREGAR FAMILIAR
   // ============================================================
 
+  // Permito asociar parientes al grupo familiar del paciente logueado,
+  // validando previamente que no carguen un DNI que ya esté registrado.
   static async agregarFamiliar(req, res) {
 
     try {
@@ -462,7 +473,7 @@ export class ClienteController {
 
 
       // --------------------------------------------------------
-      // EVITAR DUPLICADOS POR DNI
+      // EVITAR DUPLICADOS POR DNI EN EL GRUPO FAMILIAR
       // --------------------------------------------------------
 
       const familiares =

@@ -5,13 +5,9 @@ import { Cliente } from '../models/Cliente.js';
 import { Profesional } from '../models/Profesional.js';
 import { Especialidad } from '../models/Especialidad.js';
 import { sincronizarPagoMercadoPago } from './mercadoPagoWebhookController.js';
-import {
-  MercadoPagoConfig,
-  Preference
-} from 'mercadopago';
-// ============================================================
-// FUNCIONES AUXILIARES
-// ============================================================
+import { MercadoPagoConfig, Preference } from 'mercadopago';
+import { ProfesionalDashboardController } from './profesionalDashboardController.js';
+// Funciones de apoyo que uso en el controlador.
 function crearError(
   mensaje,
   statusCode = 500
@@ -22,9 +18,7 @@ function crearError(
     statusCode;
   return error;
 }
-// ============================================================
-// MERCADO PAGO CHECKOUT PRO: URLS DE RETORNO
-// ============================================================
+// Configuro el regreso desde Mercado Pago.
 // El checkout es externo. Nunca se marca un turno como pagado
 // por el solo regreso del navegador; la confirmación exige
 // validar el pago desde el webhook en el servidor.
@@ -46,7 +40,6 @@ function configurarCheckoutPro(body, turnoId) {
       throw crearError('TF_PUBLIC_URL debe ser una URL pública HTTPS sin parámetros.', 500);
     }
     const base = direccion.href.replace(/\/+$/, '');
-    const detalle = `${base}/turnos/${encodeURIComponent(String(turnoId))}`;
     body.back_urls = {
       success: `${base}/turnos/${encodeURIComponent(String(turnoId))}/verificar-pago?resultadoPago=exito`,
       pending: `${base}/turnos/${encodeURIComponent(String(turnoId))}/verificar-pago?resultadoPago=pendiente`,
@@ -83,9 +76,7 @@ function esEnlaceCheckoutSeguro(enlace) {
     return false;
   }
 }
-// ============================================================
-// USUARIO ACTUAL
-// ============================================================
+// Datos del usuario que inició sesión.
 function obtenerUsuarioId(
   usuario
 ) {
@@ -110,9 +101,7 @@ function obtenerRol(
 ) {
   return usuario?.rol || '';
 }
-// ============================================================
-// AUDITORÍA
-// ============================================================
+// Registro de movimientos.
 function registrarAuditoria(
   turno,
   {
@@ -147,9 +136,7 @@ function registrarAuditoria(
       new Date()
   });
 }
-// ============================================================
-// SOCKET.IO
-// ============================================================
+// Avisos en tiempo real.
 function emitirActualizacion(
   req,
   datos
@@ -165,9 +152,7 @@ function emitirActualizacion(
     );
   }
 }
-// ============================================================
-// PAGOFLEX: VALIDACIONES COMPARTIDAS Y API LOCAL DE DEMOSTRACION
-// ============================================================
+// Validaciones para los cobros de PagoFlex.
 async function obtenerTurnoParaCobro(req) {
   const id = req.params.id;
   const usuario = req.session?.usuario;
@@ -185,9 +170,7 @@ async function obtenerTurnoParaCobro(req) {
   }
   return turno;
 }
-// ============================================================
-// PAGO PARTICULAR / COPAGO Y TRANSFERENCIA
-// ============================================================
+// Importes para pagos particulares, copagos y transferencias.
 function importeValidado(valor, etiqueta, permitirCero = false) {
   const numero = Number(valor);
   if (valor === undefined || valor === null || valor === '' ||
@@ -280,13 +263,9 @@ function asegurarTransferenciaOperable(turno) {
     throw crearError('Este turno es histórico: no se puede convertir automáticamente a copago o particular.', 409);
   }
 }
-// ============================================================
-// CONTROLADOR
-// ============================================================
+// Controlador de turnos.
 export class TurnoController {
-  // ==========================================================
-  // 1. LISTADO DE TURNOS
-  // ==========================================================
+  // Listado y filtros de turnos
   static async getTurnos(
     req,
     res
@@ -301,9 +280,7 @@ export class TurnoController {
       limit = 10
     } = req.query;
     const filtro = {};
-    // --------------------------------------------------------
-    // SEGURIDAD DEL PACIENTE
-    // --------------------------------------------------------
+    // Verifico el acceso del paciente.
     if (
       usuario?.rol ===
       'cliente'
@@ -322,9 +299,7 @@ export class TurnoController {
       filtro.cliente_id =
         cliente._id;
     }
-    // --------------------------------------------------------
-    // FILTROS
-    // --------------------------------------------------------
+    // Aplico los filtros solicitados.
     if (estado) {
       filtro.estado =
         estado;
@@ -347,9 +322,7 @@ export class TurnoController {
       filtro.profesional_id =
         profesional_id;
     }
-    // --------------------------------------------------------
-    // PAGINACIÓN
-    // --------------------------------------------------------
+    // Organizo el listado por páginas.
     const limite =
       Math.min(
         Math.max(
@@ -454,9 +427,7 @@ export class TurnoController {
       }
     );
   }
-  // ==========================================================
-  // 2. DETALLE DE TURNO
-  // ==========================================================
+  // Detalle de un turno
   static async getDetalleTurno(
     req,
     res
@@ -505,9 +476,7 @@ export class TurnoController {
         404
       );
     }
-    // --------------------------------------------------------
-    // SEGURIDAD PACIENTE
-    // --------------------------------------------------------
+    // Verifico que el turno corresponda al paciente.
     if (
       req.session.usuario?.rol ===
       'cliente'
@@ -553,15 +522,11 @@ export class TurnoController {
       }
     );
   }
-  // ============================================================
-// 3. FORMULARIO DE NUEVO TURNO
+// Formulario para registrar turnos
 // Permite abrir:
 // /turnos/nuevo?cliente=ID_DEL_PACIENTE
-// ============================================================
-  // ==========================================================
-  // COTIZACIÓN DE NUEVO TURNO: SOLO RECEPCIÓN / ADMINISTRACIÓN
+  // Calculo importes para recepción y administración.
   // Consulta de lectura; NO crea pagos ni modifica turnos.
-  // ==========================================================
   static async cotizarTurnoRecepcion(req, res) {
     try {
     const usuario = req.session?.usuario;
@@ -584,6 +549,9 @@ export class TurnoController {
     ]);
     if (!cliente || !profesional) {
       throw crearError('No se encontró el paciente o el profesional.', 404);
+    }
+    if (profesional.activo === false) {
+      throw crearError('Este profesional está desactivado y no admite reservas.', 409);
     }
     const especialidad = await Especialidad.findOne({
       nombre: profesional.especialidad, activa: { $ne: false }
@@ -610,7 +578,7 @@ export class TurnoController {
 static async getFormNuevoTurno(req, res) {
   const profesionales =
     await Profesional
-      .find()
+      .find({ activo: { $ne: false } })
       .sort({ nombre: 1 })
       .lean({ virtuals: true });
   const especialidades =
@@ -621,10 +589,8 @@ static async getFormNuevoTurno(req, res) {
     req.session?.usuario;
   let clientes = [];
   let clienteSeleccionadoId = '';
-  // ==========================================================
-  // PACIENTE
+  // Datos del paciente.
   // Solo puede generar turnos para su propia ficha.
-  // ==========================================================
   if (
     usuario &&
     usuario.rol === 'cliente'
@@ -645,9 +611,7 @@ static async getFormNuevoTurno(req, res) {
         miPerfil._id.toString();
     }
   } else {
-    // ========================================================
-    // ADMINISTRACIÓN / RECEPCIÓN
-    // ========================================================
+    // Opciones para administración y recepción.
     clientes =
       await Cliente
         .find()
@@ -703,15 +667,13 @@ static async getFormNuevoTurno(req, res) {
         profesionales || [],
       especialidades:
         especialidades || [],
-      // NUEVO
+      // Selecciono el paciente recibido desde la URL, si corresponde.
       clienteSeleccionadoId,
       transferenciaDescuentoPct: descuentoTransferencia()
     }
   );
 }
-  // ==========================================================
-  // 4. CREAR TURNO
-  // ==========================================================
+  // Registro de turnos
   static async crearTurno(
     req,
     res
@@ -747,9 +709,7 @@ static async getFormNuevoTurno(req, res) {
         throw crearError('Verificá el convenio y plan antes de aplicar copago o cobertura total.', 400);
       }
     }
-    // --------------------------------------------------------
-    // CAMPOS OBLIGATORIOS
-    // --------------------------------------------------------
+    // Valido los datos necesarios.
     if (
       !profesional_id ||
       !fecha ||
@@ -770,9 +730,7 @@ static async getFormNuevoTurno(req, res) {
         400
       );
     }
-    // --------------------------------------------------------
-    // PACIENTE LOGUEADO
-    // --------------------------------------------------------
+    // Si el paciente inició sesión, uso su ficha.
     if (
       usuario?.rol ===
       'cliente'
@@ -802,9 +760,7 @@ static async getFormNuevoTurno(req, res) {
         400
       );
     }
-    // --------------------------------------------------------
-    // VALIDAR ENTIDADES
-    // --------------------------------------------------------
+    // Verifico que existan el paciente y el profesional.
     const [
       cliente,
       profesional
@@ -828,9 +784,10 @@ static async getFormNuevoTurno(req, res) {
         404
       );
     }
-    // --------------------------------------------------------
-    // MODALIDAD
-    // --------------------------------------------------------
+    if (profesional.activo === false) {
+      throw crearError('El profesional está desactivado y no admite nuevas reservas.', 409);
+    }
+    // Modalidad de la consulta.
     const modalidadesValidas = [
       'regular',
       'presencial',
@@ -848,9 +805,7 @@ static async getFormNuevoTurno(req, res) {
       modalidad =
         'regular';
     }
-    // --------------------------------------------------------
-    // DISPONIBILIDAD
-    // --------------------------------------------------------
+    // Compruebo que el horario esté disponible.
     const turnoExistente =
       await Turno.findOne({
         profesional_id,
@@ -870,15 +825,11 @@ static async getFormNuevoTurno(req, res) {
         409
       );
     }
-    // --------------------------------------------------------
     // PRECIO PARTICULAR O COPAGO (calculado en servidor)
-    // --------------------------------------------------------
     const especialidadData = await Especialidad.findOne({ nombre: profesional.especialidad });
     const datosPrecio = calcularPrecio(especialidadData, cliente, profesional, metodoPagoElegido, tipoCobroRecepcion);
     const montoSena = datosPrecio.montoTotal; // campo legado de MP: monto completo en turnos nuevos
-    // --------------------------------------------------------
-    // REGLAS DE PAGO
-    // --------------------------------------------------------
+    // Defino el medio y el estado del pago.
     let metodoPago =
       'efectivo';
     let estadoPago =
@@ -925,9 +876,7 @@ static async getFormNuevoTurno(req, res) {
       metodoPago = 'efectivo';
       estadoTurno = 'reservado';
     }
-    // --------------------------------------------------------
-    // VALIDAR MERCADO PAGO ANTES DE RESERVAR
-    // --------------------------------------------------------
+    // Compruebo que Mercado Pago esté configurado.
     if (
       metodoPago ===
       'mercadopago' &&
@@ -938,9 +887,7 @@ static async getFormNuevoTurno(req, res) {
         503
       );
     }
-    // --------------------------------------------------------
-    // CREAR TURNO
-    // --------------------------------------------------------
+    // Guardo el turno.
     const nuevoTurno =
       new Turno({
         cliente_id,
@@ -959,9 +906,7 @@ static async getFormNuevoTurno(req, res) {
             usuario
           )
       });
-    // --------------------------------------------------------
-    // AUDITORÍA DE CREACIÓN
-    // --------------------------------------------------------
+    // Registro la creación del turno.
     registrarAuditoria(
       nuevoTurno,
       {
@@ -995,9 +940,7 @@ static async getFormNuevoTurno(req, res) {
       }
       throw error;
     }
-    // --------------------------------------------------------
-    // NOTIFICACIÓN EN TIEMPO REAL
-    // --------------------------------------------------------
+    // Aviso a la agenda cuando se crea el turno.
     emitirActualizacion(
       req,
       {
@@ -1009,9 +952,7 @@ static async getFormNuevoTurno(req, res) {
           `Nuevo turno para el ${fecha} a las ${hora} hs.`
       }
     );
-    // --------------------------------------------------------
-    // ADMIN / RECEPCIÓN
-    // --------------------------------------------------------
+    // Respuesta para administración y recepción.
     if (
       usuario?.rol ===
         'admin' ||
@@ -1022,9 +963,7 @@ static async getFormNuevoTurno(req, res) {
         `/turnos/${nuevoTurno._id}?exito=Turno+creado+correctamente`
       );
     }
-    // --------------------------------------------------------
-    // PACIENTE - EFECTIVO
-    // --------------------------------------------------------
+    // Respuesta para efectivo y transferencia.
     if (
       metodoPago === 'efectivo' || metodoPago === 'transferencia'
     ) {
@@ -1032,9 +971,7 @@ static async getFormNuevoTurno(req, res) {
         `/turnos/${nuevoTurno._id}?exito=Turno+reservado+correctamente`
       );
     }
-    // --------------------------------------------------------
-    // PACIENTE - MERCADO PAGO
-    // --------------------------------------------------------
+    // Inicio el pago con Mercado Pago.
     try {
       const client =
         new MercadoPagoConfig({
@@ -1109,9 +1046,7 @@ static async getFormNuevoTurno(req, res) {
       );
     }
   }
-  // ==========================================================
-  // 5. CAMBIAR ESTADO
-  // ==========================================================
+  // Cambios de estado de los turnos
   static async cambiarEstadoTurno(
     req,
     res
@@ -1195,9 +1130,7 @@ static async getFormNuevoTurno(req, res) {
       obtenerUsuarioId(
         usuario
       );
-    // --------------------------------------------------------
-    // HISTORIAL LEGACY
-    // --------------------------------------------------------
+    // Mantengo el historial de estados del turno.
     turnoActual.historialEstados.push({
       estadoAnterior,
       estadoNuevo:
@@ -1207,9 +1140,7 @@ static async getFormNuevoTurno(req, res) {
       fechaModificacion:
         new Date()
     });
-    // --------------------------------------------------------
-    // AUDITORÍA GENERAL
-    // --------------------------------------------------------
+    // Registro el cambio para poder consultarlo después.
     registrarAuditoria(
       turnoActual,
       {
@@ -1258,9 +1189,128 @@ static async getFormNuevoTurno(req, res) {
       `/turnos/${id}?exito=Estado+actualizado+correctamente`
     );
   }
-  // ==========================================================
-  // 6. MARCAR ATENDIDO
-  // ==========================================================
+   
+  // Llamo al paciente desde la agenda del profesional.
+  // Registro la hora del llamado antes de avisar a la pantalla.
+  static async llamarPaciente(req, res) {
+    const responderError = (codigo, mensaje) => {
+      if (req.accepts('json') && !req.accepts('html')) {
+        return res.status(codigo).json({ ok: false, error: mensaje });
+      }
+      return res.status(codigo).send(mensaje);
+    };
+
+    try {
+      const usuario = req.session?.usuario;
+      if (!usuario || usuario.rol !== 'profesional') {
+        return responderError(403, 'No tenés autorización para llamar pacientes.');
+      }
+
+      const turnoId = String(req.params.id || '');
+      if (!mongoose.Types.ObjectId.isValid(turnoId)) {
+        return responderError(400, 'El identificador del turno no es válido.');
+      }
+
+      const email = String(usuario.email || '').trim();
+      const profesional = await Profesional.findOne({ email });
+      if (!profesional || profesional.activo === false) {
+        return responderError(403, 'No encontramos el perfil profesional asociado.');
+      }
+
+      // Verifico que el turno sea de este profesional.
+      const turno = await Turno.findOne({
+        _id: turnoId,
+        profesional_id: profesional._id
+      }).populate('cliente_id', 'nombre');
+
+      if (!turno) {
+        return responderError(404, 'El turno no existe o no pertenece a tu agenda.');
+      }
+      if (!['reservado', 'En Espera'].includes(turno.estado)) {
+        return responderError(409, 'El turno no está disponible para llamar.');
+      }
+
+      // Uso la fecha de Buenos Aires para validar el turno del día.
+      const partes = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Argentina/Buenos_Aires',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).formatToParts(new Date());
+      const dato = tipo => partes.find(parte => parte.type === tipo)?.value || '';
+      const hoy = `${dato('year')}-${dato('month')}-${dato('day')}`;
+
+      if (String(turno.fecha) !== hoy) {
+        return responderError(409, 'Solo podés llamar pacientes con turno del día.');
+      }
+      if (!turno.cliente_id) {
+        return responderError(404, 'No se encontró el paciente de este turno.');
+      }
+
+      // El llamado va únicamente a la sala de espera de Socket.IO.
+      const socketIo = req.app.get('socketio');
+      if (!socketIo || typeof socketIo.to !== 'function') {
+        return responderError(503, 'La sala de espera no está disponible.');
+      }
+      const sala = socketIo.to('sala-espera');
+      if (!sala || typeof sala.emit !== 'function') {
+        return responderError(503, 'La sala de espera no está disponible.');
+      }
+
+      const sede = String(profesional.sede || '').trim();
+      const coincidencia = sede.match(/consultorio\s*[-#:]?\s*[\w]+/i);
+      const consultorio = coincidencia
+        ? coincidencia[0].replace(/^consultorio/i, 'Consultorio')
+        : sede || 'Consultorio no asignado';
+
+      const momentoLlamado = new Date();
+      const llamado = {
+        turnoId: String(turno._id),
+        paciente: String(turno.cliente_id.nombre || 'Paciente'),
+        profesional: String(profesional.nombre || 'Profesional'),
+        consultorio,
+        hora: String(turno.hora || ''),
+        fecha: momentoLlamado.toISOString()
+      };
+
+      // Guardo el último llamado sin cambiar el estado ni los pagos.
+      const actualizacion = await Turno.updateOne(
+        {
+          _id: turnoId,
+          profesional_id: profesional._id,
+          fecha: hoy,
+          estado: { $in: ['reservado', 'En Espera'] }
+        },
+        { $set: { ultimoLlamadoSalaEn: momentoLlamado } }
+      );
+
+      if (!actualizacion?.acknowledged || actualizacion.matchedCount === 0) {
+        return responderError(409, 'El turno cambió antes de realizar el llamado.');
+      }
+
+      sala.emit('llamado_paciente', llamado);
+      console.log(
+        '📢 Llamando paciente:', llamado.paciente,
+        '| Consultorio:', llamado.consultorio
+      );
+
+      // Llamado y atendido son acciones distintas.
+      if (req.accepts('json') && !req.accepts('html')) {
+        return res.status(200).json({
+          ok: true,
+          mensaje: 'Paciente llamado correctamente.',
+          llamado
+        });
+      }
+
+      return res.redirect('/medico/agenda?exito=Paciente+llamado+correctamente');
+    } catch (error) {
+      console.error('❌ Error al llamar paciente:', error);
+      return responderError(500, 'No fue posible realizar el llamado.');
+    }
+  }
+
+  // Marcar un turno como atendido
   static async marcarAtendido(
     req,
     res
@@ -1273,9 +1323,8 @@ static async getFormNuevoTurno(req, res) {
         res
       );
   }
-  // ==========================================================
-  // 7. CANCELAR
-  // ==========================================================
+
+  // Cancelar un turno
   static async cancelarTurno(
     req,
     res
@@ -1288,9 +1337,7 @@ static async getFormNuevoTurno(req, res) {
         res
       );
   }
-  // ==========================================================
-  // 8. COBRAR EN EFECTIVO
-  // ==========================================================
+  // Registro de pagos en efectivo
   static async cobrarEfectivo(
     req,
     res
@@ -1416,9 +1463,7 @@ static async getFormNuevoTurno(req, res) {
       `/turnos/${id}?exito=Pago+en+efectivo+registrado+correctamente`
     );
   }
-  // ==========================================================
-  // 9. GENERAR / REGENERAR MERCADO PAGO
-  // ==========================================================
+  // Generación y recuperación de Mercado Pago
   static async generarPagoMP(
     req,
     res
@@ -1454,9 +1499,7 @@ static async getFormNuevoTurno(req, res) {
         404
       );
     }
-    // --------------------------------------------------------
-    // SEGURIDAD DEL PACIENTE
-    // --------------------------------------------------------
+    // Verifico el acceso del paciente.
     if (
       usuario?.rol ===
       'cliente'
@@ -1654,11 +1697,9 @@ static async getFormNuevoTurno(req, res) {
       resultado.init_point
     );
   }
-  // ============================================================
-  // MERCADO PAGO: REGRESO DESDE CHECKOUT PRO
+  // Regreso desde Mercado Pago
   // Nunca confiamos en status/collection_status del navegador.
   // El payment_id se consulta nuevamente en Mercado Pago.
-  // ============================================================
   static async verificarPagoMP(req, res) {
     const id = String(req.params.id || '');
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -1701,10 +1742,8 @@ static async getFormNuevoTurno(req, res) {
           : 'Pago+no+aprobado+por+Mercado+Pago';
     return res.redirect(303, `/turnos/${id}?info=${mensaje}`);
   }
-  // ============================================================
-  // PAGOFLEX - TRANSFERENCIA BANCARIA REAL, CONTROL ADMINISTRATIVO
+  // Transferencias bancarias y control administrativo
   // No acepta comprobantes como acreditación automática.
-  // ============================================================
   static async iniciarTransferencia(req, res) {
     validarCsrfTransferencia(req);
     const turno = await obtenerTurnoParaCobro(req);
@@ -1850,9 +1889,16 @@ static async getFormNuevoTurno(req, res) {
       .sort({ hora: 1 })
       .lean();
       return res.status(200).json(turnosActivos);
-    } catch (error) {
-      return res.status(500).json({ error: 'Error al obtener datos de la sala de espera.' });
+     } catch (error) {
+        console.error(
+        '❌ Error real de API sala de espera:',
+        error
+      );
+
+      return res.status(500).json({
+        error: 'Error al obtener datos de la sala de espera.'
+      });
     }
-  }
+  } 
 }
 export default TurnoController;

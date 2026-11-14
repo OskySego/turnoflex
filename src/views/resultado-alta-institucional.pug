@@ -1,0 +1,53 @@
+extends layout
+
+block content
+  .container.py-5
+    .row.justify-content-center
+      .col-lg-8
+        .card.border-0.shadow-sm.rounded-4
+          .card-body.p-4.p-md-5
+
+            h1.h3.fw-bold.mb-3
+              | Cuenta institucional de TurnoFlex
+
+            p
+              strong Nombre:
+              |  #{cuenta.nombre}
+
+            p
+              strong Rol:
+              |  #{cuenta.rol === 'personal' ? 'Secretaria / Recepción' : 'Profesional médico'}
+
+            p
+              strong Identificador institucional:
+              |  #{cuenta.emailInstitucional}
+
+            p
+              strong Correo particular:
+              |  #{cuenta.email}
+
+            if enviado
+              .alert.alert-success
+                strong Invitación enviada
+                p.mb-0.mt-2
+                  | El usuario debe abrir el correo
+                  | recibido y activar su cuenta.
+
+            else
+              .alert.alert-warning
+                strong Invitación pendiente
+                p.mb-0.mt-2
+                  | La cuenta institucional fue creada,
+                  | pero no se pudo enviar el correo.
+                  | Comprobá la configuración y
+                  | utilizá el botón de reenvío.
+
+              form.mb-3(
+                action='/accesos/reenviar/' + cuenta.id
+                method='POST'
+              )
+                button.btn.btn-warning(type='submit')
+                  | Reenviar invitación
+
+            a.btn.btn-outline-secondary(href='/')
+              | Volver al inicio

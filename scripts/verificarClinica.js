@@ -1,47 +1,84 @@
+/**
+ * Script de validación estructural para TurnoFlex (Módulo Clínico).
+ * Comprueba dependencias, entorno, directorios y configuración sin exponer credenciales.
+ */
+
 import 'dotenv/config';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 
+// Setup inicial de entorno CommonJS para resolver módulos si hace falta
 const require = createRequire(import.meta.url);
 const raiz = process.cwd();
 const errores = [];
 const avisos = [];
+
+// Helper visual para mostrar el estado en consola
 const informar = (etiqueta, ok) => console.log(`${ok ? '✅' : '❌'} ${etiqueta}`);
+
+// Valida la existencia física de un archivo crítico en el workspace
 const requerido = archivo => {
   if (!fs.existsSync(path.join(raiz, archivo))) errores.push(`No se encontró: ${archivo}`);
 };
 
+// 1. Chequeos de Node.js y package.json
 const version = Number(process.versions.node.split('.')[0]);
 if (version < 20) avisos.push(`Se recomienda Node.js 20 o superior (detectado ${process.version}).`);
-const pkg = JSON.parse(fs.readFileSync(path.join(raiz,'package.json'),'utf8'));
+
+const pkg = JSON.parse(fs.readFileSync(path.join(raiz, 'package.json'), 'utf8'));
 if (pkg.type !== 'module') errores.push('package.json debe declarar "type": "module".');
-for (const modulo of ['express','mongoose','multer','pug','express-session','dotenv']) {
+
+// 2. Verificación de dependencias obligatorias del stack
+for (const modulo of ['express', 'mongoose', 'multer', 'pug', 'express-session', 'dotenv']) {
   if (!pkg.dependencies?.[modulo]) errores.push(`Falta ${modulo} en package.json.`);
-  try { require.resolve(modulo); } catch { errores.push(`Falta instalar ${modulo}; ejecutá npm install en tu proyecto.`); }
+  try { 
+    require.resolve(modulo); 
+  } catch { 
+    errores.push(`Falta instalar ${modulo}; ejecutá npm install en tu proyecto.`); 
+  }
 }
+
+// 3. Validación de variables de entorno críticas (DB y Sesión)
 if (!/^mongodb(\+srv)?:\/\//i.test(String(process.env.MONGO_URI || ''))) {
   errores.push('Falta MONGO_URI o su formato no comienza con mongodb:// o mongodb+srv://.');
 }
+
 const secreto = String(process.env.SESSION_SECRET || '');
 if (secreto.trim().length < 32) avisos.push('SESSION_SECRET ausente o menor de 32 caracteres. Configurá un secreto fuerte en .env.');
-if (process.env.NODE_ENV === 'production') avisos.push('El módulo clínico está deshabilitado en producción (respuesta 503): es un prototipo.');
+
+if (process.env.NODE_ENV === 'production') {
+  avisos.push('El módulo clínico está deshabilitado en producción (respuesta 503): es un prototipo.');
+}
+
+// 4. Seguridad de directorios privados (evitar exposición en /public)
 const privado = path.resolve(raiz, process.env.TF_CLINICA_PRIVATE_DIR || 'storage_privado/clinica');
 const publico = path.resolve(raiz, 'public');
-if (privado === publico || privado.startsWith(publico + path.sep)) errores.push('TF_CLINICA_PRIVATE_DIR está dentro de public/.');
+if (privado === publico || privado.startsWith(publico + path.sep)) {
+  errores.push('TF_CLINICA_PRIVATE_DIR está dentro de public/.');
+}
+
+// 5. Comprobación de archivos y vistas esenciales
 for (const archivo of [
   'src/models/Usuario.js',
   'src/views/clinica/historia.pug',
   'src/views/clinica/evolucion-nueva.pug',
   'src/views/clinica/estudio-nuevo.pug',
   'src/views/layout.pug'
-]) requerido(archivo);
+]) {
+  requerido(archivo);
+}
+
+// 6. Resumen de resultados en consola
 console.log('TurnoFlex — comprobación local (sin conectarse a la base ni revelar credenciales)');
-informar('Node.js y dependencias', !errores.some(e=>/Falta instalar|dependencies|package.json/.test(e)));
+informar('Node.js y dependencias', !errores.some(e => /Falta instalar|dependencies|package.json/.test(e)));
 informar('Configuración MongoDB presente', /^mongodb(\+srv)?:\/\//i.test(String(process.env.MONGO_URI || '')));
 informar('Almacenamiento privado', !(privado === publico || privado.startsWith(publico + path.sep)));
+
 for (const aviso of avisos) console.warn('⚠️', aviso);
 for (const error of errores) console.error('❌', error);
+
+// Estado de salida del script según integridad
 if (errores.length) {
   console.error(`Revisión incompleta: ${errores.length} punto(s) a corregir.`);
   process.exitCode = 1;

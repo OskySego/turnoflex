@@ -1,0 +1,21 @@
+
+section.sala-panel.mt-4(
+  aria-labelledby="tituloUltimosLlamados"
+)
+  .d-flex.justify-content-between.align-items-center.mb-3
+    h4#tituloUltimosLlamados.text-white.mb-0
+      | Últimos llamados
+
+    span#contadorUltimosLlamados.badge.bg-secondary
+      | 0 de 5
+
+  p.text-light.opacity-75.small
+    | Historial de pacientes llamados durante el día.
+
+  ul#listaUltimosLlamados.list-unstyled.mb-0(
+    aria-live="polite"
+  )
+    li.text-light.opacity-75
+      | Consultando últimos llamados...
+
+script(src="/js/sala-espera-historial.js" defer)

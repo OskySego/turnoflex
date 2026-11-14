@@ -5511,3 +5511,51 @@ html[data-tf-theme='light'] body.tfp-welcome .tfp-eyebrow i,
 html[data-tf-theme='light'] body.tfp-page .tfp-eyebrow i {
     color: #5c35c6 !important; /* Ícono oscuro/violeta intenso */
 }
+
+/* ==========================================
+   BOTÓN LLAMAR PACIENTE
+   ========================================== */
+
+.medico-llamar {
+  display: inline-flex;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.medico-llamar .md-btn-llamar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 43px;
+  padding: 10px 16px;
+  background: #8B5CF6;
+  color: #ffffff;
+  border: 1px solid #8B5CF6;
+  border-radius: 11px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, .18);
+  transition: background .2s ease, transform .2s ease;
+}
+
+.medico-llamar .md-btn-llamar:hover {
+  background: #7C3AED;
+  border-color: #7C3AED;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.medico-llamar .md-btn-llamar:disabled {
+  opacity: .65;
+  cursor: wait;
+  transform: none;
+}
+
+.medico-llamar .md-btn-llamar-icon {
+  font-size: 17px;
+  line-height: 1;
+}

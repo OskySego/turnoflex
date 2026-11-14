@@ -1,3 +1,7 @@
+/**
+ * Script interactivo de desarrollo para vincular una cuenta de usuario con su ficha profesional,
+ * verificando estado, turnos previos y evitando duplicados antes de actualizar la BD.
+ */
 
 import 'dotenv/config';
 import mongoose from 'mongoose';
@@ -8,16 +12,19 @@ import { Usuario } from '../src/models/Usuario.js';
 import { Profesional } from '../src/models/Profesional.js';
 import { Turno } from '../src/models/Turno.js';
 
+// Setup de interfaz CLI para interacción por consola
 const pregunta = readline.createInterface({
   input: entrada,
   output: salida
 });
 
+// Helper rápido para castear y validar IDs de Mongoose
 const id = valor => String(valor?._id ?? valor ?? '');
 
 const PACIENTE_PRUEBA = '6adec16324e1a2870974cae2';
 
 try {
+  // Blindaje básico contra ejecución en producción
   if (process.env.NODE_ENV === 'production') {
     throw new Error('No ejecutar en producción.');
   }
@@ -26,12 +33,14 @@ try {
     throw new Error('Falta MONGO_URI en el archivo .env.');
   }
 
+  // Validamos que el esquema tenga la propiedad esperada
   if (!Usuario.schema.path('profesional_id')) {
     throw new Error(
       'El modelo Usuario no contiene profesional_id.'
     );
   }
 
+  // Conexión a la base de datos de desarrollo
   await mongoose.connect(process.env.MONGO_URI, {
     serverSelectionTimeoutMS: 8000
   });
@@ -39,6 +48,7 @@ try {
   console.log('\nBASE:', mongoose.connection.name);
   console.log('Herramienta para datos ficticios de prueba.\n');
 
+  // Solicitamos el correo del médico para buscar coincidencia
   const email = (
     await pregunta.question(
       'Correo con el que inicia sesión el médico: '
@@ -53,6 +63,7 @@ try {
     .select('_id nombre email matricula especialidad')
     .lean();
 
+  // Validaciones de existencia y rol correcto
   if (!usuario || usuario.rol !== 'profesional') {
     throw new Error(
       'No se encontró una cuenta con rol profesional.'
@@ -65,18 +76,21 @@ try {
     );
   }
 
+  // Mostramos detalle del usuario encontrado
   console.log('\n=== CUENTA DE USUARIO ===');
   console.log('Nombre:', usuario.nombre);
   console.log('ID:', id(usuario));
   console.log('Correo:', usuario.email);
   console.log('Rol:', usuario.rol);
 
+  // Mostramos detalle de la ficha profesional candidata
   console.log('\n=== FICHA PROFESIONAL CANDIDATA ===');
   console.log('Nombre:', profesional.nombre);
   console.log('ID:', id(profesional));
   console.log('Matrícula:', profesional.matricula);
   console.log('Especialidad:', profesional.especialidad);
 
+  // Comprobación de turnos activos con el paciente de prueba
   const turnos = await Turno.countDocuments({
     cliente_id: PACIENTE_PRUEBA,
     profesional_id: profesional._id,
@@ -97,6 +111,7 @@ try {
 
   const vinculoActual = id(usuario.profesional_id);
 
+  // Evaluamos el estado actual del vínculo
   if (vinculoActual) {
     if (vinculoActual === id(profesional)) {
       console.log(
@@ -113,6 +128,7 @@ try {
       console.log('No se modificó nada.');
     }
   } else {
+    // Verificamos que la ficha no pertenezca a otra cuenta por error
     const otraCuenta = await Usuario.findOne({
       _id: { $ne: usuario._id },
       profesional_id: profesional._id
@@ -132,6 +148,7 @@ try {
       'Verificá personalmente que ambos IDs y la matrícula corresponden al mismo médico ficticio.'
     );
 
+    // Confirmación manual requerida antes de aplicar cambios en BD
     const confirmacion = (
       await pregunta.question(
         '\nSi verificaste esa identidad, escribí VINCULAR: '
@@ -143,6 +160,7 @@ try {
         '\nOperación cancelada. No se modificó nada.'
       );
     } else {
+      // Ejecutamos la actualización del vínculo
       const resultado = await Usuario.updateOne(
         {
           _id: usuario._id,
@@ -174,6 +192,7 @@ try {
 } catch (error) {
   console.error('\nERROR:', error.message);
 } finally {
+  // Cierre limpio de terminal y conexión a la BD
   pregunta.close();
   await mongoose.disconnect();
 }

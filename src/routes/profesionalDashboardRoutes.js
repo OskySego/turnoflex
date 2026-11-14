@@ -1,3 +1,4 @@
+
 import { Router } from 'express';
 
 import {
@@ -5,16 +6,18 @@ import {
 } from '../controllers/profesionalDashboardController.js';
 
 import {
+  TurnoController
+} from '../controllers/turnoController.js';
+
+import {
   asegurarAutenticacion,
   permitirRoles
 } from '../middlewares/authMiddleware.js';
 
-
 const router = Router();
 
-
 // ============================================================
-// MI AGENDA
+// MI AGENDA MÉDICA
 // GET /medico/agenda
 // ============================================================
 
@@ -23,16 +26,13 @@ router.get(
 
   asegurarAutenticacion,
 
-  permitirRoles(
-    'profesional'
-  ),
+  permitirRoles('profesional'),
 
   ProfesionalDashboardController.verMiAgenda
 );
 
-
 // ============================================================
-// MARCAR TURNO PROPIO COMO ATENDIDO
+// MARCAR TURNO COMO ATENDIDO
 // POST /medico/turnos/:id/atendido
 // ============================================================
 
@@ -41,16 +41,13 @@ router.post(
 
   asegurarAutenticacion,
 
-  permitirRoles(
-    'profesional'
-  ),
+  permitirRoles('profesional'),
 
   ProfesionalDashboardController.marcarAtendido
 );
 
-
 // ============================================================
-// CANCELAR TURNO PROPIO
+// CANCELAR TURNO
 // POST /medico/turnos/:id/cancelar
 // ============================================================
 
@@ -59,12 +56,28 @@ router.post(
 
   asegurarAutenticacion,
 
-  permitirRoles(
-    'profesional'
-  ),
+  permitirRoles('profesional'),
 
   ProfesionalDashboardController.cancelarTurno
 );
 
+// ============================================================
+// LLAMAR PACIENTE A SALA DE ESPERA
+// POST /medico/turnos/:id/llamar
+// ============================================================
+
+router.post(
+  '/turnos/:id/llamar',
+
+  asegurarAutenticacion,
+
+  permitirRoles('profesional'),
+
+  TurnoController.llamarPaciente
+);
+
+// ============================================================
+// EXPORTAR RUTAS
+// ============================================================
 
 export default router;

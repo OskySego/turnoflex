@@ -232,6 +232,18 @@ block content
                       aria-label=`Registrar evolución de ${nombrePaciente}`
                     )
                       | + Evolución
+                //- Llamado a la sala de espera, solo si el turno es reservado y la fecha es hoy.
+                if turno._id && turno.fecha === hoy && ['En espera', 'reservado'].includes(estado)
+                  form.medico-llamar(
+                    method="POST"
+                    action=`/medico/turnos/${turno._id}/llamar`
+                  )
+                    if typeof csrfToken !== 'undefined' && csrfToken
+                      input(type="hidden" name="_csrf" value=csrfToken)
+
+                    button.md-btn-llamar(type="submit")
+                      span.md-btn-llamar-icon(aria-hidden="true") 📢
+                      span Llamar paciente
                 if estado === 'reservado'
                   form.medico-atendido(method='POST' action=`/medico/turnos/${turno._id}/atendido`)
                     if typeof csrfToken !== "undefined" && csrfToken

@@ -271,6 +271,17 @@ const turnoSchema = new mongoose.Schema(
     // Lo conservamos para compatibilidad con lo que ya existe.
     // ========================================================
 
+
+    // Última vez que el médico llamó a este paciente.
+    // No modifica el estado de atención ni el pago.
+    // Fecha y hora real del último llamado a consultorio.
+    ultimoLlamadoSalaEn: {
+      type: Date,
+      default: null,
+      index: true
+    },
+
+
     historialEstados: [
       {
         estadoAnterior: {
@@ -344,6 +355,12 @@ turnoSchema.index(
     fecha: 1
   }
 );
+
+
+turnoSchema.index({
+  fecha: 1,
+  ultimoLlamadoSalaEn: -1
+});
 
 
 // ============================================================

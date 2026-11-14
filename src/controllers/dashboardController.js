@@ -5,6 +5,7 @@ import { Turno } from '../models/Turno.js';
 // UTILIDADES
 // ============================================================
 
+// Me armo esta funcioncita rápida para formatear cualquier objeto Date a un string YYYY-MM-DD limpio
 function formatearFecha(fecha) {
 
   const anio =
@@ -34,6 +35,7 @@ function formatearFecha(fecha) {
 }
 
 
+// Saco el porcentaje redondeado a un decimal y evito divisiones por cero que me rompan la vista
 function porcentaje(valor, total) {
 
   if (
@@ -67,6 +69,8 @@ export class DashboardController {
   // CENTRO DE INTELIGENCIA GERENCIAL
   // ==========================================================
 
+  // Recopilo todas las estadísticas operativas y financieras del sistema 
+  // para alimentar el dashboard gerencial de la clínica.
   static async getEstadisticas(
     req,
     res,
@@ -76,7 +80,7 @@ export class DashboardController {
     try {
 
       // ========================================================
-      // FECHAS
+      // CÁLCULO DE FECHAS
       // ========================================================
 
       const hoy =
@@ -89,6 +93,7 @@ export class DashboardController {
         );
 
 
+      // Armo el array con los últimos 7 días hacia atrás para la gráfica de evolución
       const fechasUltimos7Dias =
         [];
 
@@ -120,8 +125,10 @@ export class DashboardController {
 
 
       // ========================================================
-      // CONSULTAS GERENCIALES EN PARALELO
+      // CONSULTAS GERENCIALES EN PARALELO (Promise.all)
       // ========================================================
+      // Lanzo todas las agregaciones de MongoDB juntas para que la página 
+      // cargue de un solo saque y no muera en el intento.
 
       const [
 
@@ -147,6 +154,8 @@ export class DashboardController {
         // ======================================================
         // 1. PROFESIONALES MÁS DEMANDADOS
         // ======================================================
+        // Hago un $lookup contra la colección de profesionales para contar 
+        // cuántos turnos tiene cada uno y ordenar de mayor a menor.
 
         Turno.aggregate([
 
@@ -227,6 +236,7 @@ export class DashboardController {
         // ======================================================
         // 2. ESPECIALIDADES MÁS DEMANDADAS
         // ======================================================
+        // Agrupo por especialidad médica para ver qué áreas tienen más movimiento.
 
         Turno.aggregate([
 
@@ -309,6 +319,7 @@ export class DashboardController {
         // ======================================================
         // 3. ESTADOS DE TURNOS
         // ======================================================
+        // Cuento cuántos turnos hay en cada estado operativo (atendido, cancelado, etc.)
 
         Turno.aggregate([
 
@@ -343,6 +354,7 @@ export class DashboardController {
         // ======================================================
         // 4. MÉTODOS DE PAGO
         // ======================================================
+        // Mido cuántos eligen Mercado Pago frente a los que pagan en efectivo.
 
         Turno.aggregate([
 
@@ -377,6 +389,7 @@ export class DashboardController {
         // ======================================================
         // 5. ESTADOS DE PAGO
         // ======================================================
+        // Analizo cómo viene la recaudación (señas pagadas, total pagado o pendientes).
 
         Turno.aggregate([
 
@@ -411,6 +424,7 @@ export class DashboardController {
         // ======================================================
         // 6. EVOLUCIÓN ÚLTIMOS 7 DÍAS
         // ======================================================
+        // Filtro los turnos que cayeron en el rango de los últimos 7 días para armar la línea de tiempo.
 
         Turno.aggregate([
 
@@ -460,6 +474,7 @@ export class DashboardController {
         // ======================================================
         // 7. TURNOS DE HOY
         // ======================================================
+        // Un simple count para saber cuánta gente pasa hoy por la clínica.
 
         Turno.countDocuments({
 
@@ -472,6 +487,8 @@ export class DashboardController {
         // ======================================================
         // 8. RESUMEN DE MONTOS
         // ======================================================
+        // Sumo el dinero de las señas registradas y separo lo que ya ingresó de verdad 
+        // a las arcas de la clínica en base al estado del pago.
 
         Turno.aggregate([
 
@@ -543,7 +560,7 @@ export class DashboardController {
 
 
       // ========================================================
-      // ESTADOS OPERATIVOS
+      // MAPEO Y PROCESAMIENTO DE ESTADOS OPERATIVOS
       // ========================================================
 
       const estados = {
@@ -631,13 +648,12 @@ export class DashboardController {
 
 
       // ========================================================
-      // INDICADORES OPERATIVOS
+      // CÁLCULO DE INDICADORES DE RENDIMIENTO (KPIs)
       // ========================================================
 
       /*
-       * Por ahora TurnoFlex no tiene un estado independiente
-       * "ausente". Por eso esta métrica utiliza cancelaciones
-       * como aproximación histórica del indicador.
+       * Nota mental: Como TurnoFlex todavía no maneja un estado nativo de "ausente", 
+       * utilizo las cancelaciones como una aproximación histórica para medir el ausentismo.
        */
 
       const tasaAusentismo =
@@ -660,7 +676,7 @@ export class DashboardController {
 
 
       // ========================================================
-      // MÉTODOS DE PAGO
+      // PROCESAMIENTO DE MÉTODOS DE PAGO
       // ========================================================
 
       let mercadoPago =
@@ -713,7 +729,7 @@ export class DashboardController {
 
 
       // ========================================================
-      // ESTADOS FINANCIEROS
+      // PROCESAMIENTO DE ESTADOS FINANCIEROS
       // ========================================================
 
       let pagosPendientes =
@@ -801,7 +817,7 @@ export class DashboardController {
 
 
       // ========================================================
-      // MONTOS
+      // CONSOLIDACIÓN DE MONTOS
       // ========================================================
 
       const resumenMonto =
@@ -826,7 +842,7 @@ export class DashboardController {
 
 
       // ========================================================
-      // EVOLUCIÓN SEMANAL
+      // ARMAR EL MAPA DE EVOLUCIÓN SEMANAL
       // ========================================================
 
       const mapaEvolucion =
@@ -851,6 +867,7 @@ export class DashboardController {
       );
 
 
+      // Me aseguro de rellenar con ceros los días que no tuvieron turnos para que el gráfico no se rompa
       const evolucion7Dias =
         fechasUltimos7Dias.map(
           (fecha) => {
@@ -871,13 +888,13 @@ export class DashboardController {
 
 
       // ========================================================
-      // MÉTRICAS PARA LA VISTA
+      // EMPAQUETAR MÉTRICAS PARA LA VISTA
       // ========================================================
 
       const metricas = {
 
         // ------------------------------------------------------
-        // Operación
+        // Operación general
         // ------------------------------------------------------
 
         total,
@@ -897,7 +914,7 @@ export class DashboardController {
 
 
         // ------------------------------------------------------
-        // Rendimiento
+        // Indicadores de rendimiento
         // ------------------------------------------------------
 
         tasaAusentismo,
@@ -906,14 +923,14 @@ export class DashboardController {
 
 
         // ------------------------------------------------------
-        // Jornada
+        // Jornada actual
         // ------------------------------------------------------
 
         turnosHoy,
 
 
         // ------------------------------------------------------
-        // Métodos de pago
+        // Desglose de pagos
         // ------------------------------------------------------
 
         mercadoPago,
@@ -924,7 +941,7 @@ export class DashboardController {
 
 
         // ------------------------------------------------------
-        // Estado financiero
+        // Estado financiero detallado
         // ------------------------------------------------------
 
         pagosPendientes,
@@ -941,7 +958,7 @@ export class DashboardController {
 
 
         // ------------------------------------------------------
-        // Importes
+        // Importes económicos
         // ------------------------------------------------------
 
         montoSenasRegistradas,
@@ -952,7 +969,7 @@ export class DashboardController {
 
 
       // ========================================================
-      // RENDER
+      // RENDERIZAR VISTA DEL DASHBOARD
       // ========================================================
 
       return res.render(

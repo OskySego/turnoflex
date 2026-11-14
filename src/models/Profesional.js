@@ -1,6 +1,9 @@
 import mongoose from "mongoose";
 
 const profesionalSchema = new mongoose.Schema({
+    // Baja lógica: los documentos anteriores se consideran activos.
+    activo: { type: Boolean, default: true, index: true },
+    desactivadoEn: { type: Date, default: null },
     nombre: { type: String, required: true },
     dni: { type: String, required: true, unique: true },
     genero: { type: String, required: true },

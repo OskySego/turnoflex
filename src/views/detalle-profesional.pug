@@ -461,4 +461,13 @@ block content
                     href="/turnos/nuevo"
                     style="background:#8B5CF6;"
                   )
-                    | + Gestionar nuevo turno
+                    | + Gestionar nuevo turno+
+              //- ============================================================
+              //- 6. ELIMINAR PROFESIONAL
+              //- ============================================================
+              form(action=`/profesionales/${profesional._id}/eliminar` method="POST" onsubmit="return confirm('¿Eliminar profesional definitivamente?');")
+  
+                if typeof csrfToken !== 'undefined'
+                  input(type="hidden" name="_csrf" value=csrfToken)
+    
+                button.btn.btn-danger(type="submit") 🗑️ Eliminar Profesional

@@ -1,4 +1,4 @@
-extends layout
+﻿extends layout
 
 block content
 
@@ -1070,7 +1070,7 @@ block content
           .col-md-6.col-lg-4
 
             label.prof-field-label(
-              for="subespecialidades"
+              for="subespecialidad"
             )
               | Subespecialidad
               span.required-mark
@@ -1078,8 +1078,8 @@ block content
 
             input.form-control.prof-control(
               type="text"
-              id="subespecialidades"
-              name="subespecialidades"
+              id="subespecialidad"
+              name="subespecialidad"
               required
               placeholder="Ej: Diabetes y metabolismo"
             )
@@ -1168,7 +1168,6 @@ block content
                     id=`regular-${dia.id}`
                     name="diasAtencion"
                     value=dia.nombre
-                    checked=(dia.id !== 'sabado' && dia.id !== 'domingo')
                   )
 
                   label.day-label(

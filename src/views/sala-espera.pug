@@ -1,179 +1,346 @@
+
 doctype html
 html(lang="es")
   head
     meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1")
     title Sala de Espera en Vivo - TurnoFlex
-    link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css")
-    link(rel="stylesheet", href="/css/turnoflex.css")
+    link(rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css")
+    link(rel="stylesheet" href="/css/turnoflex.css")
+
     style.
       body {
-        background-color: #2b3748; /* Tono intermedio plomo/azulado equilibrado */
+        margin: 0;
+        background: #2b3748;
         color: #f1f5f9;
         font-family: system-ui, -apple-system, sans-serif;
         min-height: 100vh;
         padding: 2rem 1rem;
       }
+
       .sala-panel, .sala-hero-inner, .sala-clock-card {
-        background: #37465d; /* Paneles en un gris intermedio destacado */
+        background: #37465d;
         border: 1px solid #4a5c78;
         border-radius: 1rem;
         padding: 1.5rem;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
       }
-      .sala-hero-inner {
-        margin-bottom: 1.5rem;
-      }
-      .sala-kicker {
-        color: #38bdf8;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.85rem;
-        letter-spacing: 0.05em;
-      }
-      .sala-clock-card {
-        text-align: right;
-      }
-      .sala-clock {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: #38bdf8;
-        line-height: 1;
-      }
-      .sala-clock-date {
-        color: #94a3b8;
-        font-size: 0.9rem;
-        margin-top: 0.25rem;
-      }
+
+      .sala-hero-inner { margin-bottom: 1.5rem; }
+      .sala-kicker { color: #38bdf8; font-weight: 700; font-size: .85rem; }
+      .sala-clock-card { text-align: right; }
+      .sala-clock { color: #38bdf8; font-size: 2.5rem; font-weight: 800; }
+      .sala-clock-date { color: #cbd5e1; font-size: .9rem; }
+
       .sala-badge {
-        background: #059669;
-        color: #fff;
-        padding: 0.3rem 0.8rem;
+        background: #475569;
+        color: white;
         border-radius: 2rem;
-        font-size: 0.85rem;
-        font-weight: 600;
+        padding: .4rem .9rem;
+        font-size: .85rem;
+        font-weight: 700;
       }
+
+      .sala-badge.activo { background: #059669; }
+
       .sala-current-name {
-        font-size: 2rem;
-        font-weight: bold;
         color: #38bdf8;
+        font-size: 2.2rem;
+        font-weight: 800;
         margin-top: 1rem;
       }
-      .sala-current-spec {
-        color: #cbd5e1;
-        font-size: 1.1rem;
-      }
-      .sala-item-fila {
-        border-bottom: 1px solid #4a5c78 !important;
-        color: #e2e8f0;
+
+      .sala-current-spec { color: #cbd5e1; font-size: 1.1rem; }
+      .sala-item-fila { border-bottom: 1px solid #4a5c78; padding: 12px 0; }
+      .sala-destello { animation: destacar .7s ease 3; }
+
+      @keyframes destacar {
+        0%, 100% { opacity: 1; }
+        50% { opacity: .35; }
       }
 
   body
     .container-fluid.px-4
-      //- Encabezado / Hero
+
       section.sala-hero-inner
         .row.align-items-center.g-4
           .col-lg-8
-            .sala-kicker ◈ TurnoFlex · Sala de Espera en Vivo
+            .sala-kicker ◈ TURNOFLEX · SALA DE ESPERA EN VIVO
             h1.fw-bold.text-white.mb-2 Consultorios en Atención
-            p.text-light.opacity-75.mb-0 Pantalla dinámica conectada a la agenda médica en tiempo real.
+            p.text-light.opacity-75.mb-0 Pantalla dinámica de llamados médicos en tiempo real.
+
           .col-lg-4
             .sala-clock-card
-              .sala-clock-label.text-light.opacity-75 Hora actual de Buenos Aires
+              .text-light.opacity-75 Hora actual de Buenos Aires
               .sala-clock#salaClock --:--
               .sala-clock-date#salaDate Cargando fecha...
 
-      //- Grilla de paneles
       .row.g-4
-        //- Panel principal de llamado actual
+
         .col-lg-7
           .sala-panel.h-100
             .d-flex.justify-content-between.align-items-center.mb-3
-              span.sala-badge ⚡ Llamando ahora
-            h3.text-white.mb-3 Paciente en Box / Consultorio
+              span.sala-badge#estadoLlamado Aguardando llamado
+
+            h3.text-white.mb-3 Llamado a consultorio
+
             .sala-current-box.p-3
               .sala-current-name#pacienteActual Aguardando próximo llamado...
-              .sala-current-spec#profesionalActual Profesionales listos en la clínica
+              .sala-current-spec#profesionalActual Los pacientes serán convocados por su profesional.
 
-        //- Lista de pacientes aguardando
         .col-lg-5
           .sala-panel.h-100
             .d-flex.justify-content-between.align-items-center.mb-3
               h4.text-white.mb-0 📋 Próximos en espera
               span.badge.bg-secondary#contadorEspera 0 en fila
-            .sala-list#listaEspera.mt-3
-              .sala-empty-item.text-light.opacity-75 No hay pacientes en espera en este momento.
 
+            .sala-list.mt-3#listaEspera
+              .text-light.opacity-75 Consultando turnos pendientes...
+
+    include includes/salaEsperaHistorial.pug
     script(src="/socket.io/socket.io.js")
+
     script.
       document.addEventListener('DOMContentLoaded', function () {
         'use strict';
-        var timeZone = 'America/Argentina/Buenos_Aires';
-        
+
+        const zona = 'America/Argentina/Buenos_Aires';
+        const reloj = document.getElementById('salaClock');
+        const fecha = document.getElementById('salaDate');
+        const paciente = document.getElementById('pacienteActual');
+        const profesional = document.getElementById('profesionalActual');
+        const estado = document.getElementById('estadoLlamado');
+        const lista = document.getElementById('listaEspera');
+        const contador = document.getElementById('contadorEspera');
+        let ultimoTurnoLlamado = null;
+        let versionRecuperacion = 0;
+
+        // RELOJ DE BUENOS AIRES
         function actualizarReloj() {
-          var ahora = new Date();
-          var reloj = document.getElementById('salaClock');
-          var fecha = document.getElementById('salaDate');
-          if (reloj) reloj.textContent = ahora.toLocaleTimeString('es-AR', { timeZone: timeZone, hour: '2-digit', minute: '2-digit', hour12: false });
-          if (fecha) fecha.textContent = ahora.toLocaleDateString('es-AR', { timeZone: timeZone, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-        }
-        
-        async function cargarSala() {
-          try {
-            var res = await fetch('/api/sala-espera/activos', { headers: { Accept: 'application/json' } });
-            if (!res.ok) return;
-            var turnos = await res.json();
-            
-            var pacienteEl = document.getElementById('pacienteActual');
-            var profesionalEl = document.getElementById('profesionalActual');
-            var listaEl = document.getElementById('listaEspera');
-            var contadorEl = document.getElementById('contadorEspera');
-            
-            if (!Array.isArray(turnos) || turnos.length === 0) {
-              pacienteEl.textContent = 'Aguardando próximo llamado...';
-              profesionalEl.textContent = 'Sin turnos activos en curso';
-              listaEl.innerHTML = '<div class="sala-empty-item text-light opacity-75">No hay pacientes en espera.</div>';
-              if (contadorEl) contadorEl.textContent = '0 en fila';
-              return;
-            }
-            
-            var enEspera = turnos.filter(function(t) {
-              var est = String(t.estado || '').toLowerCase().trim();
-              return est === 'en espera' || est === 'reservado';
+          const ahora = new Date();
+
+          if (reloj) {
+            reloj.textContent = ahora.toLocaleTimeString('es-AR', {
+              timeZone: zona,
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false
             });
-            
-            if (enEspera.length > 0) {
-              var actual = enEspera[0];
-              var clienteNombre = (actual.cliente_id && actual.cliente_id.nombre) ? actual.cliente_id.nombre : 'Paciente';
-              var profNombre = (actual.profesional_id && actual.profesional_id.nombre) ? actual.profesional_id.nombre : 'Profesional';
-              var profSpec = (actual.profesional_id && actual.profesional_id.especialidad) ? actual.profesional_id.especialidad : 'Especialidad médica';
-              
-              pacienteEl.textContent = clienteNombre;
-              profesionalEl.textContent = 'Atiende: Dr/a. ' + profNombre + ' (' + profSpec + ') — ' + actual.hora + ' hs';
-              
-              listaEl.innerHTML = '';
-              enEspera.slice(1).forEach(function(t) {
-                var div = document.createElement('div');
-                div.className = 'sala-item-fila py-2';
-                var cNombre = (t.cliente_id && t.cliente_id.nombre) ? t.cliente_id.nombre : 'Paciente';
-                var pSpec = (t.profesional_id && t.profesional_id.especialidad) ? t.profesional_id.especialidad : '';
-                div.innerHTML = '<strong>' + t.hora + ' hs</strong> — <span>' + cNombre + '</span> <small class="text-light opacity-75">(' + pSpec + ')</small>';
-                listaEl.appendChild(div);
-              });
-              if (contadorEl) contadorEl.textContent = enEspera.length + ' en fila';
-            }
-          } catch (err) {
-            console.error('Error actualizando sala de espera:', err);
+          }
+
+          if (fecha) {
+            fecha.textContent = ahora.toLocaleDateString('es-AR', {
+              timeZone: zona,
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+            });
           }
         }
 
-        actualizarReloj();
-        setInterval(actualizarReloj, 30000);
-        cargarSala();
+        // LISTA DE TURNOS PENDIENTES
+        async function cargarSala() {
+          try {
+            const respuesta = await fetch('/api/sala-espera/activos', {
+              headers: { Accept: 'application/json' },
+              cache: 'no-store'
+            });
+
+            if (!respuesta.ok) {
+              throw new Error('No fue posible consultar la sala.');
+            }
+
+            const turnos = await respuesta.json();
+
+            if (!Array.isArray(turnos)) {
+              throw new Error('Formato de turnos inválido.');
+            }
+
+            // Un turno reservado NO es un llamado.
+            const enEspera = turnos.filter(function (t) {
+              const valor = String(t.estado || '')
+                .toLowerCase()
+                .trim();
+
+              const pendiente =
+                valor === 'reservado' ||
+                valor === 'en espera';
+
+              return pendiente &&
+                String(t._id) !== ultimoTurnoLlamado;
+            });
+
+            lista.replaceChildren();
+
+            enEspera.forEach(function (t) {
+              const fila = document.createElement('div');
+              fila.className = 'sala-item-fila';
+
+              const codigo = String(t._id || '')
+                .slice(-6)
+                .toUpperCase();
+
+              fila.textContent =
+                String(t.hora || '--:--') +
+                ' hs — Turno #' + codigo;
+
+              lista.appendChild(fila);
+            });
+
+            if (!enEspera.length) {
+              const vacio = document.createElement('div');
+              vacio.className = 'text-light opacity-75';
+              vacio.textContent = 'No hay turnos pendientes.';
+              lista.appendChild(vacio);
+            }
+
+            contador.textContent = enEspera.length + ' en fila';
+
+          } catch (error) {
+            console.error('Error en sala de espera:', error);
+
+            if (lista) {
+              lista.textContent =
+                'No se pudo actualizar la lista de espera.';
+            }
+          }
+        }
+
+        // LLAMADO REAL DEL MÉDICO
+        function mostrarLlamado(datos) {
+          if (!datos || !datos.paciente) return;
+          versionRecuperacion++;
+
+          const sedeOConsultorio = String(
+            datos.consultorio || ''
+          ).trim();
+
+          // "Sede Central - Consultorio 6" -> "Consultorio 6"
+          const coincidencia = sedeOConsultorio.match(
+            /consultorio\s*[-#:]?\s*[\w]+/i
+          );
+
+          const consultorio = coincidencia
+            ? coincidencia[0].replace(
+                /^consultorio/i,
+                'Consultorio'
+              )
+            : sedeOConsultorio || 'Consultorio no asignado';
+
+          paciente.textContent = String(datos.paciente);
+
+          profesional.textContent =
+            'Diríjase al ' + consultorio +
+            (
+              datos.profesional
+                ? ' — ' + String(datos.profesional)
+                : ''
+            );
+
+          estado.textContent = '📢 Llamando ahora';
+          estado.classList.add('activo');
+
+          paciente.classList.remove('sala-destello');
+          void paciente.offsetWidth;
+          paciente.classList.add('sala-destello');
+
+          ultimoTurnoLlamado = String(datos.turnoId || '');
+
+          cargarSala();
+        }
         
+
+        // ================================================
+        // RECUPERAR ÚLTIMO LLAMADO DESDE MONGODB
+        // ================================================
+
+        function limpiarLlamado() {
+          ultimoTurnoLlamado = null;
+
+          paciente.textContent =
+            'Aguardando próximo llamado...';
+
+          profesional.textContent =
+            'Los pacientes serán convocados por su profesional.';
+
+          estado.textContent = 'Aguardando llamado';
+          estado.classList.remove('activo');
+        }
+
+        async function recuperarUltimoLlamado() {
+          const version = ++versionRecuperacion;
+
+          try {
+            const respuesta = await fetch(
+              '/api/sala-espera/ultimo-llamado',
+              {
+                headers: {
+                  Accept: 'application/json'
+                },
+                cache: 'no-store'
+              }
+            );
+
+            if (!respuesta.ok) {
+              throw new Error(
+                'No se pudo recuperar el último llamado.'
+              );
+            }
+
+            const datos = await respuesta.json();
+
+            // Evitar que una respuesta atrasada
+            // sobrescriba un llamado recibido en vivo.
+            if (version !== versionRecuperacion) {
+              return;
+            }
+
+            if (datos.llamado) {
+              mostrarLlamado(datos.llamado);
+            } else {
+              limpiarLlamado();
+            }
+
+          } catch (error) {
+            console.error(
+              'Error recuperando el llamado:',
+              error
+            );
+          }
+        }
+
+        // INICIALIZAR LA PANTALLA
+        actualizarReloj();
+        setInterval(actualizarReloj, 1000);
+
+        cargarSala();
+        recuperarUltimoLlamado();
+        setInterval(cargarSala, 30000);
+
+        // CONEXIÓN EN TIEMPO REAL
         if (typeof io === 'function') {
-          var socket = io();
-          socket.on('actualizacion_agenda', function(data) {
+          const socket = io();
+
+          
+          socket.on('connect', () => {
             cargarSala();
+            recuperarUltimoLlamado();
           });
+
+          socket.on('actualizacion_agenda', () => {
+            cargarSala();
+            recuperarUltimoLlamado();
+          });
+
+          socket.on(
+            'llamado_paciente',
+            mostrarLlamado
+          );
+
+        } else {
+          console.error(
+            'Socket.IO no está disponible en la sala de espera.'
+          );
         }
       });

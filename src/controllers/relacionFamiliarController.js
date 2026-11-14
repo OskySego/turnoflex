@@ -8,6 +8,8 @@ import { RelacionFamiliar } from '../models/RelacionFamiliar.js';
 // PARENTESCOS PERMITIDOS
 // ============================================================
 
+// Defino la lista exacta de parentescos que aceptamos en el sistema 
+// para evitar que ingresen cualquier texto.
 const PARENTESCOS_PERMITIDOS = [
   'padre',
   'madre',
@@ -29,6 +31,7 @@ const PARENTESCOS_PERMITIDOS = [
 // FUNCIONES AUXILIARES
 // ============================================================
 
+// Armo un helper rápido para estandarizar los errores que le mando al usuario
 function crearError(mensaje, statusCode = 400) {
   const error = new Error(mensaje);
   error.statusCode = statusCode;
@@ -36,6 +39,7 @@ function crearError(mensaje, statusCode = 400) {
 }
 
 
+// Me aseguro de que los IDs sean de MongoDB válidos antes de hacer consultas locas
 function validarObjectId(id, nombreCampo = 'ID') {
   if (!id || !mongoose.Types.ObjectId.isValid(id)) {
     throw crearError(`${nombreCampo} inválido.`, 400);
@@ -43,6 +47,7 @@ function validarObjectId(id, nombreCampo = 'ID') {
 }
 
 
+// Agarro el ID del usuario desde la sesión para guardar quién armó la relación
 function obtenerUsuarioId(req) {
   const id =
     req.session?.usuario?.id ||
@@ -57,6 +62,8 @@ function obtenerUsuarioId(req) {
 }
 
 
+// Creo un ID único y ordenado alfabéticamente para que no importe 
+// quién es el paciente A y quién es el B (Oscar_Juan es lo mismo que Juan_Oscar)
 function generarClaveRelacion(idA, idB) {
   return [idA.toString(), idB.toString()]
     .sort()
@@ -64,7 +71,7 @@ function generarClaveRelacion(idA, idB) {
 }
 
 
-// Evita que caracteres especiales rompan la búsqueda.
+// Limpio el texto antes de tirarlo a una búsqueda con RegExp para evitar que nos inyecten caracteres raros
 function escaparRegex(texto = '') {
   return texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -72,13 +79,10 @@ function escaparRegex(texto = '') {
 
 // ============================================================
 // RELACIÓN INVERSA
-//
-// Ejemplo:
-//
-// Oscar -> Juan = hijo/a
-// Juan  -> Oscar = padre
 // ============================================================
 
+// Si el usuario me dice que Juan es el "padre" de Oscar,
+// automáticamente deduzco que Oscar es el "hijo/a" de Juan.
 function obtenerParentescoInverso(
   parentesco,
   generoFamiliar = ''
@@ -140,7 +144,7 @@ function obtenerParentescoInverso(
 
 
 // ============================================================
-// CREAR O REACTIVAR RELACIÓN
+// CREAR O REACTIVAR RELACIÓN (Función Central)
 // ============================================================
 
 async function crearOActualizarRelacion({
@@ -151,6 +155,7 @@ async function crearOActualizarRelacion({
   creadoPor
 }) {
 
+  // Valido que no nos estén mandando fruta
   if (!PARENTESCOS_PERMITIDOS.includes(parentesco)) {
     throw crearError(
       'Seleccioná un parentesco válido.',
@@ -163,8 +168,7 @@ async function crearOActualizarRelacion({
     parentescoInverso;
 
 
-  // Si no viene indicada desde el formulario,
-  // TurnoFlex intenta calcularla automáticamente.
+  // Si la vista no me mandó la relación inversa, uso la función que armé arriba para calcularla sola
   if (
     !relacionInversa ||
     !PARENTESCOS_PERMITIDOS.includes(relacionInversa)
@@ -185,6 +189,7 @@ async function crearOActualizarRelacion({
     familiar._id.toString();
 
 
+  // Obvio, no podés ser familiar de vos mismo
   if (idPrincipal === idFamiliar) {
 
     throw crearError(
@@ -203,7 +208,7 @@ async function crearOActualizarRelacion({
 
 
   // ==========================================================
-  // ¿YA EXISTE?
+  // BUSCO SI YA ESTABAN VINCULADOS ANTES
   // ==========================================================
 
   const existente =
@@ -212,6 +217,8 @@ async function crearOActualizarRelacion({
     });
 
 
+  // Si ya existía (por ahí la habían desactivado), la reciclo y le actualizo los datos 
+  // para no llenar la base de datos de basura.
   if (existente) {
 
     const principalEsA =
@@ -257,7 +264,7 @@ async function crearOActualizarRelacion({
 
 
   // ==========================================================
-  // NUEVA RELACIÓN
+  // COMO NO EXISTE, CREO UNA RELACIÓN NUEVA
   // ==========================================================
 
   const nuevaRelacion =
@@ -331,6 +338,7 @@ export class RelacionFamiliarController {
     }
 
 
+    // Traigo todas las relaciones activas donde este paciente sea el A o el B
     const relaciones =
       await RelacionFamiliar
         .find({
@@ -359,8 +367,8 @@ export class RelacionFamiliarController {
         .lean();
 
 
-    // Convertimos la relación técnica en algo fácil
-    // de utilizar desde la vista.
+    // Proceso el array para que la vista reciba un formato fácil de leer,
+    // donde siempre vea a la otra persona como "el familiar".
     const familiares =
       relaciones.map(function (relacion) {
 
@@ -421,7 +429,7 @@ export class RelacionFamiliarController {
 
 
   // ==========================================================
-  // 2. BUSCAR PACIENTES PARA ASOCIAR
+  // 2. BUSCAR PACIENTES PARA ASOCIAR (Buscador Autocomplete)
   // ==========================================================
 
   static async buscarPacientes(req, res) {
@@ -440,7 +448,7 @@ export class RelacionFamiliarController {
     );
 
 
-    // No hacemos búsquedas enormes con un campo vacío.
+    // Corto la ejecución si tipearon muy poco, no voy a escanear toda la DB por 1 letra.
     if (texto.length < 2) {
 
       return res.status(200).json({
@@ -463,6 +471,7 @@ export class RelacionFamiliarController {
       );
 
 
+    // Busco por nombre, dni o email y excluyo al propio paciente
     const pacientes =
       await Cliente
         .find({
@@ -518,7 +527,7 @@ export class RelacionFamiliarController {
 
 
   // ==========================================================
-  // 3. ASOCIAR UN PACIENTE YA EXISTENTE
+  // 3. ASOCIAR UN PACIENTE QUE YA EXISTE EN EL SISTEMA
   // ==========================================================
 
   static async asociarExistente(req, res) {
@@ -546,6 +555,7 @@ export class RelacionFamiliarController {
     );
 
 
+    // Los pido a los dos al mismo tiempo para ganar rendimiento
     const [
       pacientePrincipal,
       familiar
@@ -578,6 +588,7 @@ export class RelacionFamiliarController {
     }
 
 
+    // Uso la función gigante que armé arriba para procesarlo
     const resultado =
       await crearOActualizarRelacion({
 
@@ -595,8 +606,7 @@ export class RelacionFamiliarController {
       });
 
 
-    // Si más adelante usamos esta ruta desde JavaScript,
-    // también puede responder JSON.
+    // Soporto respuestas JSON por si después pego el frontend con AJAX
     if (
       req.accepts('json') &&
       !req.accepts('html')
@@ -627,7 +637,7 @@ export class RelacionFamiliarController {
 
 
   // ==========================================================
-  // 4. REGISTRAR NUEVO PACIENTE Y ASOCIARLO
+  // 4. CREAR A LA PERSONA DESDE CERO Y ASOCIARLA
   // ==========================================================
 
   static async registrarYAsociar(req, res) {
@@ -681,7 +691,7 @@ export class RelacionFamiliarController {
 
 
     // ========================================================
-    // CAMPOS OBLIGATORIOS
+    // CHEQUEOS DE SEGURIDAD BÁSICOS
     // ========================================================
 
     if (
@@ -700,16 +710,14 @@ export class RelacionFamiliarController {
     }
 
 
-    // ========================================================
-    // EVITAR PACIENTES DUPLICADOS
-    // ========================================================
-
     const pacienteExistente =
       await Cliente.findOne({
         dni: String(dni).trim()
       });
 
 
+    // Freno si el paciente ya existe para evitar fichas duplicadas.
+    // Le digo al usuario que use el otro método.
     if (pacienteExistente) {
 
       const error =
@@ -732,10 +740,7 @@ export class RelacionFamiliarController {
 
     try {
 
-      // ======================================================
-      // CREAR PACIENTE
-      // ======================================================
-
+      // Primero creo la ficha completa
       nuevoFamiliar =
         await Cliente.create({
 
@@ -789,10 +794,7 @@ export class RelacionFamiliarController {
         });
 
 
-      // ======================================================
-      // ASOCIAR AUTOMÁTICAMENTE
-      // ======================================================
-
+      // Ahora vinculo la nueva ficha con el paciente principal
       await crearOActualizarRelacion({
 
         pacientePrincipal,
@@ -812,8 +814,8 @@ export class RelacionFamiliarController {
 
     } catch (error) {
 
-      // Si se creó el nuevo paciente pero falló la relación,
-      // eliminamos ese registro para no dejar un alta incompleta.
+      // IMPORTANTE: Si la ficha se creó pero falló la relación, 
+      // borro el perfil nuevo a mano (Rollback) para no dejar basura suelta en la DB.
       if (nuevoFamiliar) {
 
         await Cliente.findByIdAndDelete(
@@ -856,9 +858,6 @@ export class RelacionFamiliarController {
 
   // ==========================================================
   // 5. DESVINCULAR FAMILIAR
-  //
-  // No eliminamos físicamente la relación.
-  // La dejamos inactiva para conservar trazabilidad.
   // ==========================================================
 
   static async desasociar(req, res) {
@@ -897,6 +896,7 @@ export class RelacionFamiliarController {
     }
 
 
+    // Me aseguro de que el usuario no esté intentando borrar una relación ajena modificando el ID
     const perteneceAlPaciente =
       relacion.pacienteA.toString() ===
         id.toString() ||
@@ -914,6 +914,8 @@ export class RelacionFamiliarController {
     }
 
 
+    // Hago un borrado lógico (la oculto) en vez de borrarla de verdad, 
+    // así mantengo el historial de la clínica intacto por cuestiones legales.
     relacion.activo =
       false;
 

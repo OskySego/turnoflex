@@ -1,0 +1,595 @@
+
+extends layout
+
+block content
+  - const p = profesional
+  - const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+  - const regulares = Array.isArray(p.diasAtencion) ? p.diasAtencion : []
+  - const sobreturnos = Array.isArray(p.diasSobreturnos) ? p.diasSobreturnos : []
+  - const telemedicina = Array.isArray(p.diasTelemedicina) ? p.diasTelemedicina : []
+
+  style.
+    .editar-prof-page {
+      --violeta: #8B5CF6;
+      --azul: #0D1B3E;
+    }
+
+    .editar-prof-hero {
+      background: linear-gradient(135deg, #0D1B3E, #312e81);
+      color: white;
+      border-radius: 22px;
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+
+    .editar-prof-section {
+      padding: 26px;
+      border-radius: 18px;
+      margin-bottom: 20px;
+    }
+
+    .editar-prof-section h4 {
+      font-weight: 800;
+      font-size: 1.1rem;
+      margin-bottom: 20px;
+    }
+
+    .editar-prof-section .form-label {
+      font-weight: 650;
+      font-size: .85rem;
+    }
+
+    .editar-prof-section .form-control,
+    .editar-prof-section .form-select {
+      border-radius: 10px;
+      min-height: 43px;
+    }
+
+    .editar-prof-days {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .editar-prof-day {
+      padding: 10px 14px;
+      border: 1px solid rgba(139,92,246,.22);
+      border-radius: 10px;
+    }
+
+    .editar-prof-toggle {
+      padding: 18px;
+      border-radius: 14px;
+      background: rgba(139,92,246,.06);
+      border: 1px solid rgba(139,92,246,.18);
+    }
+
+    .editar-prof-optional {
+      margin-top: 20px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(139,92,246,.18);
+    }
+
+    .editar-prof-save {
+      background: #8B5CF6;
+      color: white;
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-weight: 800;
+    }
+
+    .editar-prof-save:hover {
+      background: #7C3AED;
+      color: white;
+    }
+
+  .container.py-4.editar-prof-page.tfu-page
+
+    .editar-prof-hero.tfu-hero
+      .d-flex.justify-content-between.align-items-center.flex-wrap.gap-3
+        div
+          h2.fw-bold.mb-2
+            | ✏️ Editar profesional
+
+          p.mb-1
+            = p.nombre || 'Profesional'
+
+          small.opacity-75
+            | Actualizá los datos y la configuración de atención.
+
+        a.btn.btn-light(
+          href="/profesionales"
+        )
+          | Volver a profesionales
+
+    form#formEditarProfesional(
+      method="POST"
+      action="/profesionales/" + p._id + "/editar"
+    )
+
+      if typeof csrfToken !== 'undefined' && csrfToken
+        input(
+          type="hidden"
+          name="_csrf"
+          value=csrfToken
+        )
+
+      //- ===========================================
+      //- 1. IDENTIFICACION
+      //- ===========================================
+
+      .card.border-0.shadow-sm.editar-prof-section.tfu-card
+
+        h4
+          | 👤 1. Identificación y contacto
+
+        .row.g-3
+
+          .col-md-6
+            label.form-label Nombre completo
+            input.form-control(
+              type="text"
+              name="nombre"
+              value=p.nombre || ''
+              required
+            )
+
+          .col-md-6
+            label.form-label DNI / Pasaporte
+            input.form-control(
+              type="text"
+              name="dni"
+              value=p.dni || ''
+              required
+            )
+
+          .col-md-4
+            label.form-label Género
+            select.form-select(name="genero" required)
+              each valor in ['Masculino', 'Femenino', 'Otro']
+                option(
+                  value=valor
+                  selected=p.genero === valor
+                )= valor
+
+          .col-md-4
+            label.form-label Correo electrónico
+            input.form-control(
+              type="email"
+              name="email"
+              value=p.email || ''
+              required
+            )
+
+          .col-md-4
+            label.form-label Teléfono
+            input.form-control(
+              type="tel"
+              name="telefono"
+              value=p.telefono || ''
+              required
+            )
+
+      //- ===========================================
+      //- 2. INFORMACION PROFESIONAL
+      //- ===========================================
+
+      .card.border-0.shadow-sm.editar-prof-section.tfu-card
+
+        h4
+          | 🩺 2. Información profesional
+
+        .row.g-3
+
+          .col-md-6
+            label.form-label Matrícula profesional
+            input.form-control(
+              type="text"
+              name="matricula"
+              value=p.matricula || ''
+              required
+            )
+
+          .col-md-6
+            label.form-label Especialidad
+            input.form-control(
+              type="text"
+              name="especialidad"
+              value=p.especialidad || ''
+              required
+            )
+
+          .col-md-6
+            label.form-label Subespecialidad
+            input.form-control(
+              type="text"
+              name="subespecialidad"
+              value=p.subespecialidad || ''
+              required
+            )
+
+            small.text-muted
+              | Si no posee, ingresá General.
+
+          .col-md-6
+            label.form-label Sede / Consultorio
+            input.form-control(
+              type="text"
+              name="sede"
+              value=p.sede || ''
+              placeholder="Ej: Consultorio 3"
+            )
+
+          .col-md-6
+            label.form-label Cobertura aceptada
+            select.form-select(
+              name="tipoCobertura"
+              required
+            )
+
+              option(
+                value="ambas"
+                selected=p.tipoCobertura === 'ambas'
+              )
+                | Particular y Obra Social
+
+              option(
+                value="particular"
+                selected=p.tipoCobertura === 'particular'
+              )
+                | Solo Particular
+
+              option(
+                value="obra_social"
+                selected=p.tipoCobertura === 'obra_social'
+              )
+                | Solo Obra Social / Prepaga
+
+      //- ===========================================
+      //- 3. AGENDA REGULAR
+      //- ===========================================
+
+      .card.border-0.shadow-sm.editar-prof-section.tfu-card
+
+        h4
+          | 📅 3. Agenda regular
+
+        .mb-4
+          label.form-label
+            | Días de atención
+
+          .editar-prof-days
+            each dia in dias
+              .editar-prof-day
+                .form-check.m-0
+                  input.form-check-input(
+                    type="checkbox"
+                    name="diasAtencion"
+                    value=dia
+                    id="regular-" + dia
+                    checked=regulares.includes(dia)
+                  )
+
+                  label.form-check-label(
+                    for="regular-" + dia
+                  )= dia
+
+        .row.g-3
+
+          .col-md-6
+            label.form-label Modalidad principal
+
+            select.form-select(
+              name="modalidad"
+              required
+            )
+
+              option(
+                value="presencial"
+                selected=p.modalidad === 'presencial'
+              ) Presencial
+
+              option(
+                value="telemedicina"
+                selected=p.modalidad === 'telemedicina'
+              ) Telemedicina
+
+              option(
+                value="ambas"
+                selected=p.modalidad === 'ambas'
+              ) Presencial y Telemedicina
+
+          .col-md-6
+            label.form-label Duración de cada turno
+
+            select.form-select(
+              name="duracionTurnoMinutos"
+              required
+            )
+
+              each minutos in [15, 20, 30, 40, 45, 60]
+                option(
+                  value=minutos
+                  selected=Number(p.duracionTurnoMinutos || 30) === minutos
+                )= minutos + ' minutos'
+
+          .col-md-6
+            label.form-label Hora de inicio
+
+            input.form-control(
+              type="time"
+              name="horaInicio"
+              value=p.horaInicio || '08:00'
+              required
+            )
+
+          .col-md-6
+            label.form-label Hora de finalización
+
+            input.form-control(
+              type="time"
+              name="horaFin"
+              value=p.horaFin || '16:00'
+              required
+            )
+
+      //- ===========================================
+      //- 4. SOBRETURNOS
+      //- ===========================================
+
+      .card.border-0.shadow-sm.editar-prof-section.tfu-card
+
+        h4
+          | ⚡ 4. Configuración de sobreturnos
+
+        .editar-prof-toggle
+          .form-check.form-switch
+
+            input.form-check-input(
+              type="checkbox"
+              role="switch"
+              id="permiteSobreturnos"
+              name="permiteSobreturnos"
+              checked=Boolean(p.permiteSobreturnos)
+            )
+
+            label.form-check-label.fw-bold(
+              for="permiteSobreturnos"
+            )
+              | Permitir sobreturnos
+
+          small.text-muted
+            | Activá esta opción para configurar días, horarios y cantidad máxima.
+
+        #configSobreturnos.editar-prof-optional(
+          hidden=!p.permiteSobreturnos
+        )
+
+          .mb-3
+            label.form-label
+              | Días habilitados para sobreturnos
+
+            .editar-prof-days
+
+              each dia in dias
+                .editar-prof-day
+                  .form-check.m-0
+
+                    input.form-check-input(
+                      type="checkbox"
+                      name="diasSobreturnos"
+                      value=dia
+                      id="sob-" + dia
+                      checked=sobreturnos.includes(dia)
+                    )
+
+                    label.form-check-label(
+                      for="sob-" + dia
+                    )= dia
+
+          .row.g-3
+
+            .col-md-4
+              label.form-label Hora de inicio
+
+              input.form-control(
+                type="time"
+                name="horaInicioSobreturnos"
+                value=p.horaInicioSobreturnos || ''
+              )
+
+            .col-md-4
+              label.form-label Hora de finalización
+
+              input.form-control(
+                type="time"
+                name="horaFinSobreturnos"
+                value=p.horaFinSobreturnos || ''
+              )
+
+            .col-md-4
+              label.form-label Cantidad máxima
+
+              input.form-control(
+                type="number"
+                name="cantidadMaximaSobreturnos"
+                min="1"
+                max="8"
+                value=p.cantidadMaximaSobreturnos || 4
+              )
+
+      //- ===========================================
+      //- 5. TELEMEDICINA
+      //- ===========================================
+
+      .card.border-0.shadow-sm.editar-prof-section.tfu-card
+
+        h4
+          | 💻 5. Configuración de telemedicina
+
+        .editar-prof-toggle
+          .form-check.form-switch
+
+            input.form-check-input(
+              type="checkbox"
+              role="switch"
+              id="ofreceTelemedicina"
+              name="ofreceTelemedicina"
+              checked=Boolean(p.ofreceTelemedicina)
+            )
+
+            label.form-check-label.fw-bold(
+              for="ofreceTelemedicina"
+            )
+              | Ofrecer telemedicina
+
+          small.text-muted
+            | Activá esta opción para definir una agenda de videoconsultas.
+
+        #configTelemedicina.editar-prof-optional(
+          hidden=!p.ofreceTelemedicina
+        )
+
+          .mb-3
+            label.form-label
+              | Días habilitados para telemedicina
+
+            .editar-prof-days
+
+              each dia in dias
+                .editar-prof-day
+                  .form-check.m-0
+
+                    input.form-check-input(
+                      type="checkbox"
+                      name="diasTelemedicina"
+                      value=dia
+                      id="tele-" + dia
+                      checked=telemedicina.includes(dia)
+                    )
+
+                    label.form-check-label(
+                      for="tele-" + dia
+                    )= dia
+
+          .row.g-3
+
+            .col-md-6
+              label.form-label Hora de inicio
+
+              input.form-control(
+                type="time"
+                name="horaInicioTelemedicina"
+                value=p.horaInicioTelemedicina || ''
+              )
+
+            .col-md-6
+              label.form-label Hora de finalización
+
+              input.form-control(
+                type="time"
+                name="horaFinTelemedicina"
+                value=p.horaFinTelemedicina || ''
+              )
+
+      //- ===========================================
+      //- BOTONES
+      //- ===========================================
+
+      .d-flex.justify-content-end.flex-wrap.gap-3.mb-4
+
+        a.btn.btn-outline-secondary.px-4(
+          href="/profesionales"
+        )
+          | Cancelar
+
+        button.btn.editar-prof-save#guardarEdicion(
+          type="submit"
+        )
+          | ✓ Guardar todos los cambios
+
+  script.
+    document.addEventListener('DOMContentLoaded', function () {
+
+      const formulario = document.getElementById('formEditarProfesional');
+
+      const checkSob = document.getElementById('permiteSobreturnos');
+      const configSob = document.getElementById('configSobreturnos');
+
+      const checkTele = document.getElementById('ofreceTelemedicina');
+      const configTele = document.getElementById('configTelemedicina');
+
+      function actualizarSeccion(check, panel) {
+        if (!check || !panel) return;
+
+        panel.hidden = !check.checked;
+
+        panel.querySelectorAll('input, select').forEach(function(campo) {
+          campo.disabled = !check.checked;
+        });
+      }
+
+      checkSob.addEventListener('change', function () {
+        actualizarSeccion(checkSob, configSob);
+      });
+
+      checkTele.addEventListener('change', function () {
+        actualizarSeccion(checkTele, configTele);
+      });
+
+      actualizarSeccion(checkSob, configSob);
+      actualizarSeccion(checkTele, configTele);
+
+      formulario.addEventListener('submit', function(event) {
+
+        const diasRegulares = formulario.querySelectorAll(
+          'input[name="diasAtencion"]:checked'
+        );
+
+        if (!diasRegulares.length) {
+          event.preventDefault();
+          alert('Seleccioná al menos un día de atención regular.');
+          return;
+        }
+
+        const inicio = formulario.elements.horaInicio.value;
+        const fin = formulario.elements.horaFin.value;
+
+        if (inicio >= fin) {
+          event.preventDefault();
+          alert('La hora de finalización debe ser posterior al inicio.');
+          return;
+        }
+
+        if (checkSob.checked) {
+          const diasSob = formulario.querySelectorAll(
+            'input[name="diasSobreturnos"]:checked'
+          );
+
+          const desde = formulario.elements.horaInicioSobreturnos.value;
+          const hasta = formulario.elements.horaFinSobreturnos.value;
+
+          if (!diasSob.length || !desde || !hasta || desde >= hasta) {
+            event.preventDefault();
+            alert('Completá correctamente días y horarios de sobreturnos.');
+            return;
+          }
+        }
+
+        if (checkTele.checked) {
+          const diasTele = formulario.querySelectorAll(
+            'input[name="diasTelemedicina"]:checked'
+          );
+
+          const desde = formulario.elements.horaInicioTelemedicina.value;
+          const hasta = formulario.elements.horaFinTelemedicina.value;
+
+          if (!diasTele.length || !desde || !hasta || desde >= hasta) {
+            event.preventDefault();
+            alert('Completá correctamente días y horarios de telemedicina.');
+            return;
+          }
+        }
+      });
+    });

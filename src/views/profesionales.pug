@@ -1,80 +1,223 @@
+
 extends layout
 
 block content
-  .tf-page--profesionales
+  - const listaProfesionales = Array.isArray(profesionales) ? profesionales : []
+  - const puedeGestionar = typeof user !== 'undefined' && user && ['admin', 'personal'].includes(user.rol)
+  - const esAdmin = typeof user !== 'undefined' && user && user.rol === 'admin'
 
-    //- ============================================================
+  style.
+    .tf-page--profesionales {
+      --prof-violet: #8B5CF6;
+      --prof-blue: #2563eb;
+    }
+
+    .tf-prof-header {
+      padding: 30px;
+      margin-bottom: 24px;
+      border-radius: 22px;
+      color: #ffffff;
+      background: linear-gradient(135deg, #0D1B3E, #312e81);
+    }
+
+    .tf-prof-card {
+      transition: transform .2s ease, box-shadow .2s ease;
+      overflow: hidden;
+    }
+
+    .tf-prof-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 30px rgba(0,0,0,.10) !important;
+    }
+
+    .tf-prof-avatar {
+      width: 54px;
+      height: 54px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 15px;
+      color: white;
+      font-weight: 800;
+      font-size: 1.2rem;
+      background: linear-gradient(135deg, #2563eb, #8B5CF6);
+    }
+
+    .tf-prof-code {
+      display: inline-block;
+      font-size: .65rem;
+      font-weight: 800;
+      color: var(--prof-violet);
+      margin-bottom: 4px;
+    }
+
+    .tf-label {
+      display: block;
+      font-size: .68rem;
+      font-weight: 700;
+      color: #64748b;
+      margin-bottom: 5px;
+    }
+
+    .tf-info-box, .tf-days-box {
+      padding: 13px;
+      border-radius: 12px;
+      border: 1px solid rgba(148,163,184,.18);
+      background: rgba(148,163,184,.06);
+    }
+
+    .tf-feature {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: .68rem;
+      font-weight: 700;
+    }
+
+    .tf-feature-purple {
+      color: #7c3aed;
+      background: rgba(139,92,246,.12);
+    }
+
+    .tf-feature-blue {
+      color: #2563eb;
+      background: rgba(37,99,235,.12);
+    }
+
+    .tf-feature-orange {
+      color: #b45309;
+      background: rgba(245,158,11,.12);
+    }
+
+    .tf-prof-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .tf-prof-actions form {
+      margin: 0;
+    }
+
+    .tf-prof-actions .btn {
+      width: 100%;
+      font-weight: 700;
+      border-radius: 10px;
+    }
+
+    .tf-empty-search {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    [data-bs-theme="dark"] .tf-info-box,
+    [data-bs-theme="dark"] .tf-days-box {
+      background: rgba(255,255,255,.04);
+      border-color: rgba(255,255,255,.10);
+    }
+
+    @media (max-width: 575px) {
+      .tf-prof-header {
+        padding: 22px;
+      }
+
+      .tf-prof-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+
+  .tf-page--profesionales.tfu-page
+
+    //- ==============================================
     //- CABECERA
-    //- ============================================================
+    //- ==============================================
 
     .tf-prof-header.tfu-hero
 
       .d-flex.justify-content-between.align-items-center.flex-wrap.gap-3
 
         div
-
           small.text-uppercase.fw-bold(
             style="color:#c4b5fd;"
           )
             | Equipo Médico
 
-          h2.mb-1.fw-bold
-            | Profesionales
+          h2.mb-1.fw-bold Profesionales
 
           p.mb-0
             | Especialidades, agendas y modalidades de atención
-
 
         .d-flex.flex-wrap.align-items-center.gap-2
 
           span.badge.rounded-pill.px-3.py-2(
             style="background:rgba(255,255,255,.12);"
           )
-            | #{profesionales ? profesionales.length : 0} profesionales
+            | #{listaProfesionales.length} profesionales
 
-          a.btn.btn-light.rounded-3(
-            href="/"
-          )
+          a.btn.btn-light.rounded-3(href="/")
             | Inicio
 
-          if user && (user.rol === 'admin' || user.rol === 'personal')
-
+          if puedeGestionar
             a.btn.text-white.rounded-3(
               href="/profesionales/nuevo"
               style="background:#8B5CF6;"
             )
               | + Nuevo profesional
 
+    //- ==============================================
+    //- RECUPERACIÓN SEGURA DE UN CORREO HUÉRFANO
+    //- Solo muestra el formulario al administrador.
+    //- ==============================================
+    if esAdmin
+      details.card.border-0.shadow-sm.rounded-4.mb-4.tfu-card
+        summary.card-body.p-3.fw-bold
+          | Liberar un correo de prueba que quedó ocupado
+        .card-body.pt-0
+          p.small.text-muted
+            | Si el perfil ya no existe y no hay historial, elimina la cuenta
+            | huérfana. Si hay historial, archiva la cuenta y libera el correo
+            | sin borrar turnos ni auditorías.
+          form.form-liberar-correo-huerfano.row.g-2.align-items-end(
+            method='POST'
+            action='/profesionales/cuentas-huerfanas/liberar'
+          )
+            if typeof csrfToken !== 'undefined' && csrfToken
+              input(type='hidden' name='_csrf' value=csrfToken)
+            input(type='hidden' name='confirmar' value='LIBERAR')
+            .col-md-8
+              label.form-label(for='correoHuerfano') Correo particular
+              input#correoHuerfano.form-control(
+                type='email'
+                name='email'
+                required
+                placeholder='profesional-de-prueba@gmail.com'
+              )
+            .col-md-4
+              button.btn.btn-outline-danger.w-100(type='submit')
+                | Liberar correo
 
-    //- ============================================================
+    //- ==============================================
     //- BUSCADOR Y FILTROS
-    //- ============================================================
+    //- ==============================================
 
-    if profesionales && profesionales.length > 0
+    if listaProfesionales.length > 0
 
       .card.border-0.shadow-sm.rounded-4.mb-4.tfu-card
-
         .card-body.p-3.p-md-4
 
           .row.g-3.align-items-center
 
             .col-lg-6
-
-              .tf-search-box
-
-                span.tf-search-icon
-                  | ⌕
-
-                input.form-control(
-                  id="buscarProfesional"
-                  type="search"
-                  placeholder="Buscar por nombre, especialidad, matrícula o sede..."
-                  autocomplete="off"
-                )
-
+              input.form-control(
+                id="buscarProfesional"
+                type="search"
+                placeholder="Buscar por nombre, especialidad, matrícula o sede..."
+                autocomplete="off"
+              )
 
             .col-lg-6
-
               .d-flex.flex-wrap.gap-2.justify-content-lg-end
 
                 button.btn.btn-primary.tf-filter-btn(
@@ -101,210 +244,163 @@ block content
                 )
                   | Ambas
 
-
-    //- ============================================================
+    //- ==============================================
     //- SIN PROFESIONALES
-    //- ============================================================
+    //- ==============================================
 
-    if !profesionales || profesionales.length === 0
+    if listaProfesionales.length === 0
 
       .card.border-0.shadow-sm.rounded-4.tfu-card
-
         .card-body.text-center.p-5
 
-          .display-6.mb-3
-            | ✚
+          .display-6.mb-3 ✚
 
-          h5.fw-bold
-            | No hay profesionales registrados
+          h5.fw-bold No hay profesionales registrados
 
           p.text-muted.mb-4
             | Los profesionales incorporados aparecerán en este panel.
 
-          if user && (user.rol === 'admin' || user.rol === 'personal')
-
+          if puedeGestionar
             a.btn.btn-primary.rounded-3.px-4(
               href="/profesionales/nuevo"
             )
               | Registrar profesional
 
-
-    //- ============================================================
-    //- GRILLA
-    //- ============================================================
+    //- ==============================================
+    //- GRILLA DE PROFESIONALES
+    //- ==============================================
 
     else
 
       #profesionalesGrid.row.g-4
 
-        each prof in profesionales
+        each prof in listaProfesionales
 
-          - const profId = prof._id || prof.id
+          - const profId = String(prof._id || prof.id || '')
           - const nombre = prof.nombre || 'Profesional'
+          - const estaActivo = prof.activo !== false
           - const partesNombre = nombre.split(' ').filter(Boolean)
-          - const inicial1 = partesNombre.length > 0 ? partesNombre[0].charAt(0) : 'P'
-          - const inicial2 = partesNombre.length > 1 ? partesNombre[1].charAt(0) : ''
-          - const iniciales = (inicial1 + inicial2).toUpperCase()
-          - const dias = prof.diasAtencion && Array.isArray(prof.diasAtencion) ? prof.diasAtencion : []
+          - const iniciales = partesNombre.slice(0, 2).map(p => p.charAt(0)).join('').toUpperCase() || 'P'
+          - const dias = Array.isArray(prof.diasAtencion) ? prof.diasAtencion : []
           - const modalidad = prof.modalidad || 'presencial'
           - const cobertura = prof.tipoCobertura || 'ambas'
-          - const codigo = profId ? 'PRO-' + profId.toString().slice(-5).toUpperCase() : 'PRO-00000'
+          - const codigo = 'PRO-' + profId.slice(-5).toUpperCase()
+          - const busqueda = [nombre, prof.especialidad, prof.subespecialidad, prof.matricula, prof.sede, prof.email].filter(Boolean).join(' ').toLowerCase()
 
           .col-xl-4.col-lg-6.profesional-wrapper(
             data-modalidad=modalidad
-            data-search=`${nombre} ${prof.especialidad || ''} ${prof.subespecialidad || ''} ${prof.matricula || ''} ${prof.sede || ''} ${prof.email || ''}`.toLowerCase()
+            data-search=busqueda
           )
 
             .card.tf-prof-card.border-0.rounded-4.shadow-sm.h-100.tfu-card
 
               .card-body.p-4.d-flex.flex-column
 
-
-                //- ==================================================
+                //- ===================================
                 //- IDENTIDAD
-                //- ==================================================
+                //- ===================================
 
                 .d-flex.align-items-center.gap-3.mb-4
 
-                  .tf-prof-avatar
-                    = iniciales
+                  .tf-prof-avatar= iniciales
 
-                  div.flex-grow-1
+                  .flex-grow-1
 
-                    span.tf-prof-code
-                      = codigo
+                    span.tf-prof-code= codigo
 
-                    h5.fw-bold.mb-1
-                      = nombre
+                    h5.fw-bold.mb-1= nombre
+                    if !estaActivo
+                      span.badge.bg-secondary.mt-1 Inactivo
 
                     p.text-muted.small.mb-0
                       = prof.especialidad || 'Especialidad no especificada'
 
+                    if prof.subespecialidad
+                      small.text-muted= prof.subespecialidad
 
-                //- ==================================================
+                //- ===================================
                 //- MATRÍCULA Y SEDE
-                //- ==================================================
+                //- ===================================
 
                 .row.g-2.mb-3
 
                   .col-6
-
                     .tf-info-box.h-100
-
-                      span.tf-label
-                        | Matrícula
-
-                      strong.small
-                        = prof.matricula || 'N/D'
-
+                      span.tf-label Matrícula
+                      strong.small= prof.matricula || 'N/D'
 
                   .col-6
-
                     .tf-info-box.h-100
+                      span.tf-label Sede
+                      strong.small= prof.sede || 'Sede Central'
 
-                      span.tf-label
-                        | Sede
-
-                      strong.small
-                        = prof.sede || 'Sede Central'
-
-
-                //- ==================================================
+                //- ===================================
                 //- AGENDA REGULAR
-                //- ==================================================
+                //- ===================================
 
                 .tf-days-box.mb-3
 
-                  span.tf-label
-                    | Agenda regular
+                  span.tf-label Agenda regular
 
                   if dias.length > 0
-
-                    strong.small.d-block.mb-1
-                      = dias.join(' · ')
-
+                    strong.small.d-block.mb-1= dias.join(' · ')
                   else
-
                     strong.small.d-block.mb-1
                       | Días no definidos
 
-                  small.text-muted
+                  small.text-muted.d-block
                     | #{prof.horaInicio || '08:00'} a #{prof.horaFin || '18:00'} hs
 
                   small.text-muted.d-block
                     | Turnos de #{prof.duracionTurnoMinutos || 30} minutos
 
-
-                //- ==================================================
+                //- ===================================
                 //- COBERTURA
-                //- ==================================================
+                //- ===================================
 
                 .mb-3
 
-                  span.tf-label.mb-2
-                    | Tipo de atención
+                  span.tf-label.mb-2 Tipo de atención
 
                   if cobertura === 'particular'
-
-                    span.badge.bg-info.text-dark
-                      | Particular
+                    span.badge.bg-info.text-dark Particular
 
                   else if cobertura === 'obra_social'
-
-                    span.badge.bg-primary
-                      | Obra social / Prepaga
+                    span.badge.bg-primary Obra social / Prepaga
 
                   else
-
                     span.badge.bg-primary
                       | Particular + Obra social
 
-
-                //- ==================================================
+                //- ===================================
                 //- MODALIDADES
-                //- ==================================================
+                //- ===================================
 
                 .d-flex.flex-wrap.gap-2.mb-3
 
-                  if modalidad === 'presencial'
-
+                  if modalidad === 'presencial' || modalidad === 'ambas'
                     span.tf-feature.tf-feature-purple
                       | ● Presencial
 
-                  else if modalidad === 'telemedicina'
-
+                  if modalidad === 'telemedicina' || modalidad === 'ambas'
                     span.tf-feature.tf-feature-blue
                       | ◉ Telemedicina
-
-                  else
-
-                    span.tf-feature.tf-feature-purple
-                      | ● Presencial
-
-                    span.tf-feature.tf-feature-blue
-                      | ◉ Telemedicina
-
 
                   if prof.permiteSobreturnos
-
                     span.tf-feature.tf-feature-orange
                       | + Sobreturnos
 
-
-                  if prof.ofreceTelemedicina && modalidad !== 'telemedicina' && modalidad !== 'ambas'
-
+                  if prof.ofreceTelemedicina && modalidad === 'presencial'
                     span.tf-feature.tf-feature-blue
-                      | ◉ Telemedicina
+                      | ◉ Telemedicina disponible
 
-
-                //- ==================================================
+                //- ===================================
                 //- CONTACTO
-                //- ==================================================
+                //- ===================================
 
                 .mb-3
 
-                  span.tf-label
-                    | Contacto
+                  span.tf-label Contacto
 
                   small.text-muted.d-block
                     = prof.telefono || 'Teléfono no registrado'
@@ -312,84 +408,118 @@ block content
                   small.text-muted.d-block
                     = prof.email || 'Email no registrado'
 
-
-                //- ==================================================
-                //- BOTÓN
-                //- ==================================================
+                //- ===================================
+                //- BOTONES DE ACCIÓN
+                //- ===================================
 
                 .mt-auto.pt-2
 
-                  a.btn.btn-outline-primary.w-100.rounded-3.fw-bold(
-                    href=`/profesionales/${profId}`
+                  a.btn.btn-outline-primary.w-100.rounded-3.fw-bold.mb-2(
+                    href='/profesionales/' + profId
                   )
                     | Ver ficha y agenda
 
+                  //- SOLO ADMINISTRACIÓN Y RECEPCIÓN
 
-      //- ==========================================================
+                  if puedeGestionar
+
+                    .tf-prof-actions
+
+                      //- EDICIÓN Y DESACTIVACIÓN
+                      if estaActivo
+                        a.btn.btn-outline-primary(
+                          href='/profesionales/' + profId + '/editar'
+                          aria-label='Editar profesional ' + nombre
+                        )
+                          | ✏️ Editar
+
+                        form.form-eliminar-profesional(
+                          method='POST'
+                          action='/profesionales/' + profId + '/eliminar'
+                          data-nombre=nombre
+                        )
+                          if typeof csrfToken !== 'undefined' && csrfToken
+                            input(type='hidden' name='_csrf' value=csrfToken)
+                          button.btn.btn-outline-warning(
+                            type='submit'
+                            aria-label='Desactivar profesional ' + nombre
+                          )
+                            | Desactivar
+                      else
+                        if esAdmin
+                          form.form-reactivar-profesional(
+                            method='POST'
+                            action='/profesionales/' + profId + '/reactivar'
+                            data-nombre=nombre
+                          )
+                            if typeof csrfToken !== 'undefined' && csrfToken
+                              input(type='hidden' name='_csrf' value=csrfToken)
+                            button.btn.btn-outline-success(type='submit') Reactivar
+
+                      //- BORRADO FÍSICO SOLO PARA ADMINISTRADOR
+                      if esAdmin
+                        form.form-borrar-definitivamente(
+                          method='POST'
+                          action='/profesionales/' + profId + '/eliminar-definitivamente'
+                          data-nombre=nombre
+                        )
+                          if typeof csrfToken !== 'undefined' && csrfToken
+                            input(type='hidden' name='_csrf' value=csrfToken)
+                          input(type='hidden' name='confirmar' value='ELIMINAR')
+                          button.btn.btn-outline-danger(type='submit')
+                            | Eliminar definitivamente
+
+      //- ==============================================
       //- SIN RESULTADOS
-      //- ==========================================================
+      //- ==============================================
 
       #sinResultadosProfesionales.tf-empty-search
 
-        .display-6.mb-2
-          | ⌕
+        .display-6.mb-2 ⌕
 
-        h5.fw-bold
-          | No encontramos profesionales
+        h5.fw-bold No encontramos profesionales
 
         p.text-muted.mb-0
           | Probá con otro nombre, especialidad, matrícula o sede.
 
-
-    //- ============================================================
-    //- BÚSQUEDA Y FILTROS
-    //- ============================================================
+    //- ==============================================
+    //- JAVASCRIPT
+    //- ==============================================
 
     script.
       document.addEventListener('DOMContentLoaded', function () {
 
-        const buscador =
-          document.getElementById('buscarProfesional');
+        const buscador = document.getElementById('buscarProfesional');
 
-        const tarjetas =
-          Array.from(
-            document.querySelectorAll('.profesional-wrapper')
-          );
+        const tarjetas = Array.from(
+          document.querySelectorAll('.profesional-wrapper')
+        );
 
-        const botones =
-          document.querySelectorAll('[data-modalidad]');
+        const botones = Array.from(
+          document.querySelectorAll('.tf-filter-btn')
+        );
 
-        const sinResultados =
-          document.getElementById('sinResultadosProfesionales');
+        const sinResultados = document.getElementById(
+          'sinResultadosProfesionales'
+        );
 
-        let modalidadActiva =
-          'todos';
-
+        let modalidadActiva = 'todos';
 
         function aplicarFiltros() {
 
-          const texto =
-            buscador
-              ? buscador.value.toLowerCase().trim()
-              : '';
+          const texto = buscador
+            ? buscador.value.toLowerCase().trim()
+            : '';
 
-          let visibles =
-            0;
-
+          let visibles = 0;
 
           tarjetas.forEach(function (tarjeta) {
 
-            const contenido =
-              tarjeta.dataset.search || '';
+            const contenido = tarjeta.dataset.search || '';
 
-            const modalidad =
-              tarjeta.dataset.modalidad || 'presencial';
+            const modalidad = tarjeta.dataset.modalidad || 'presencial';
 
-
-            const coincideTexto =
-              !texto ||
-              contenido.includes(texto);
-
+            const coincideTexto = !texto || contenido.includes(texto);
 
             const coincideModalidad =
               modalidadActiva === 'todos' ||
@@ -403,88 +533,103 @@ block content
                 modalidad === 'ambas'
               );
 
+            const mostrar = coincideTexto && coincideModalidad;
 
-            if (
-              coincideTexto &&
-              coincideModalidad
-            ) {
+            tarjeta.style.display = mostrar ? '' : 'none';
 
-              tarjeta.style.display = '';
-
-              visibles++;
-
-            } else {
-
-              tarjeta.style.display = 'none';
-
-            }
-
+            if (mostrar) visibles++;
           });
 
-
           if (sinResultados) {
-
             sinResultados.style.display =
-              visibles === 0
+              visibles === 0 && tarjetas.length > 0
                 ? 'block'
                 : 'none';
-
           }
-
         }
-
-
-        if (buscador) {
-
-          buscador.addEventListener(
-            'input',
-            aplicarFiltros
-          );
-
-        }
-
 
         botones.forEach(function (boton) {
 
-          boton.addEventListener(
-            'click',
-            function () {
+          boton.addEventListener('click', function () {
 
-              modalidadActiva =
-                boton.dataset.modalidad;
+            modalidadActiva = boton.dataset.modalidad;
 
+            botones.forEach(function (btn) {
 
-              botones.forEach(function (btn) {
+              btn.classList.remove('btn-primary');
+              btn.classList.remove('btn-outline-primary');
+              btn.classList.remove('btn-outline-info');
+              btn.classList.remove('btn-outline-secondary');
 
-                if (btn.dataset.modalidad === 'telemedicina') {
+              btn.classList.add('btn');
 
-                  btn.className =
-                    'btn btn-outline-info tf-filter-btn';
+              if (btn.dataset.modalidad === 'telemedicina') {
+                btn.classList.add('btn-outline-info');
 
-                } else if (btn.dataset.modalidad === 'ambas') {
+              } else if (btn.dataset.modalidad === 'ambas') {
+                btn.classList.add('btn-outline-secondary');
 
-                  btn.className =
-                    'btn btn-outline-secondary tf-filter-btn';
+              } else {
+                btn.classList.add('btn-outline-primary');
+              }
+            });
 
-                } else {
+            boton.classList.remove(
+              'btn-outline-primary',
+              'btn-outline-info',
+              'btn-outline-secondary'
+            );
 
-                  btn.className =
-                    'btn btn-outline-primary tf-filter-btn';
+            boton.classList.add('btn-primary');
 
-                }
-
-              });
-
-
-              boton.className =
-                'btn btn-primary tf-filter-btn';
-
-
-              aplicarFiltros();
-
-            }
-          );
-
+            aplicarFiltros();
+          });
         });
 
+        if (buscador) {
+          buscador.addEventListener('input', aplicarFiltros);
+        }
+
+        // Confirmaciones independientes; no se cambian los filtros.
+        function prepararConfirmacion(selector, construirMensaje) {
+          document.querySelectorAll(selector).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+              const nombre = form.dataset.nombre || 'este profesional';
+              if (!window.confirm(construirMensaje(nombre))) {
+                event.preventDefault();
+                return;
+              }
+              const boton = form.querySelector('button[type="submit"]');
+              if (boton) {
+                boton.disabled = true;
+                boton.textContent = 'Procesando...';
+              }
+            });
+          });
+        }
+
+        prepararConfirmacion('.form-eliminar-profesional', function (nombre) {
+          return '¿Querés desactivar a ' + nombre + '?' +
+            '\n\nSe bloqueará su acceso y no podrá recibir nuevas reservas.' +
+            '\nLos turnos y registros históricos se conservarán.';
+        });
+
+        prepararConfirmacion('.form-reactivar-profesional', function (nombre) {
+          return '¿Querés reactivar a ' + nombre + '?' +
+            '\n\nSe habilitará nuevamente su perfil profesional.';
+        });
+
+        prepararConfirmacion('.form-borrar-definitivamente', function (nombre) {
+          return '¿Eliminar definitivamente a ' + nombre + '?' +
+            '\n\nSe eliminarán su perfil y su cuenta institucional.' +
+            '\nSi tiene turnos o historias clínicas, el servidor lo impedirá.' +
+            '\n\nESTA ACCIÓN NO SE PUEDE DESHACER.';
+        });
+
+        prepararConfirmacion('.form-liberar-correo-huerfano', function () {
+          return '¿Liberar el correo institucional de prueba?' +
+            '\n\nSi tiene historial, la cuenta se archivará sin borrar los registros.';
+        });
+
+        aplicarFiltros();
       });

@@ -1,0 +1,25 @@
+extends layout
+
+block content
+  .container.py-5
+    .row.justify-content-center
+      .col-md-8.col-lg-6
+        .card.border-0.shadow-sm.rounded-4
+          .card-body.p-4.p-md-5
+            h1.h3.fw-bold.mb-3 Activar acceso a TurnoFlex
+            p.text-body-secondary Configurá tu contraseña para ingresar a la plataforma.
+            if alias
+              .alert.alert-info
+                strong Identificador institucional:
+                p.mb-0= alias
+            if error
+              .alert.alert-danger(role='alert')= error
+            form(action='/accesos/activar/' + token method='POST')
+              .mb-3
+                label.form-label(for='password') Nueva contraseña
+                input#password.form-control(type='password' name='password' minlength='12' maxlength='128' autocomplete='new-password' required)
+                .form-text Al menos 12 caracteres.
+              .mb-4
+                label.form-label(for='confirmacion') Repetir contraseña
+                input#confirmacion.form-control(type='password' name='confirmacion' minlength='12' maxlength='128' autocomplete='new-password' required)
+              button.btn.btn-primary.w-100(type='submit') Activar cuenta e ingresar
